@@ -290,6 +290,7 @@ export default function AdminDashboard() {
                 <thead>
                   <tr>
                     <th>ID</th>
+                    <th>Issue Description</th>
                     <th>Category</th>
                     <th>Priority</th>
                     <th>Status</th>
@@ -300,13 +301,14 @@ export default function AdminDashboard() {
                 <tbody>
                   <AnimatePresence>
                     {complaints.length === 0 ? (
-                      <tr><td colSpan="6" className="text-center text-muted">No complaints found.</td></tr>
+                      <tr><td colSpan="7" className="text-center text-muted">No complaints found.</td></tr>
                     ) : complaints.map((c, i) => (
                       <motion.tr 
                         key={c._id}
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.05 }}
                       >
                         <td><a href={`/complaints/${c._id}`} className="text-accent" style={{ fontFamily: 'monospace' }}>#{c._id.slice(-5)}</a></td>
+                        <td style={{ maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.text}>{c.text}</td>
                         <td>{c.category}</td>
                         <td><span className={`badge badge-${c.priority.toLowerCase()}`}>{c.priority}</span></td>
                         <td>{c.status}</td>
