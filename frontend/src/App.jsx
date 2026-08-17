@@ -13,6 +13,7 @@ import SubmitComplaint from './pages/SubmitComplaint';
 import MyComplaints   from './pages/MyComplaints';
 import ComplaintDetail from './pages/ComplaintDetail';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminLogin     from './pages/AdminLogin';
 import { Toaster }    from 'react-hot-toast';
 
 function AnimatedRoutes() {
@@ -38,6 +39,7 @@ function AnimatedRoutes() {
         } />
 
         {/* Admin routes */}
+        <Route path="/admin/login" element={<PageTransition><Navbar /><AdminLogin /></PageTransition>} />
         <Route path="/admin" element={
           <ProtectedRoute adminOnly><PageTransition><Navbar /><AdminDashboard /></PageTransition></ProtectedRoute>
         } />

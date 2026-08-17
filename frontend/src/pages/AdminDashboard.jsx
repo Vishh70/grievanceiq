@@ -2,9 +2,9 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import Skeleton from '../components/Skeleton';
-import { BarChart3, Clock, CheckCircle, AlertTriangle, Layers, X, Activity } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, Layers, X, Activity, Link as LinkIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 
 const PRIORITY_COLORS = {
@@ -14,8 +14,11 @@ const PRIORITY_COLORS = {
   'Low': '#10b981'       // Success green
 };
 
+const CATEGORY_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9'];
+
 export default function AdminDashboard() {
   const [summary, setSummary] = useState(null);
+  const [similarGroups, setSimilarGroups] = useState([]);
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -27,12 +30,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sumRes, compRes] = await Promise.all([
+        const [sumRes, compRes, simRes] = await Promise.all([
           api.get('/dashboard/summary'),
-          api.get('/complaints', { params: { ...filters, page, limit: 10 } })
+          api.get('/complaints', { params: { ...filters, page, limit: 10 } }),
+          api.get('/dashboard/similar-groups')
         ]);
         setSummary(sumRes.data);
         setComplaints(compRes.data.complaints);
+        setSimilarGroups(simRes.data.groups || []);
       } catch (err) {
         toast.error('Failed to load dashboard data.');
       } finally {
@@ -46,10 +51,9 @@ export default function AdminDashboard() {
 
   const exportToCSV = () => {
     if (!complaints.length) return toast.error('No data to export');
-    const headers = ['ID', 'Citizen', 'Category', 'Priority', 'Status', 'Department', 'Date', 'Description'];
+    const headers = ['ID', 'Category', 'Priority', 'Status', 'Department', 'Date', 'Description'];
     const rows = complaints.map(c => [
       c._id,
-      c.citizenId?.name || 'Unknown',
       c.category,
       c.priority,
       c.status,
@@ -97,8 +101,10 @@ export default function AdminDashboard() {
   const s = summary?.summary || {};
   
   // Prepare data for charts
-  const priorityData = s.byPriority ? Object.entries(s.byPriority).map(([name, value]) => ({ name, value })) : [];
+  const priorityData = summary?.priorityBreakdown || [];
   const deptData = summary?.departmentBreakdown || [];
+  const trendData = summary?.trend || [];
+  const categoryData = summary?.categoryBreakdown || [];
 
   return (
     <div className="page">
@@ -106,7 +112,7 @@ export default function AdminDashboard() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-2">
           <div>
             <h1>Admin Dashboard</h1>
-            <p>Complaint intelligence overview — real-time analytics and management</p>
+            <p>End-to-End Civic Intelligence & Analytics Platform</p>
           </div>
           <button className="btn btn-secondary" onClick={exportToCSV}>
             📥 Export to CSV
@@ -124,21 +130,35 @@ export default function AdminDashboard() {
           </div>
           <div className="card card-glass flex items-center gap-2">
             <div style={{ background: 'rgba(239,68,68,0.15)', padding: '1rem', borderRadius: '50%' }}><AlertTriangle size={24} color="var(--danger)"/></div>
-            <div><p className="text-sm text-muted">Critical</p><h2 style={{ fontSize: '1.8rem' }}>{s.byPriority?.Critical || 0}</h2></div>
+            <div><p className="text-sm text-muted">Critical</p><h2 style={{ fontSize: '1.8rem' }}>{s.highPriority || 0}</h2></div>
           </div>
           <div className="card card-glass flex items-center gap-2">
             <div style={{ background: 'rgba(245,158,11,0.15)', padding: '1rem', borderRadius: '50%' }}><Clock size={24} color="var(--warning)"/></div>
-            <div><p className="text-sm text-muted">In Progress</p><h2 style={{ fontSize: '1.8rem' }}>{s.byStatus?.['In Progress'] || 0}</h2></div>
+            <div><p className="text-sm text-muted">Pending</p><h2 style={{ fontSize: '1.8rem' }}>{s.pending || 0}</h2></div>
           </div>
           <div className="card card-glass flex items-center gap-2">
             <div style={{ background: 'rgba(16,185,129,0.15)', padding: '1rem', borderRadius: '50%' }}><CheckCircle size={24} color="var(--success)"/></div>
-            <div><p className="text-sm text-muted">Resolved</p><h2 style={{ fontSize: '1.8rem' }}>{s.byStatus?.Resolved || 0}</h2></div>
+            <div><p className="text-sm text-muted">Resolved</p><h2 style={{ fontSize: '1.8rem' }}>{s.resolved || 0}</h2></div>
           </div>
         </motion.div>
 
-        {/* Advanced Analytics Charts */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        {/* Row 1: Trends & Priority */}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
             <motion.div className="card card-glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <h3 className="mb-2">Incoming Issue Trends (14 Days)</h3>
+              <div style={{ height: 250, width: '100%' }}>
+                 <ResponsiveContainer>
+                    <LineChart data={trendData} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
+                      <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                      <Line type="monotone" dataKey="count" stroke="var(--accent)" strokeWidth={3} dot={{ r: 4, fill: 'var(--accent)' }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                 </ResponsiveContainer>
+              </div>
+            </motion.div>
+
+            <motion.div className="card card-glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <h3 className="mb-2">Priority Distribution</h3>
               <div style={{ height: 250, width: '100%' }}>
                  <ResponsiveContainer>
@@ -148,20 +168,41 @@ export default function AdminDashboard() {
                           <Cell key={`cell-${index}`} fill={PRIORITY_COLORS[entry.name] || '#8884d8'} />
                         ))}
                       </Pie>
-                      <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                      <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                     </PieChart>
                  </ResponsiveContainer>
               </div>
             </motion.div>
+        </div>
+
+        {/* Row 2: Category & Department Workload */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+            <motion.div className="card card-glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+              <h3 className="mb-2">Category Analytics</h3>
+              <div style={{ height: 250, width: '100%' }}>
+                 <ResponsiveContainer>
+                    <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 30, left: 40, bottom: 0 }}>
+                      <XAxis type="number" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <YAxis dataKey="name" type="category" tick={{ fontSize: 12, fill: 'var(--text-primary)' }} tickLine={false} axisLine={false} />
+                      <RechartsTooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ borderRadius: '8px', border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                 </ResponsiveContainer>
+              </div>
+            </motion.div>
             
-            <motion.div className="card card-glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <motion.div className="card card-glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
               <h3 className="mb-2">Department Workload</h3>
               <div style={{ height: 250, width: '100%' }}>
                  <ResponsiveContainer>
                     <BarChart data={deptData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
                       <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                      <RechartsTooltip cursor={{ fill: 'rgba(99,102,241,0.05)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                      <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <RechartsTooltip cursor={{ fill: 'rgba(99,102,241,0.05)' }} contentStyle={{ borderRadius: '8px', border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                       <Bar dataKey="value" fill="var(--accent)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                  </ResponsiveContainer>
@@ -169,12 +210,35 @@ export default function AdminDashboard() {
             </motion.div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', alignItems: 'start' }}>
+        {/* AI Similar Issue Clusters */}
+        <motion.div className="mb-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+            <h3 className="mb-1 flex items-center gap-1">
+              <LinkIcon size={20} color="var(--accent)"/> AI Detected Similar Issue Clusters
+            </h3>
+            <p className="text-sm text-muted mb-2">The AI automatically groups semantically identical complaints to prevent duplicate work.</p>
+            {similarGroups.length === 0 ? (
+              <div className="card card-glass text-center text-muted">No duplicate clusters detected yet.</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+                {similarGroups.map((group, idx) => (
+                  <div key={idx} className="card card-glass flex-col gap-1" style={{ borderLeft: '4px solid var(--warning)' }}>
+                    <div className="flex items-center justify-between">
+                       <span className="font-semibold text-sm">Cluster #{group._id.slice(-4)}</span>
+                       <span className="badge badge-warning">{group.count} Complaints</span>
+                    </div>
+                    <p className="text-xs text-muted mt-1">Found in categories: <br/><strong style={{ color: 'var(--text-primary)' }}>{group.categories.join(', ')}</strong></p>
+                  </div>
+                ))}
+              </div>
+            )}
+        </motion.div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', alignItems: 'start', marginTop: '3rem' }}>
           
           {/* Main Table Area */}
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }} className="card">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="card">
             <div className="flex items-center justify-between mb-2">
-              <h3>Issue Tracking</h3>
+              <h3>Issue Tracking Table</h3>
               <div className="flex gap-1">
                 <select className="form-select" style={{ padding: '0.4rem 1rem', width: 'auto' }} value={filters.status} onChange={e => applyFilter('status', e.target.value)}>
                   <option value="">All Statuses</option>
@@ -238,7 +302,7 @@ export default function AdminDashboard() {
           </motion.div>
 
           {/* Recent Activity Sidebar */}
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="card" style={{ background: 'var(--bg-secondary)' }}>
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 }} className="card" style={{ background: 'var(--bg-secondary)' }}>
             <h3 className="mb-2 flex items-center gap-1 border-b pb-1" style={{ borderColor: 'var(--border)' }}>
               <Activity size={18} color="var(--accent-light)"/> Recent Activity
             </h3>
