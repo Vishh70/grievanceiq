@@ -113,7 +113,7 @@ export default function AdminLogin() {
       </div>
 
       {/* Right Visual Side */}
-      <div className="auth-right flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)' }}>
+      <div className="auth-right mobile-hidden flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)' }}>
         {/* Background dark blobs */}
         <div style={{ position: 'absolute', top: '10%', right: '10%', width: '30vw', height: '30vw', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '50%', filter: 'blur(80px)' }}></div>
         <div style={{ position: 'absolute', bottom: '10%', left: '10%', width: '30vw', height: '30vw', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '50%', filter: 'blur(80px)' }}></div>

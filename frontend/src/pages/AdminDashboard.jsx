@@ -143,7 +143,7 @@ export default function AdminDashboard() {
         </motion.div>
 
         {/* Row 1: Trends & Priority */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        <div className="grid-responsive-2" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
             <motion.div className="card card-glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               <h3 className="mb-2">Incoming Issue Trends (14 Days)</h3>
               <div style={{ height: 250, width: '100%' }}>
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Row 2: Category & Department Workload */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div className="grid-responsive-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
             <motion.div className="card card-glass" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
               <h3 className="mb-2">Category Analytics</h3>
               <div style={{ height: 250, width: '100%' }}>
@@ -233,7 +233,7 @@ export default function AdminDashboard() {
             )}
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', alignItems: 'start', marginTop: '3rem' }}>
+        <div className="grid-responsive-sidebar" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', alignItems: 'start', marginTop: '3rem' }}>
           
           {/* Main Table Area */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="card">

@@ -242,3 +242,44 @@ tbody tr:hover { background: #f8fafc; }
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ── Mobile Responsiveness (max-width: 768px) ──────────────────────────────── */
+@media (max-width: 768px) {
+  /* Prevent horizontal overflow */
+  html, body { overflow-x: hidden; }
+
+  /* Navbar */
+  .nav-text-hide-mobile { display: none !important; }
+  .nav-inner { padding: 0 1rem; }
+  .nav-brand { font-size: 1.1rem; }
+  .btn { padding: 0.5rem 1rem; }
+  .btn-sm { padding: 0.4rem 0.6rem; }
+
+  /* Typography */
+  h1 { font-size: 1.8rem; }
+  h2 { font-size: 1.4rem; }
+
+  /* Grids */
+  .grid-responsive-2 { 
+    grid-template-columns: 1fr !important; 
+  }
+  .grid-responsive-sidebar { 
+    grid-template-columns: 1fr !important; 
+  }
+
+  /* Table overflow */
+  .table-wrap {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Cards */
+  .card { padding: 1rem; }
+
+  /* Admin Login Hide Right Side Override */
+  .auth-right.mobile-hidden {
+    display: none !important;
+  }
+}
