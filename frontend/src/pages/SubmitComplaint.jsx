@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { Upload, MapPin, Send, Loader2, Navigation } from 'lucide-react';
+import { Upload, MapPin, Send, Loader2, Navigation, Camera, X, Image as ImageIcon } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -54,6 +54,9 @@ export default function SubmitComplaint() {
   const [preview, setPreview] = useState('');
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
   const navigate              = useNavigate();
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -61,9 +64,68 @@ export default function SubmitComplaint() {
   const handleImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
     setImage(file);
     setPreview(URL.createObjectURL(file));
   };
+
+  // ── Camera Functions ──
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+      });
+      streamRef.current = stream;
+      setCameraActive(true);
+      // Wait for next render so videoRef is mounted
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      }, 100);
+    } catch (err) {
+      toast.error('Camera access denied. Please allow camera permission.');
+      console.error('Camera error:', err);
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+    canvas.toBlob((blob) => {
+      const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setImage(file);
+      setPreview(URL.createObjectURL(file));
+      stopCamera();
+      toast.success('Photo captured!');
+    }, 'image/jpeg', 0.9);
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    setPreview('');
+  };
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const getLocation = () => {
     if (!navigator.geolocation) return toast.error('Geolocation not supported by your browser.');
@@ -152,53 +214,147 @@ export default function SubmitComplaint() {
 
             <div className="form-group">
               <label className="form-label flex items-center gap-1">
-                <Upload size={16} /> Attach Photo
+                <Camera size={16} /> Attach Photo (Camera or Upload)
               </label>
               
-              <div 
-                onClick={() => document.getElementById('file-upload').click()}
-                style={{
-                  border: '2px dashed var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: preview ? '0.5rem' : '2rem',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  backgroundColor: 'var(--bg-secondary)',
-                  transition: 'border-color 0.2s',
-                  position: 'relative'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
-                onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
-              >
-                <input
-                  id="file-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImage}
-                  style={{ display: 'none' }}
-                />
-                
-                {preview ? (
-                  <div style={{ position: 'relative', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
-                    <img src={preview} alt="Preview" style={{ display: 'block', width: '100%', maxHeight: 240, objectFit: 'cover' }} />
-                    <div className="upload-overlay" style={{
-                      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: 'rgba(0,0,0,0.5)', opacity: 0, transition: 'opacity 0.2s', color: 'white', fontWeight: 600
-                    }}
-                    onMouseOver={e => e.currentTarget.style.opacity = 1}
-                    onMouseOut={e => e.currentTarget.style.opacity = 0}
+              {/* Camera Active — Live Viewfinder */}
+              {cameraActive && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                  style={{ 
+                    borderRadius: 'var(--radius-md)', overflow: 'hidden', 
+                    border: '2px solid var(--accent)', position: 'relative', background: '#000' 
+                  }}
+                >
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted 
+                    style={{ width: '100%', maxHeight: 300, objectFit: 'cover', display: 'block' }} 
+                  />
+                  <div style={{ 
+                    display: 'flex', justifyContent: 'center', gap: '1rem', 
+                    padding: '1rem', background: 'rgba(0,0,0,0.7)' 
+                  }}>
+                    <button 
+                      type="button" onClick={capturePhoto}
+                      style={{
+                        width: 60, height: 60, borderRadius: '50%', border: '3px solid white',
+                        background: 'var(--danger)', cursor: 'pointer', display: 'flex', 
+                        alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                      title="Capture Photo"
                     >
-                      <Upload size={24} style={{ marginRight: '8px' }} /> Change Photo
-                    </div>
+                      <Camera size={24} color="white" />
+                    </button>
+                    <button 
+                      type="button" onClick={stopCamera}
+                      style={{
+                        width: 44, height: 44, borderRadius: '50%', border: 'none',
+                        background: 'rgba(255,255,255,0.2)', cursor: 'pointer', display: 'flex', 
+                        alignItems: 'center', justifyContent: 'center', alignSelf: 'center'
+                      }}
+                      title="Cancel Camera"
+                    >
+                      <X size={20} color="white" />
+                    </button>
                   </div>
-                ) : (
-                  <>
-                    <Upload size={32} style={{ color: 'var(--text-secondary)', margin: '0 auto 1rem' }} />
-                    <p style={{ margin: 0, fontWeight: 500, color: 'var(--text-primary)' }}>Click to upload a photo</p>
-                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>PNG, JPG up to 5MB</p>
-                  </>
-                )}
-              </div>
+                </motion.div>
+              )}
+
+              {/* Preview — After Capture or Upload */}
+              {preview && !cameraActive && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                  style={{ position: 'relative', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}
+                >
+                  <img src={preview} alt="Preview" style={{ display: 'block', width: '100%', maxHeight: 260, objectFit: 'cover' }} />
+                  <button 
+                    type="button" onClick={removeImage}
+                    style={{
+                      position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', 
+                      color: 'white', border: 'none', borderRadius: '50%', width: 32, height: 32,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                    }}
+                    title="Remove Photo"
+                  >
+                    <X size={16} />
+                  </button>
+                  <div style={{ 
+                    padding: '0.5rem 1rem', background: 'rgba(5, 150, 105, 0.1)', 
+                    borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.5rem' 
+                  }}>
+                    <span style={{ color: 'var(--success)', fontSize: '0.85rem', fontWeight: 600 }}>✓ Photo attached</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>({(image?.size / 1024).toFixed(0)} KB)</span>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Dual Option Buttons — Camera + Upload */}
+              {!preview && !cameraActive && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  {/* Camera Option */}
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={startCamera}
+                    style={{
+                      border: '2px dashed var(--border)', borderRadius: 'var(--radius-md)',
+                      padding: '1.5rem 1rem', textAlign: 'center', cursor: 'pointer',
+                      backgroundColor: 'var(--bg-secondary)', transition: 'border-color 0.2s, background 0.2s',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem'
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                  >
+                    <div style={{ 
+                      background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', 
+                      padding: '0.75rem', borderRadius: '50%', display: 'flex' 
+                    }}>
+                      <Camera size={24} color="white" />
+                    </div>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>Take Photo</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Open camera</span>
+                  </motion.button>
+
+                  {/* Upload Option */}
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => document.getElementById('file-upload').click()}
+                    style={{
+                      border: '2px dashed var(--border)', borderRadius: 'var(--radius-md)',
+                      padding: '1.5rem 1rem', textAlign: 'center', cursor: 'pointer',
+                      backgroundColor: 'var(--bg-secondary)', transition: 'border-color 0.2s, background 0.2s',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem'
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--success)'; e.currentTarget.style.background = 'rgba(5,150,105,0.05)'; }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                  >
+                    <div style={{ 
+                      background: 'linear-gradient(135deg, var(--success), #34d399)', 
+                      padding: '0.75rem', borderRadius: '50%', display: 'flex' 
+                    }}>
+                      <ImageIcon size={24} color="white" />
+                    </div>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>Upload Photo</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>From gallery</span>
+                  </motion.button>
+                </div>
+              )}
+
+              <input
+                id="file-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImage}
+                style={{ display: 'none' }}
+              />
             </div>
 
             <div className="form-group">
