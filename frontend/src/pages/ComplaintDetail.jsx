@@ -87,13 +87,13 @@ export default function ComplaintDetail() {
               <p style={{ fontSize: '1.05rem', whiteSpace: 'pre-wrap' }}>{complaint.text}</p>
             </div>
 
-            {complaint.imageUrl && (
+            {(complaint.imageBase64 || complaint.imageUrl) && (
               <div className="card" style={{ padding: '0.5rem' }}>
                 <div 
                   style={{ position: 'relative', cursor: 'zoom-in', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}
                   onClick={() => setLightbox(true)}
                 >
-                  <img src={complaint.imageUrl} alt="Evidence" style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }} />
+                  <img src={complaint.imageBase64 || complaint.imageUrl} alt="Evidence" style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }} />
                   <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.6)', padding: '0.4rem', borderRadius: '50%' }}>
                     <Maximize2 size={16} color="#fff" />
                   </div>
@@ -197,7 +197,7 @@ export default function ComplaintDetail() {
             <button style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={32}/></button>
             <motion.img 
               initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-              src={complaint.imageUrl} 
+              src={complaint.imageBase64 || complaint.imageUrl} 
               alt="Evidence Fullscreen" 
               style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} 
               onClick={(e) => e.stopPropagation()}

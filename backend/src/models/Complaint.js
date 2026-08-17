@@ -21,6 +21,7 @@ const complaintSchema = new mongoose.Schema(
     // Complaint content
     text:     { type: String, required: true, trim: true },
     imageUrl: { type: String, default: '' },
+    imageBase64: { type: String, default: '' },
     location: {
       lat:     { type: Number, default: null },
       lng:     { type: Number, default: null },

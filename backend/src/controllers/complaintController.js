@@ -1,10 +1,19 @@
-// src/controllers/complaintController.js
 const Complaint = require('../models/Complaint');
 const { analyzeComplaint } = require('../services/aiService');
+const fs = require('fs');
 
 exports.createComplaint = async (req, res) => {
   try {
     const { text, address, lat, lng } = req.body;
+    
+    let imageBase64 = null;
+    let mimeType = null;
+    if (req.file) {
+      const buffer = fs.readFileSync(req.file.path);
+      imageBase64 = buffer.toString('base64');
+      mimeType = req.file.mimetype;
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
     
     // 1. Save initial complaint
     const complaint = new Complaint({
@@ -14,7 +23,8 @@ exports.createComplaint = async (req, res) => {
         address,
         coordinates: lat && lng ? [parseFloat(lng), parseFloat(lat)] : []
       },
-      imageUrl: req.file ? `/uploads/${req.file.filename}` : null,
+      imageUrl: '',
+      imageBase64: imageBase64 ? `data:${mimeType};base64,${imageBase64}` : '',
       statusHistory: [{ status: 'Submitted' }]
     });
 
@@ -24,8 +34,7 @@ exports.createComplaint = async (req, res) => {
     // We don't await this so the user gets a fast response
     (async () => {
       try {
-        const imagePath = req.file ? req.file.path : null;
-        const aiResult = await analyzeComplaint(text, imagePath);
+        const aiResult = await analyzeComplaint(text, imageBase64, mimeType);
         
         // Basic similarity grouping using text search (Requires text index)
         let similarGroupId = complaint._id;

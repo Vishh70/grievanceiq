@@ -18,22 +18,10 @@ const extractJson = (text) => {
 };
 
 /**
- * Converts a local file to the format required by Gemini API
- */
-function fileToGenerativePart(path, mimeType) {
-  return {
-    inlineData: {
-      data: Buffer.from(fs.readFileSync(path)).toString("base64"),
-      mimeType
-    },
-  };
-}
-
-/**
  * Analyze the complaint using Gemini.
- * Expects the complaint text and an optional image path.
+ * Expects the complaint text and an optional base64 image string.
  */
-async function analyzeComplaint(text, imagePath = null) {
+async function analyzeComplaint(text, imageBase64 = null, mimeType = null) {
   if (!process.env.GEMINI_API_KEY) {
     console.warn('⚠️ GEMINI_API_KEY is not set. Using fallback mock analysis.');
     return {
@@ -71,12 +59,13 @@ Complaint Text: "${text}"
 
   try {
     let result;
-    if (imagePath) {
-      // Basic mime type guessing
-      const ext = imagePath.split('.').pop().toLowerCase();
-      const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
-      const imagePart = fileToGenerativePart(imagePath, mimeType);
-      
+    if (imageBase64 && mimeType) {
+      const imagePart = {
+        inlineData: {
+          data: imageBase64,
+          mimeType: mimeType
+        }
+      };
       result = await model.generateContent([prompt, imagePart]);
     } else {
       result = await model.generateContent(prompt);
