@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import Skeleton from '../components/Skeleton';
-import { Clock, CheckCircle, AlertTriangle, Layers, X, Activity, Link as LinkIcon } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, Layers, X, Activity, Link as LinkIcon, Eye, Edit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
@@ -314,9 +314,11 @@ export default function AdminDashboard() {
                         <td>{c.status}</td>
                         <td>{new Date(c.createdAt).toLocaleDateString()}</td>
                         <td style={{ display: 'flex', gap: '0.5rem' }}>
-                          <a href={`/complaints/${c._id}`} className="btn btn-sm btn-primary" style={{ textDecoration: 'none' }}>View</a>
-                          <button className="btn btn-sm btn-secondary" onClick={() => setStatusModal({ complaintId: c._id })}>
-                            Update
+                          <a href={`/complaints/${c._id}`} className="btn btn-sm btn-primary flex items-center" style={{ textDecoration: 'none', padding: '0.4rem 0.6rem' }} title="View Details">
+                            <Eye size={14} /> <span className="nav-text-hide-mobile">View</span>
+                          </a>
+                          <button className="btn btn-sm btn-secondary flex items-center" onClick={() => setStatusModal({ complaintId: c._id })} style={{ padding: '0.4rem 0.6rem' }} title="Update Status">
+                            <Edit size={14} /> <span className="nav-text-hide-mobile">Update</span>
                           </button>
                         </td>
                       </motion.tr>

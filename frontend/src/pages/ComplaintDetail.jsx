@@ -76,7 +76,7 @@ export default function ComplaintDetail() {
           </div>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '2rem', alignItems: 'start' }}>
+        <div className="grid-responsive-sidebar" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '2rem', alignItems: 'start' }}>
           
           {/* Main Content (Left) */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex-col gap-2">

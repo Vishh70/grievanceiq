@@ -144,7 +144,7 @@ export default function SubmitComplaint() {
                 </button>
               </label>
               <div style={{ height: 260, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                <MapContainer center={position || [28.6139, 77.2090]} zoom={11} style={{ height: '100%', width: '100%' }}>
+                <MapContainer center={position || [28.6139, 77.2090]} zoom={11} dragging={!L.Browser.mobile} tap={!L.Browser.mobile} style={{ height: '100%', width: '100%' }}>
                   <TileLayer
                     url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

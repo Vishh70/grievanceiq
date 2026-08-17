@@ -257,11 +257,66 @@ table tbody tr:hover {
 @media (max-width: 768px) {
   /* Prevent horizontal overflow */
   html, body { overflow-x: hidden; }
+  body { padding-bottom: 70px; /* Space for bottom nav */ }
 
   /* Navbar */
   .nav-text-hide-mobile { display: none !important; }
   .nav-inner { padding: 0 1rem; }
   .nav-brand { font-size: 1.1rem; }
+  .desktop-nav-links { display: none !important; }
+  
+  /* Mobile Bottom Nav */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    z-index: 999;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.03);
+  }
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    flex: 1;
+    height: 100%;
+    text-decoration: none;
+    transition: var(--transition);
+    background: none;
+    border: none;
+  }
+  .mobile-nav-item.active {
+    color: var(--accent);
+  }
+  .mobile-nav-item.mobile-nav-primary {
+    color: var(--accent);
+    transform: translateY(-15px);
+  }
+  .mobile-nav-item.mobile-nav-primary .icon-wrapper {
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    color: #fff;
+    padding: 12px;
+    border-radius: 50%;
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .btn { padding: 0.5rem 1rem; }
   .btn-sm { padding: 0.4rem 0.6rem; }
 
@@ -283,6 +338,7 @@ table tbody tr:hover {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    box-shadow: inset -10px 0 10px -10px rgba(0,0,0,0.1), inset 10px 0 10px -10px rgba(0,0,0,0.1);
   }
   
   /* Cards */
@@ -292,4 +348,9 @@ table tbody tr:hover {
   .auth-right.mobile-hidden {
     display: none !important;
   }
+}
+
+/* Hide Mobile Nav on Desktop */
+.mobile-bottom-nav {
+  display: none;
 }
