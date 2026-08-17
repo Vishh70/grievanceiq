@@ -10,7 +10,9 @@ const app = express();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: process.env.CLIENT_URL || '*',
+  origin: function (origin, callback) {
+    callback(null, true); // Allow all origins dynamically to fix CORS
+  },
   credentials: true
 }));
 app.use(express.json());
