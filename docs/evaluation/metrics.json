@@ -1,0 +1,101 @@
+{
+  "total_samples": 1000,
+  "overall_category_accuracy": 0.905,
+  "overall_priority_accuracy": 0.885,
+  "category_report": {
+    "Roads": {
+      "precision": 0.8050314465408805,
+      "recall": 0.8888888888888888,
+      "f1-score": 0.8448844884488449,
+      "support": 144.0
+    },
+    "Water Supply": {
+      "precision": 0.9319727891156463,
+      "recall": 0.9013157894736842,
+      "f1-score": 0.9163879598662207,
+      "support": 152.0
+    },
+    "Electricity": {
+      "precision": 0.875,
+      "recall": 0.9130434782608695,
+      "f1-score": 0.8936170212765957,
+      "support": 46.0
+    },
+    "Drainage": {
+      "precision": 0.8679245283018868,
+      "recall": 0.8518518518518519,
+      "f1-score": 0.8598130841121495,
+      "support": 54.0
+    },
+    "Waste Management": {
+      "precision": 0.9054545454545454,
+      "recall": 0.9256505576208178,
+      "f1-score": 0.9154411764705882,
+      "support": 269.0
+    },
+    "Public Infrastructure": {
+      "precision": 0.9618320610687023,
+      "recall": 0.8811188811188811,
+      "f1-score": 0.9197080291970803,
+      "support": 143.0
+    },
+    "Other": {
+      "precision": 0.946524064171123,
+      "recall": 0.921875,
+      "f1-score": 0.9340369393139841,
+      "support": 192.0
+    },
+    "accuracy": 0.905,
+    "macro avg": {
+      "precision": 0.8991056335218264,
+      "recall": 0.8976777781735705,
+      "f1-score": 0.8976983855264947,
+      "support": 1000.0
+    },
+    "weighted avg": {
+      "precision": 0.9075441945567198,
+      "recall": 0.905,
+      "f1-score": 0.9055976427511343,
+      "support": 1000.0
+    }
+  },
+  "priority_report": {
+    "Critical": {
+      "precision": 0.6666666666666666,
+      "recall": 0.8703703703703703,
+      "f1-score": 0.7550200803212851,
+      "support": 108.0
+    },
+    "High": {
+      "precision": 0.8385826771653543,
+      "recall": 0.9181034482758621,
+      "f1-score": 0.8765432098765432,
+      "support": 232.0
+    },
+    "Medium": {
+      "precision": 0.9259259259259259,
+      "recall": 0.872093023255814,
+      "f1-score": 0.8982035928143712,
+      "support": 258.0
+    },
+    "Low": {
+      "precision": 0.9751381215469613,
+      "recall": 0.8781094527363185,
+      "f1-score": 0.9240837696335078,
+      "support": 402.0
+    },
+    "accuracy": 0.885,
+    "macro avg": {
+      "precision": 0.851578347826227,
+      "recall": 0.8846690736595911,
+      "f1-score": 0.8634626631614268,
+      "support": 1000.0
+    },
+    "weighted avg": {
+      "precision": 0.8974455948531296,
+      "recall": 0.885,
+      "f1-score": 0.8881183957048348,
+      "support": 1000.0
+    }
+  }
+}
