@@ -36,12 +36,10 @@ connectDB().then(async () => {
     const adminEmail = 'admin@grievanceiq.com';
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (!existingAdmin) {
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash('admin123', salt);
       await User.create({
         name: 'System Admin',
         email: adminEmail,
-        password: hashedPassword,
+        passwordHash: 'admin123', // the schema pre-save hook will hash this
         role: 'admin'
       });
       console.log('✅ Default Admin created: admin@grievanceiq.com / admin123');
