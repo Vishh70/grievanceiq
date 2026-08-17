@@ -2,10 +2,21 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import Skeleton from '../components/Skeleton';
-import { Clock, CheckCircle, AlertTriangle, Layers, X, Activity, Link as LinkIcon, Eye, Edit } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, Layers, X, Activity, Link as LinkIcon, Eye, Edit, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix leaflet default icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const PRIORITY_COLORS = {
   'Critical': '#ef4444', // Danger red
@@ -230,6 +241,42 @@ export default function AdminDashboard() {
             </motion.div>
         </div>
 
+        {/* Global Geographic Distribution Map */}
+        {summary?.mapPins && summary.mapPins.length > 0 && (
+          <motion.div className="card mb-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+            <h3 className="mb-2 flex items-center gap-1">
+              <MapPin size={20} color="var(--accent)" /> Global Geographic Distribution
+            </h3>
+            <div style={{ height: 400, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <MapContainer 
+                center={[summary.mapPins[0].location.coordinates[1], summary.mapPins[0].location.coordinates[0]]} 
+                zoom={12} 
+                dragging={!L.Browser.mobile} tap={!L.Browser.mobile} 
+                style={{ height: '100%', width: '100%' }}
+              >
+                <TileLayer
+                  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                  attribution='&copy; OpenStreetMap'
+                />
+                {summary.mapPins.map(pin => {
+                  if(!pin.location || !pin.location.coordinates || pin.location.coordinates.length < 2) return null;
+                  return (
+                    <Marker key={pin._id} position={[pin.location.coordinates[1], pin.location.coordinates[0]]}>
+                      <Popup>
+                        <div style={{ width: '200px' }}>
+                          <span className={`badge badge-${(pin.priority || 'medium').toLowerCase()}`}>{pin.priority}</span>
+                          <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', marginBottom: '0.5rem', maxHeight: '60px', overflow: 'hidden', color: '#000' }}>{pin.text}</p>
+                          <a href={`/complaints/${pin._id}`} className="btn btn-sm btn-primary" style={{ textDecoration: 'none', display: 'block', textAlign: 'center' }}>View Details</a>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )
+                })}
+              </MapContainer>
+            </div>
+          </motion.div>
+        )}
+
         {/* AI Similar Issue Clusters */}
         <motion.div className="mb-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
             <h3 className="mb-1 flex items-center gap-1">
@@ -268,6 +315,12 @@ export default function AdminDashboard() {
                   onChange={e => applyFilter('search', e.target.value)}
                   style={{ padding: '0.4rem 1rem', width: '200px' }}
                 />
+                <select className="form-select" style={{ padding: '0.4rem 1rem', width: 'auto' }} value={filters.category} onChange={e => applyFilter('category', e.target.value)}>
+                  <option value="">All Categories</option>
+                  {summary?.categoryBreakdown?.map((c, i) => (
+                    <option key={i} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
                 <select className="form-select" style={{ padding: '0.4rem 1rem', width: 'auto' }} value={filters.status} onChange={e => applyFilter('status', e.target.value)}>
                   <option value="">All Statuses</option>
                   <option value="Submitted">Submitted</option>

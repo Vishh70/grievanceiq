@@ -14,6 +14,7 @@ exports.getSummary = async (_req, res) => {
       departmentBreakdown,
       statusBreakdown,
       trend,
+      mapPins,
     ] = await Promise.all([
       // Total count
       Complaint.countDocuments(),
@@ -68,6 +69,12 @@ exports.getSummary = async (_req, res) => {
         },
         { $sort: { _id: 1 } },
       ]),
+      
+      // Latest 200 Map Pins with coordinates
+      Complaint.find(
+        { "location.coordinates": { $exists: true, $not: { $size: 0 } } },
+        { _id: 1, "location.coordinates": 1, category: 1, priority: 1, text: 1 }
+      ).sort({ createdAt: -1 }).limit(200)
     ]);
 
     res.json({
@@ -77,6 +84,7 @@ exports.getSummary = async (_req, res) => {
       departmentBreakdown: departmentBreakdown.map(d => ({ name: d._id || 'Unassigned', value: d.count })),
       statusBreakdown:     statusBreakdown.map(s => ({ name: s._id, value: s.count })),
       trend:               trend.map(t => ({ date: t._id, count: t.count })),
+      mapPins:             mapPins
     });
   } catch (err) {
     console.error('Dashboard summary error:', err);
