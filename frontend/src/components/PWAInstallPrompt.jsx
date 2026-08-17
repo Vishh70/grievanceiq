@@ -10,25 +10,25 @@ export default function PWAInstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Check if it's already installed
+    // Check if it's already installed (standalone mode)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     if (isStandalone) return;
 
     // Detect iOS
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
-    
-    if (isIOSDevice) {
-      setIsIOS(true);
-      // Delay showing the prompt slightly
-      setTimeout(() => setShowPrompt(true), 3000);
-    }
+    if (isIOSDevice) setIsIOS(true);
 
-    // Listen for Android/Chrome native event
+    // ALWAYS show the prompt after 2.5 seconds so the user can physically see the UI!
+    const timer = setTimeout(() => {
+      setShowPrompt(true);
+    }, 2500);
+
+    // Listen for Android/Chrome native event to capture the actual install trigger
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowPrompt(true);
+      setShowPrompt(true); // Show immediately if native event fires
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -49,7 +49,14 @@ export default function PWAInstallPrompt() {
       return;
     }
     
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      import('react-hot-toast').then(({ default: toast }) => {
+        toast('Open your browser menu (⋮) and select "Install App"', { icon: 'ℹ️', duration: 4000 });
+      });
+      setShowPrompt(false);
+      return;
+    }
+
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     setDeferredPrompt(null);
