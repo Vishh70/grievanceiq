@@ -40,7 +40,7 @@ connectDB().then(async () => {
       await User.create({
         name: 'System Admin',
         email: adminEmail,
-        passwordHash: 'admin123', // the schema pre-save hook will hash this
+        passwordHash: process.env.ADMIN_PASSWORD || 'admin123', // the schema pre-save hook will hash this
         role: 'admin'
       });
       console.log('✅ Default Admin created: system@grievanceiq.com / admin123');

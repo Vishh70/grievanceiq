@@ -9,6 +9,7 @@ const PRIORITY_CLASS = { Critical: 'critical', High: 'high', Medium: 'medium', L
 const STATUS_COLORS  = {
   Submitted:   'var(--info)',
   'In Review': 'var(--warning)',
+  'In Progress': 'var(--accent)',
   Assigned:    'var(--accent-light)',
   Resolved:    'var(--success)',
   Rejected:    'var(--danger)',
@@ -60,7 +61,9 @@ export default function MyComplaints() {
 
         {complaints.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card text-center" style={{ padding: '4rem 2rem' }}>
-              <img src="/empty_state.jpg" alt="No Complaints" style={{ width: '180px', height: '180px', objectFit: 'cover', borderRadius: '24px', margin: '0 auto 1.5rem', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)' }} />
+              <div style={{ width: '120px', height: '120px', background: 'var(--bg-secondary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', border: '1px dashed var(--border)' }}>
+                <span style={{ fontSize: '4rem' }}>📝</span>
+              </div>
               <h2 className="mb-1" style={{ fontSize: '1.8rem' }}>No complaints yet</h2>
             <p className="text-muted mt-1">Submit your first civic complaint to get started.</p>
             <Link to="/complaints/new" className="btn btn-primary mt-2">Submit a Complaint</Link>

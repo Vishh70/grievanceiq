@@ -58,10 +58,16 @@ export default function Navbar() {
       {user && (
         <div className="mobile-bottom-nav">
           {user.role === 'admin' ? (
-            <Link to="/admin" className={`mobile-nav-item ${location.pathname === '/admin' ? 'active' : ''}`}>
-              <LayoutDashboard size={20} />
-              <span>Dashboard</span>
-            </Link>
+            <>
+              <Link to="/admin" className={`mobile-nav-item ${location.pathname === '/admin' ? 'active' : ''}`}>
+                <LayoutDashboard size={20} />
+                <span>Dashboard</span>
+              </Link>
+              <button className="mobile-nav-item" onClick={handleLogout} style={{ background: 'none', border: 'none', color: 'var(--text-muted)' }}>
+                <LogOut size={20} />
+                <span>Logout</span>
+              </button>
+            </>
           ) : (
             <>
               <Link to="/leaderboard" className={`mobile-nav-item ${location.pathname === '/leaderboard' ? 'active' : ''}`}>

@@ -18,6 +18,7 @@ import Profile        from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin     from './pages/AdminLogin';
 import { Toaster }    from 'react-hot-toast';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -79,6 +80,7 @@ export default function App() {
       <BrowserRouter>
         <AnimatedRoutes />
       </BrowserRouter>
+      <PWAInstallPrompt />
     </AuthProvider>
   );
 }

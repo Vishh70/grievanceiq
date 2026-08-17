@@ -35,7 +35,7 @@ export default function Profile() {
       <div className="container" style={{ maxWidth: '800px' }}>
         <h1 className="mb-2">My Civic Profile</h1>
 
-        <div className="grid-responsive mb-2">
+        <div className="grid-responsive-2 mb-2">
           {/* Identity Card */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card" style={{ textAlign: 'center' }}>
             <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--accent-glow)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>

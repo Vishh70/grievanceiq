@@ -46,6 +46,8 @@ const complaintSchema = new mongoose.Schema(
     embeddingVector:       { type: [Number], default: [] },
     similarGroupId:        { type: String, default: null },
     recommendedDepartment: { type: String, default: '' },
+    keywords:              { type: [String], default: [] },
+    isDuplicate:           { type: Boolean, default: false },
     aiProcessed:           { type: Boolean, default: false },
 
     // Status tracking

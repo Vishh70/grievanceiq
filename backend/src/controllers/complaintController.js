@@ -22,7 +22,8 @@ exports.createComplaint = async (req, res) => {
       text,
       location: {
         address,
-        coordinates: lat && lng ? [parseFloat(lng), parseFloat(lat)] : []
+        lat: lat ? parseFloat(lat) : null,
+        lng: lng ? parseFloat(lng) : null
       },
       imageUrl: '',
       imageBase64: imageBase64 ? `data:${mimeType};base64,${imageBase64}` : '',

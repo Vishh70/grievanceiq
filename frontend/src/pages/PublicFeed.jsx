@@ -71,7 +71,7 @@ export default function PublicFeed() {
   if (loading) return (
     <div className="page container">
       <Skeleton style={{ height: 400, marginBottom: '2rem' }} />
-      <div className="grid-responsive">
+      <div className="grid-responsive-2">
         <Skeleton style={{ height: 150 }} />
         <Skeleton style={{ height: 150 }} />
       </div>
@@ -80,6 +80,15 @@ export default function PublicFeed() {
 
   // Group trending by upvotes
   const trending = [...complaints].sort((a, b) => b.upvotes - a.upvotes).slice(0, 10);
+
+  // Calculate dynamic center
+  let mapCenter = [18.6298, 73.7997]; // Default Pune/PCMC
+  const complaintsWithLocation = complaints.filter(c => c.location?.lat && c.location?.lng);
+  if (complaintsWithLocation.length > 0) {
+    const avgLat = complaintsWithLocation.reduce((sum, c) => sum + c.location.lat, 0) / complaintsWithLocation.length;
+    const avgLng = complaintsWithLocation.reduce((sum, c) => sum + c.location.lng, 0) / complaintsWithLocation.length;
+    mapCenter = [avgLat, avgLng];
+  }
 
   return (
     <div className="page">
@@ -93,14 +102,14 @@ export default function PublicFeed() {
         {/* Massive Map */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card mb-2" style={{ padding: 0, overflow: 'hidden', height: '400px', border: '1px solid var(--border)' }}>
           <MapContainer 
-            center={[18.6298, 73.7997]} // default approx PCMC/Pune
+            center={mapCenter} 
             zoom={12} 
             style={{ height: '100%', width: '100%', zIndex: 1 }}
           >
             <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
             {complaints.map(c => (
-              c.location?.coordinates?.length > 1 && (
-                <Marker key={c._id} position={[c.location.coordinates[1], c.location.coordinates[0]]}>
+              c.location?.lat && c.location?.lng && (
+                <Marker key={c._id} position={[c.location.lat, c.location.lng]}>
                   <Popup>
                     <div style={{ padding: '0.5rem', maxWidth: '200px' }}>
                       <div className="flex items-center gap-1 mb-1">
@@ -119,7 +128,7 @@ export default function PublicFeed() {
 
         {/* Trending Issues List */}
         <h2 className="mb-1">Trending Issues 🔥</h2>
-        <div className="grid-responsive">
+        <div className="grid-responsive-2">
           {trending.map(c => {
             const hasUpvoted = c.upvotedBy?.includes(user.id);
             return (

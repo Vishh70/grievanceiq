@@ -144,7 +144,7 @@ export default function ComplaintDetail() {
                       <div className="card" style={{ padding: '1rem', background: isLast ? 'rgba(99,102,241,0.03)' : 'transparent', border: isLast ? '1px solid var(--border-glow)' : '1px solid var(--border)', boxShadow: 'none' }}>
                         <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem' }}>{h.status}</div>
                         <div className="text-sm text-muted mt-1" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <Calendar size={12} /> {new Date(h.timestamp || complaint.createdAt).toLocaleString()}
+                          <Calendar size={12} /> {new Date(h.date || complaint.createdAt).toLocaleString()}
                         </div>
                         {h.note && (
                           <div className="text-sm mt-1" style={{ background: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--accent-light)', marginTop: '0.75rem' }}>
@@ -203,10 +203,10 @@ export default function ComplaintDetail() {
                   <p className="text-sm text-muted">No precise GPS data provided</p>
                 </div>
               )}
-              {complaint.location?.coordinates?.length > 0 && (
+              {complaint.location?.lat && complaint.location?.lng && (
                 <div style={{ height: 220, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
                   <MapContainer 
-                    center={[complaint.location.coordinates[1], complaint.location.coordinates[0]]} 
+                    center={[complaint.location.lat, complaint.location.lng]} 
                     zoom={15} 
                     dragging={!L.Browser.mobile} tap={!L.Browser.mobile} 
                     style={{ height: '100%', width: '100%', zIndex: 1 }}
@@ -215,7 +215,7 @@ export default function ComplaintDetail() {
                       url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                       attribution='&copy; OpenStreetMap'
                     />
-                    <Marker position={[complaint.location.coordinates[1], complaint.location.coordinates[0]]} />
+                    <Marker position={[complaint.location.lat, complaint.location.lng]} />
                   </MapContainer>
                 </div>
               )}
