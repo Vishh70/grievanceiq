@@ -122,7 +122,7 @@ export default function AdminDashboard() {
       <div className="container">
         <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} 
-          className="flex items-center justify-between mb-2"
+          className="flex items-center justify-between mb-2 admin-header-wrap"
           style={{
             background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9))',
             padding: '2rem',
@@ -304,9 +304,9 @@ export default function AdminDashboard() {
           
           {/* Main Table Area */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="card">
-            <div className="flex items-center justify-between mb-2" style={{ flexWrap: 'wrap', gap: '1rem' }}>
+            <div className="flex items-center justify-between mb-2 admin-header-wrap">
               <h3>Issue Tracking Table</h3>
-              <div className="flex gap-1" style={{ flexWrap: 'wrap' }}>
+              <div className="flex gap-1 dashboard-filters">
                 <input 
                   type="text" 
                   className="form-input" 
