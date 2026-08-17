@@ -51,7 +51,7 @@ const complaintSchema = new mongoose.Schema(
     // Status tracking
     status: {
       type:    String,
-      enum:    ['Submitted', 'In Review', 'Assigned', 'Resolved', 'Rejected'],
+      enum:    ['Submitted', 'In Review', 'In Progress', 'Assigned', 'Resolved', 'Rejected'],
       default: 'Submitted',
     },
     statusHistory: [statusEntrySchema],
