@@ -17,7 +17,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-function LocationPicker({ position, setPosition }) {
+function LocationPicker({ position, setPosition, setAddress }) {
   const map = useMap();
 
   useEffect(() => {
@@ -27,8 +27,18 @@ function LocationPicker({ position, setPosition }) {
   }, [position, map]);
 
   useMapEvents({
-    click(e) {
+    async click(e) {
       setPosition(e.latlng);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
+        const data = await res.json();
+        if (data && data.display_name) {
+          setAddress(data.display_name);
+          toast.success('Address auto-filled from map!');
+        }
+      } catch (err) {
+        console.error("Geocoding failed", err);
+      }
     },
   });
   return position ? <Marker position={position} /> : null;
@@ -57,9 +67,20 @@ export default function SubmitComplaint() {
     
     const loadingToast = toast.loading('Locating your position...');
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         toast.success('Location found!', { id: loadingToast });
+        
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+          const data = await res.json();
+          if (data && data.display_name) {
+            setForm(f => ({ ...f, address: data.display_name }));
+            toast.success('Address auto-filled from GPS!');
+          }
+        } catch (err) {
+          console.error("Geocoding failed", err);
+        }
       },
       () => {
         toast.error('Could not get GPS location. Please click on the map to drop a pin.', { id: loadingToast });
@@ -149,7 +170,7 @@ export default function SubmitComplaint() {
                     url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   />
-                  <LocationPicker position={position} setPosition={setPosition} />
+                  <LocationPicker position={position} setPosition={setPosition} setAddress={(addr) => setForm(f => ({ ...f, address: addr }))} />
                 </MapContainer>
               </div>
               <p className="text-sm text-muted mt-1">Click on the map to drop a pin.</p>
