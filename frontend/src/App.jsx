@@ -39,7 +39,7 @@ function AnimatedRoutes() {
         } />
 
         {/* Admin routes */}
-        <Route path="/admin/login" element={<PageTransition><Navbar /><AdminLogin /></PageTransition>} />
+        <Route path="/admin/login" element={<PageTransition><AdminLogin /></PageTransition>} />
         <Route path="/admin" element={
           <ProtectedRoute adminOnly><PageTransition><Navbar /><AdminDashboard /></PageTransition></ProtectedRoute>
         } />
