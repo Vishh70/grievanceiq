@@ -12,6 +12,7 @@ import Register       from './pages/Register';
 import SubmitComplaint from './pages/SubmitComplaint';
 import MyComplaints   from './pages/MyComplaints';
 import ComplaintDetail from './pages/ComplaintDetail';
+import PublicFeed     from './pages/PublicFeed';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin     from './pages/AdminLogin';
 import { Toaster }    from 'react-hot-toast';
@@ -28,6 +29,9 @@ function AnimatedRoutes() {
         <Route path="/register" element={<PageTransition><Navbar /><Register /></PageTransition>} />
 
         {/* Citizen routes */}
+        <Route path="/feed" element={
+          <ProtectedRoute><PageTransition><Navbar /><PublicFeed /></PageTransition></ProtectedRoute>
+        } />
         <Route path="/complaints/new" element={
           <ProtectedRoute><PageTransition><Navbar /><SubmitComplaint /></PageTransition></ProtectedRoute>
         } />

@@ -168,3 +168,55 @@ exports.getSimilarComplaints = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.getPublicComplaints = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    // Get latest AI-processed complaints that have valid locations
+    const complaints = await Complaint.find({ 
+      aiProcessed: true,
+      'location.lat': { $ne: null }
+    })
+    .populate('citizenId', 'name')
+    .sort({ createdAt: -1 })
+    .limit(limit);
+
+    res.json({ complaints });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.upvoteComplaint = async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+
+    // Check if user already upvoted
+    const hasUpvoted = complaint.upvotedBy.includes(req.user.id);
+    
+    if (hasUpvoted) {
+      // Toggle off
+      complaint.upvotedBy.pull(req.user.id);
+      complaint.upvotes = Math.max(0, complaint.upvotes - 1);
+    } else {
+      // Toggle on
+      complaint.upvotedBy.push(req.user.id);
+      complaint.upvotes += 1;
+      
+      // Dynamic priority upgrade logic
+      if (complaint.upvotes >= 5 && complaint.priority !== 'Critical') {
+        complaint.priority = 'Critical';
+        complaint.statusHistory.push({
+          status: complaint.status,
+          note: 'Priority automatically upgraded to Critical due to high community upvotes (5+).'
+        });
+      }
+    }
+
+    await complaint.save();
+    res.json({ upvotes: complaint.upvotes, hasUpvoted: !hasUpvoted, priority: complaint.priority });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

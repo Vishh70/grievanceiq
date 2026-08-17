@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, LayoutDashboard, FileText, PlusCircle } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, PlusCircle, Globe } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -29,6 +29,9 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <>
+                  <Link to="/feed" className="btn btn-secondary btn-sm" style={{ background: 'var(--accent-glow)', color: 'var(--accent-dark)', borderColor: 'var(--accent-light)' }}>
+                    <Globe size={15} /> <span>Public Feed</span>
+                  </Link>
                   <Link to="/complaints/new" className="btn btn-primary btn-sm">
                     <PlusCircle size={15} /> <span>New Complaint</span>
                   </Link>
@@ -58,9 +61,13 @@ export default function Navbar() {
             </Link>
           ) : (
             <>
+              <Link to="/feed" className={`mobile-nav-item ${location.pathname === '/feed' ? 'active' : ''}`}>
+                <Globe size={20} />
+                <span>Feed</span>
+              </Link>
               <Link to="/complaints" className={`mobile-nav-item ${location.pathname === '/complaints' ? 'active' : ''}`}>
                 <FileText size={20} />
-                <span>My Complaints</span>
+                <span>Mine</span>
               </Link>
               <Link to="/complaints/new" className={`mobile-nav-item mobile-nav-primary`}>
                 <div className="icon-wrapper">

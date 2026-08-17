@@ -28,6 +28,10 @@ const complaintSchema = new mongoose.Schema(
       address: { type: String, default: '' },
     },
 
+    // Upvoting & Public Feed
+    upvotes: { type: Number, default: 0 },
+    upvotedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
     // AI outputs
     category:              {
       type:    String,
@@ -60,5 +64,6 @@ complaintSchema.index({ text: 'text' });
 complaintSchema.index({ category: 1, priority: 1 });
 complaintSchema.index({ citizenId: 1 });
 complaintSchema.index({ similarGroupId: 1 });
+complaintSchema.index({ upvotes: -1 });
 
 module.exports = mongoose.model('Complaint', complaintSchema);
