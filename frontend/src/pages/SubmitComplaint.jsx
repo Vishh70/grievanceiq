@@ -32,8 +32,11 @@ function LocationPicker({ position, setPosition, setAddress }) {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
         const data = await res.json();
-        if (data && data.display_name) {
-          setAddress(data.display_name);
+        if (data && data.address) {
+          const addr = data.address;
+          const cleanParts = [addr.road, addr.neighbourhood, addr.suburb, addr.city || addr.town, addr.postcode].filter(Boolean);
+          const cleanAddress = cleanParts.length > 0 ? cleanParts.join(', ') : data.display_name;
+          setAddress(cleanAddress);
           toast.success('Address auto-filled from map!');
         }
       } catch (err) {
@@ -74,8 +77,11 @@ export default function SubmitComplaint() {
         try {
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
           const data = await res.json();
-          if (data && data.display_name) {
-            setForm(f => ({ ...f, address: data.display_name }));
+          if (data && data.address) {
+            const addr = data.address;
+            const cleanParts = [addr.road, addr.neighbourhood, addr.suburb, addr.city || addr.town, addr.postcode].filter(Boolean);
+            const cleanAddress = cleanParts.length > 0 ? cleanParts.join(', ') : data.display_name;
+            setForm(f => ({ ...f, address: cleanAddress }));
             toast.success('Address auto-filled from GPS!');
           }
         } catch (err) {
