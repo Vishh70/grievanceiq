@@ -240,14 +240,14 @@ export default function SubmitComplaint() {
               <p className="text-sm text-muted mt-1">Click on the map to drop a pin.</p>
               
               <div style={{ position: 'relative', marginTop: '1rem' }}>
-                <MapPin size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                <input
-                  className="form-input"
+                <MapPin size={18} style={{ position: 'absolute', left: '1rem', top: '1rem', color: 'var(--text-secondary)' }} />
+                <textarea
+                  className="form-textarea"
                   name="address"
-                  placeholder="Street address or area name (Auto-fills on map click)"
+                  placeholder="Street address or area name (Auto-fills on map click, but you can edit it manually!)"
                   value={form.address}
                   onChange={handleChange}
-                  style={{ paddingLeft: '2.5rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+                  style={{ paddingLeft: '2.5rem', minHeight: '80px', backgroundColor: '#ffffff', border: '1px solid var(--border)' }}
                 />
               </div>
             </div>
