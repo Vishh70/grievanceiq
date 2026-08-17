@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { ChevronRight, PlusCircle, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Skeleton from '../components/Skeleton';
 
 const PRIORITY_CLASS = { Critical: 'critical', High: 'high', Medium: 'medium', Low: 'low' };
 const STATUS_COLORS  = {
@@ -25,7 +26,22 @@ export default function MyComplaints() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="page container text-center" style={{ padding: '5rem 0' }}>Loading your complaints…</div>;
+  if (loading) return (
+    <div className="page container">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <Skeleton style={{ height: 40, width: 200, marginBottom: 8 }} />
+          <Skeleton style={{ height: 20, width: 150 }} />
+        </div>
+        <Skeleton style={{ height: 40, width: 140, borderRadius: 20 }} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+        <Skeleton style={{ height: 200 }} />
+        <Skeleton style={{ height: 200 }} />
+        <Skeleton style={{ height: 200 }} />
+      </div>
+    </div>
+  );
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="page">
