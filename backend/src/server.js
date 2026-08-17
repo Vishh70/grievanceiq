@@ -28,7 +28,28 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // ── Database ──────────────────────────────────────────────────────────────────
-connectDB();
+connectDB().then(async () => {
+  // Auto-seed default admin user
+  try {
+    const User = require('./models/User');
+    const bcrypt = require('bcryptjs');
+    const adminEmail = 'admin@grievanceiq.com';
+    const existingAdmin = await User.findOne({ email: adminEmail });
+    if (!existingAdmin) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('admin123', salt);
+      await User.create({
+        name: 'System Admin',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin'
+      });
+      console.log('✅ Default Admin created: admin@grievanceiq.com / admin123');
+    }
+  } catch (err) {
+    console.error('Failed to seed admin:', err);
+  }
+});
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/auth',       require('./routes/authRoutes'));

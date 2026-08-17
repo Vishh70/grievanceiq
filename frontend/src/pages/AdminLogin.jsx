@@ -8,7 +8,7 @@ import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import api from '../services/api';
 
 export default function AdminLogin() {
-  const [form, setForm]       = useState({ email: '', password: '' });
+  const [form, setForm]       = useState({ email: 'admin@grievanceiq.com', password: 'admin123' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login, logout }     = useAuth();
