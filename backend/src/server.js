@@ -32,8 +32,7 @@ connectDB().then(async () => {
   // Auto-seed default admin user
   try {
     const User = require('./models/User');
-    const bcrypt = require('bcryptjs');
-    const adminEmail = 'admin@grievanceiq.com';
+    const adminEmail = 'system@grievanceiq.com';
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (!existingAdmin) {
       await User.create({
@@ -42,7 +41,7 @@ connectDB().then(async () => {
         passwordHash: 'admin123', // the schema pre-save hook will hash this
         role: 'admin'
       });
-      console.log('✅ Default Admin created: admin@grievanceiq.com / admin123');
+      console.log('✅ Default Admin created: system@grievanceiq.com / admin123');
     }
   } catch (err) {
     console.error('Failed to seed admin:', err);
