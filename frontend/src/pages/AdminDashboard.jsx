@@ -150,10 +150,9 @@ export default function AdminDashboard() {
           </motion.button>
         </motion.div>
 
-        {/* Top KPIs */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="mb-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}
+          className="mb-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}
         >
           <div className="card card-glass flex items-center gap-2">
             <div style={{ background: 'rgba(99,102,241,0.15)', padding: '1rem', borderRadius: '50%' }}><Layers size={24} color="var(--accent-light)"/></div>
@@ -360,13 +359,13 @@ export default function AdminDashboard() {
                         key={c._id}
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.05 }}
                       >
-                        <td><a href={`/complaints/${c._id}`} className="text-accent" style={{ fontFamily: 'monospace' }}>#{c._id.slice(-5)}</a></td>
-                        <td style={{ maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.text}>{c.text}</td>
-                        <td>{c.category}</td>
-                        <td><span className={`badge badge-${c.priority.toLowerCase()}`}>{c.priority}</span></td>
-                        <td>{c.status}</td>
-                        <td>{new Date(c.createdAt).toLocaleDateString()}</td>
-                        <td style={{ display: 'flex', gap: '0.5rem' }}>
+                        <td data-label="ID"><a href={`/complaints/${c._id}`} className="text-accent" style={{ fontFamily: 'monospace' }}>#{c._id.slice(-5)}</a></td>
+                        <td data-label="Description" style={{ maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.text}>{c.text}</td>
+                        <td data-label="Category">{c.category}</td>
+                        <td data-label="Priority"><span className={`badge badge-${c.priority.toLowerCase()}`}>{c.priority}</span></td>
+                        <td data-label="Status">{c.status}</td>
+                        <td data-label="Date">{new Date(c.createdAt).toLocaleDateString()}</td>
+                        <td data-label="Action" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                           <a href={`/complaints/${c._id}`} className="btn btn-sm btn-primary flex items-center" style={{ textDecoration: 'none', padding: '0.4rem 0.6rem' }} title="View Details">
                             <Eye size={14} /> <span className="nav-text-hide-mobile">View</span>
                           </a>
