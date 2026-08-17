@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { Upload, MapPin, Send } from 'lucide-react';
+import { Upload, MapPin, Send, Loader2, Navigation } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -127,7 +127,7 @@ export default function SubmitComplaint() {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card">
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
+            <div className="form-group" style={{ position: 'relative' }}>
               <label className="form-label">Describe the Issue *</label>
               <textarea
                 className="form-textarea"
@@ -135,9 +135,13 @@ export default function SubmitComplaint() {
                 placeholder="e.g. There is a large pothole on MG Road near the bus stop..."
                 value={form.text}
                 onChange={handleChange}
-                style={{ minHeight: 140 }}
+                style={{ minHeight: 140, paddingBottom: '2rem' }}
+                maxLength={500}
                 required
               />
+              <span style={{ position: 'absolute', bottom: '12px', right: '12px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                {form.text.length}/500
+              </span>
             </div>
 
             <div className="form-group">
@@ -192,20 +196,46 @@ export default function SubmitComplaint() {
             </div>
 
             <div className="form-group">
-              <label className="form-label flex items-center justify-between">
-                <span className="flex items-center gap-1"><MapPin size={16} /> Location Map</span>
-                <button type="button" onClick={getLocation} style={{ background: 'none', border: 'none', color: 'var(--accent-light)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-                  📍 Use My GPS
-                </button>
+              <label className="form-label flex items-center gap-1">
+                <MapPin size={16} /> Location Map
               </label>
-              <div style={{ height: 260, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                <MapContainer center={position || [28.6139, 77.2090]} zoom={11} dragging={!L.Browser.mobile} tap={!L.Browser.mobile} style={{ height: '100%', width: '100%' }}>
+              <div style={{ height: 260, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
+                <MapContainer center={position || [28.6139, 77.2090]} zoom={11} dragging={!L.Browser.mobile} tap={!L.Browser.mobile} style={{ height: '100%', width: '100%', zIndex: 1 }}>
                   <TileLayer
                     url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   />
                   <LocationPicker position={position} setPosition={setPosition} setAddress={(addr) => setForm(f => ({ ...f, address: addr }))} />
                 </MapContainer>
+                
+                {/* Floating GPS Button Overlay */}
+                <button 
+                  type="button" 
+                  onClick={getLocation} 
+                  style={{
+                    position: 'absolute',
+                    bottom: '15px',
+                    right: '15px',
+                    zIndex: 1000,
+                    background: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '44px',
+                    height: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                    cursor: 'pointer',
+                    color: 'var(--accent)',
+                    transition: 'transform 0.2s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                  title="Use My Location"
+                >
+                  <Navigation size={20} style={{ transform: 'translate(-1px, 1px)' }} />
+                </button>
               </div>
               <p className="text-sm text-muted mt-1">Click on the map to drop a pin.</p>
               
@@ -222,8 +252,11 @@ export default function SubmitComplaint() {
               </div>
             </div>
 
-            <button className="btn btn-primary btn-lg w-full mt-2" type="submit" disabled={loading}>
-              <Send size={18} />
+            <style>{`
+              @keyframes spin { 100% { transform: rotate(360deg); } }
+            `}</style>
+            <button className="btn btn-primary btn-lg w-full mt-2" type="submit" disabled={loading} style={{ position: 'relative', overflow: 'hidden' }}>
+              {loading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={18} />}
               {loading ? 'Submitting & Analyzing...' : 'Submit Complaint'}
             </button>
           </form>
