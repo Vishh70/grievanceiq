@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, LayoutDashboard, FileText, PlusCircle, Globe } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, PlusCircle, Globe, Trophy, User as UserIcon } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -29,6 +29,9 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <>
+                  <Link to="/leaderboard" className="btn btn-secondary btn-sm" style={{ color: '#F59E0B' }}>
+                    <Trophy size={15} /> <span>Leaderboard</span>
+                  </Link>
                   <Link to="/feed" className="btn btn-secondary btn-sm" style={{ background: 'var(--accent-glow)', color: 'var(--accent-dark)', borderColor: 'var(--accent-light)' }}>
                     <Globe size={15} /> <span>Public Feed</span>
                   </Link>
@@ -40,9 +43,9 @@ export default function Navbar() {
                   </Link>
                 </>
               )}
-              <span className="text-sm text-muted" style={{ padding: '0 0.5rem' }}>
-                {user.name}
-              </span>
+              <Link to="/profile" className="text-sm text-muted" style={{ padding: '0 0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none' }}>
+                <UserIcon size={16} /> <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{user.name}</span>
+              </Link>
               <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
                 <LogOut size={15} /> <span>Logout</span>
               </button>
@@ -61,6 +64,10 @@ export default function Navbar() {
             </Link>
           ) : (
             <>
+              <Link to="/leaderboard" className={`mobile-nav-item ${location.pathname === '/leaderboard' ? 'active' : ''}`}>
+                <Trophy size={20} />
+                <span>Ranks</span>
+              </Link>
               <Link to="/feed" className={`mobile-nav-item ${location.pathname === '/feed' ? 'active' : ''}`}>
                 <Globe size={20} />
                 <span>Feed</span>
@@ -77,10 +84,10 @@ export default function Navbar() {
               </Link>
             </>
           )}
-          <button className="mobile-nav-item" onClick={handleLogout}>
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
+          <Link to="/profile" className={`mobile-nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
+            <UserIcon size={20} />
+            <span>Profile</span>
+          </Link>
         </div>
       )}
     </>

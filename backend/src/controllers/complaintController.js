@@ -1,4 +1,5 @@
 const Complaint = require('../models/Complaint');
+const User = require('../models/User');
 const { analyzeComplaint } = require('../services/aiService');
 const fs = require('fs');
 
@@ -29,6 +30,13 @@ exports.createComplaint = async (req, res) => {
     });
 
     await complaint.save();
+
+    // Gamification: Award points to the creator
+    const user = await User.findById(req.user.id);
+    if (user) {
+      user.civicPoints = (user.civicPoints || 0) + 50;
+      await user.save();
+    }
 
     // 2. Process with Gemini API (asynchronously)
     // We don't await this so the user gets a fast response
@@ -211,6 +219,13 @@ exports.upvoteComplaint = async (req, res) => {
           status: complaint.status,
           note: 'Priority automatically upgraded to Critical due to high community upvotes (5+).'
         });
+      }
+
+      // Gamification: Award points to the complaint creator
+      const creator = await User.findById(complaint.citizenId);
+      if (creator) {
+        creator.civicPoints = (creator.civicPoints || 0) + 10;
+        await creator.save();
       }
     }
 

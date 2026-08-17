@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     role:         { type: String, enum: ['citizen', 'admin'], default: 'citizen' },
     phone:        { type: String, trim: true, default: '' },
+    civicPoints:  { type: Number, default: 0 },
+    badges:       { type: [String], default: [] },
   },
   { timestamps: true }
 );
