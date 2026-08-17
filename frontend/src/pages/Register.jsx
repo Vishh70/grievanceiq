@@ -1,7 +1,7 @@
 // src/pages/Register.jsx
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, Users } from 'lucide-react';
@@ -10,6 +10,7 @@ export default function Register() {
   const [form, setForm]       = useState({ name: '', email: '', password: '', phone: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { register }          = useAuth();
   const navigate              = useNavigate();
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -19,9 +20,9 @@ export default function Register() {
     setLoading(true);
     const loadingToast = toast.loading('Creating account...');
     try {
-      await api.post('/auth/register', form);
-      toast.success('Registration successful! Please login.', { id: loadingToast });
-      navigate('/login');
+      const user = await register(form.name, form.email, form.password, form.phone);
+      toast.success('Registration successful!', { id: loadingToast });
+      navigate(user.role === 'admin' ? '/admin' : '/complaints');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Registration failed. Please try again.', { id: loadingToast });
     } finally {
