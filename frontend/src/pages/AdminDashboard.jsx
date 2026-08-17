@@ -313,7 +313,8 @@ export default function AdminDashboard() {
                         <td><span className={`badge badge-${c.priority.toLowerCase()}`}>{c.priority}</span></td>
                         <td>{c.status}</td>
                         <td>{new Date(c.createdAt).toLocaleDateString()}</td>
-                        <td>
+                        <td style={{ display: 'flex', gap: '0.5rem' }}>
+                          <a href={`/complaints/${c._id}`} className="btn btn-sm btn-primary" style={{ textDecoration: 'none' }}>View</a>
                           <button className="btn btn-sm btn-secondary" onClick={() => setStatusModal({ complaintId: c._id })}>
                             Update
                           </button>
