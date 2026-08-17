@@ -44,8 +44,8 @@ export default function MyComplaints() {
 
         {complaints.length === 0 ? (
           <div className="card text-center" style={{ padding: '3rem' }}>
-            <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</p>
-            <h3>No complaints yet</h3>
+              <img src="/empty_state.jpg" alt="No Complaints" style={{ width: '180px', height: '180px', objectFit: 'cover', borderRadius: '24px', margin: '0 auto 1.5rem', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)' }} />
+              <h2 className="mb-1" style={{ fontSize: '1.8rem' }}>No complaints yet</h2>
             <p className="text-muted mt-1">Submit your first civic complaint to get started.</p>
             <Link to="/complaints/new" className="btn btn-primary mt-2">Submit a Complaint</Link>
           </div>

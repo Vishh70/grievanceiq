@@ -70,7 +70,7 @@ exports.createComplaint = async (req, res) => {
 
 exports.getComplaints = async (req, res) => {
   try {
-    const { category, priority, status, department, page = 1, limit = 15 } = req.query;
+    const { category, priority, status, department, search, page = 1, limit = 15 } = req.query;
     
     let filter = {};
     if (req.user.role === 'citizen') {
@@ -82,6 +82,17 @@ exports.getComplaints = async (req, res) => {
     if (priority)   filter.priority = priority;
     if (status)     filter.status = status;
     if (department) filter.recommendedDepartment = department;
+    if (search) {
+      // If it looks like a full ID, search ID, otherwise regex search text and category
+      if (search.match(/^[0-9a-fA-F]{24}$/)) {
+        filter._id = search;
+      } else {
+        filter.$or = [
+          { text: { $regex: search, $options: 'i' } },
+          { category: { $regex: search, $options: 'i' } }
+        ];
+      }
+    }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 

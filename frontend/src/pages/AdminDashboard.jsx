@@ -22,7 +22,7 @@ export default function AdminDashboard() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState({ status: '', priority: '', category: '' });
+  const [filters, setFilters] = useState({ status: '', priority: '', category: '', search: '' });
   const [statusModal, setStatusModal] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [statusNote, setStatusNote] = useState('');
@@ -109,14 +109,34 @@ export default function AdminDashboard() {
   return (
     <div className="page">
       <div className="container">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-2">
-          <div>
-            <h1>Admin Dashboard</h1>
-            <p>End-to-End Civic Intelligence & Analytics Platform</p>
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} 
+          className="flex items-center justify-between mb-2"
+          style={{
+            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9))',
+            padding: '2rem',
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Animated subtle glow inside header */}
+          <div style={{ position: 'absolute', top: '-50%', left: '-20%', width: '50%', height: '200%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)', transform: 'rotate(25deg)', animation: 'shimmer 8s infinite linear' }}></div>
+          
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h1 style={{ fontSize: '2.2rem', marginBottom: '0.25rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Admin Command Center</h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>End-to-End Civic Intelligence & Analytics Platform</p>
           </div>
-          <button className="btn btn-secondary" onClick={exportToCSV}>
-            📥 Export to CSV
-          </button>
+          <motion.button 
+            whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.4)' }}
+            whileTap={{ scale: 0.95 }}
+            className="btn btn-primary" onClick={exportToCSV}
+            style={{ position: 'relative', zIndex: 1, background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', border: 'none' }}
+          >
+            📥 Export CSV Report
+          </motion.button>
         </motion.div>
 
         {/* Top KPIs */}
@@ -237,9 +257,17 @@ export default function AdminDashboard() {
           
           {/* Main Table Area */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="card">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-2" style={{ flexWrap: 'wrap', gap: '1rem' }}>
               <h3>Issue Tracking Table</h3>
-              <div className="flex gap-1">
+              <div className="flex gap-1" style={{ flexWrap: 'wrap' }}>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Search category or desc..." 
+                  value={filters.search} 
+                  onChange={e => applyFilter('search', e.target.value)}
+                  style={{ padding: '0.4rem 1rem', width: '200px' }}
+                />
                 <select className="form-select" style={{ padding: '0.4rem 1rem', width: 'auto' }} value={filters.status} onChange={e => applyFilter('status', e.target.value)}>
                   <option value="">All Statuses</option>
                   <option value="Submitted">Submitted</option>

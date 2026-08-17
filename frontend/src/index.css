@@ -86,9 +86,9 @@ a:hover { color: var(--accent-dark); }
   overflow: hidden;
 }
 .card:hover {
-  border-color: var(--accent-glow);
   transform: translateY(-2px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), var(--shadow-glow);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
 }
 .card-glass {
   background: var(--bg-glass);
@@ -163,9 +163,19 @@ a:hover { color: var(--accent-dark); }
 table { width: 100%; border-collapse: collapse; }
 thead tr { background: #f8fafc; border-bottom: 2px solid var(--border); }
 th { padding: 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-tbody tr { transition: background var(--transition); }
-tbody tr:hover { background: #f8fafc; }
+td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.05);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
 
 /* ── Navigation ────────────────────────────────────────────────────────────── */
 .navbar { background: var(--bg-glass); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; transition: all var(--transition); }
