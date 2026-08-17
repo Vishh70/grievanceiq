@@ -144,17 +144,51 @@ export default function SubmitComplaint() {
               <label className="form-label flex items-center gap-1">
                 <Upload size={16} /> Attach Photo
               </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImage}
-                style={{ color: 'var(--text-secondary)' }}
-              />
-              {preview && (
-                <div style={{ marginTop: '0.75rem', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                  <img src={preview} alt="Preview" style={{ display: 'block', width: '100%', maxHeight: 240, objectFit: 'cover' }} />
-                </div>
-              )}
+              
+              <div 
+                onClick={() => document.getElementById('file-upload').click()}
+                style={{
+                  border: '2px dashed var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: preview ? '0.5rem' : '2rem',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: 'var(--bg-secondary)',
+                  transition: 'border-color 0.2s',
+                  position: 'relative'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
+                onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImage}
+                  style={{ display: 'none' }}
+                />
+                
+                {preview ? (
+                  <div style={{ position: 'relative', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                    <img src={preview} alt="Preview" style={{ display: 'block', width: '100%', maxHeight: 240, objectFit: 'cover' }} />
+                    <div className="upload-overlay" style={{
+                      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: 'rgba(0,0,0,0.5)', opacity: 0, transition: 'opacity 0.2s', color: 'white', fontWeight: 600
+                    }}
+                    onMouseOver={e => e.currentTarget.style.opacity = 1}
+                    onMouseOut={e => e.currentTarget.style.opacity = 0}
+                    >
+                      <Upload size={24} style={{ marginRight: '8px' }} /> Change Photo
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Upload size={32} style={{ color: 'var(--text-secondary)', margin: '0 auto 1rem' }} />
+                    <p style={{ margin: 0, fontWeight: 500, color: 'var(--text-primary)' }}>Click to upload a photo</p>
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>PNG, JPG up to 5MB</p>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="form-group">
@@ -175,13 +209,17 @@ export default function SubmitComplaint() {
               </div>
               <p className="text-sm text-muted mt-1">Click on the map to drop a pin.</p>
               
-              <input
-                className="form-input mt-1"
-                name="address"
-                placeholder="Street address or area name (Optional)"
-                value={form.address}
-                onChange={handleChange}
-              />
+              <div style={{ position: 'relative', marginTop: '1rem' }}>
+                <MapPin size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                <input
+                  className="form-input"
+                  name="address"
+                  placeholder="Street address or area name (Auto-fills on map click)"
+                  value={form.address}
+                  onChange={handleChange}
+                  style={{ paddingLeft: '2.5rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
+                />
+              </div>
             </div>
 
             <button className="btn btn-primary btn-lg w-full mt-2" type="submit" disabled={loading}>
