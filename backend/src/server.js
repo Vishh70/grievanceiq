@@ -9,9 +9,21 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+].filter(Boolean);
+
 app.use(cors({
   origin: function (origin, callback) {
-    callback(null, true); // Allow all origins dynamically to fix CORS
+    // Allow requests with no origin (like mobile apps or curl requests)
+    // or requests from our allowed list
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Origin not allowed by CORS'));
+    }
   },
   credentials: true
 }));
