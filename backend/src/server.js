@@ -10,6 +10,7 @@ const app = express();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 const allowedOrigins = [
+  'https://grievanceiq-app.vercel.app',
   process.env.CLIENT_URL,
   'http://localhost:5173',
   'http://127.0.0.1:5173'
