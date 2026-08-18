@@ -83,7 +83,7 @@ Complaint Text: "${text}"
   } catch (err) {
     console.error('Gemini Analysis Error:', err.message);
     return {
-      category: 'Other',
+      category: 'API_ERROR: ' + err.message.substring(0, 30),
       priority: 'Medium',
       recommendedDepartment: 'General Admin',
       keywords: []
