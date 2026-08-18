@@ -5,17 +5,17 @@
 ## Architecture
 
 ```
-frontend/    React + Vite              → http://localhost:5173
-backend/     Node.js + Express + MongoDB → http://localhost:5000
-ai-service/  Python + FastAPI           → http://localhost:8000
+frontend/    React + Vite (PWA)          → Vercel
+backend/     Node.js + Express + MongoDB → Render
+AI Service   Google Gemini API           → External API Call
 ```
 
 ## Quick Start
 
 ### Prerequisites
 - Node.js 18+ (`node -v`)
-- Python 3.10+ (`python --version`)
 - MongoDB running locally OR MongoDB Atlas connection string
+- Google Gemini API Key
 
 ---
 
@@ -23,7 +23,7 @@ ai-service/  Python + FastAPI           → http://localhost:8000
 
 ```bash
 cd backend
-# Copy .env.example → .env and fill in MONGO_URI
+# Copy .env.example → .env and fill in MONGO_URI and GEMINI_API_KEY
 copy .env.example .env
 
 npm install
@@ -34,22 +34,7 @@ npm run dev
 
 ---
 
-### 2. AI Service
-
-```bash
-cd ai-service
-python -m venv venv
-venv\Scripts\activate          # Windows
-
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-# Health: http://localhost:8000/health
-# Docs:   http://localhost:8000/docs
-```
-
----
-
-### 3. Frontend
+### 2. Frontend
 
 ```bash
 cd frontend
@@ -82,12 +67,6 @@ npm run dev
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/dashboard/summary` | Summary cards + chart data + trend |
-| GET | `/api/dashboard/similar-groups` | All similarity groups |
-
-### AI Service
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/analyze` | Returns category, priority, embedding, department |
 
 ---
 
@@ -96,13 +75,13 @@ npm run dev
 | Module | Description |
 |--------|-------------|
 | 🔐 Auth | JWT-based login/register for citizens and admins |
-| 📝 Complaint Submission | Text + image + GPS location |
-| 🤖 NLP Classification | TF-IDF + LinearSVC → 6 civic categories |
-| ⚡ Priority Prediction | Critical / High / Medium / Low |
-| 🔗 Similarity Detection | SentenceTransformer embeddings, cosine ≥ 0.80 |
+| 📝 Complaint Submission | Text + image (Camera/Upload) + GPS location via Map |
+| 🤖 AI Classification | Real-time categorization using Google Gemini API |
+| ⚡ Priority Prediction | Critical / High / Medium / Low via Gemini |
 | 🏛 Dept Recommendation | Auto-routing to correct government department |
 | 📊 Admin Dashboard | Charts, filters, status updates, trend analysis |
 | 📋 Status Tracking | Full timeline visible to citizens |
+| 📱 PWA Support | Installable Progressive Web App with caching |
 
 ---
 
@@ -110,11 +89,11 @@ npm run dev
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18, Vite, Recharts, React Router, Lucide |
+| Frontend | React 18, Vite, Recharts, React Router, Lucide, Framer Motion |
 | Backend | Node.js, Express.js, Mongoose, JWT, Multer |
-| Database | MongoDB |
-| AI/ML | Python, FastAPI, scikit-learn, sentence-transformers |
-| Deployment | Docker (AI service), Vercel/Render/Railway |
+| Database | MongoDB Atlas |
+| AI/ML | Google Gemini API (`@google/generative-ai`) |
+| Deployment | Vercel (Frontend), Render (Backend) |
 
 ---
 
@@ -122,9 +101,9 @@ npm run dev
 
 | Symptom | Fix |
 |---------|-----|
-| `MongoNetworkError` | Check MONGO_URI in backend .env |
-| AI service timeout | Ensure `uvicorn` is running on port 8000 |
-| Images not uploading | Check `backend/uploads/` folder exists |
+| `MongoNetworkError` | Check MONGO_URI in backend .env or Atlas IP Whitelist (`0.0.0.0/0`) |
+| AI Analysis Failing | Ensure `GEMINI_API_KEY` is set in the `.env` (it will fallback gracefully if missing) |
+| Server sleeping / Timeout | Free-tier Render takes ~45s to wake up on the first request. Wait 1 min and retry. |
 | 401 Unauthorized | Re-login; check JWT_SECRET matches |
 | Dashboard charts empty | Check category/priority values are case-exact |
 
@@ -133,7 +112,7 @@ npm run dev
 ## Security Notes
 
 - Passwords hashed with **bcrypt** (12 rounds)
-- JWT signed with long random secret — change in production
+- JWT signed with long random secret
 - File upload: images only, 5 MB max
 - Role-based access: citizens cannot reach admin routes
 - **Never commit `.env` files to Git**
