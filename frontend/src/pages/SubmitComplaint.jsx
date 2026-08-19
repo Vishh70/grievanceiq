@@ -9,42 +9,58 @@ import toast from 'react-hot-toast';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix leaflet default icon issue
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
 function LocationPicker({ position, setPosition, setAddress }) {
   const map = useMap();
+  const markerRef = useRef(null);
 
   useEffect(() => {
     if (position) {
-      map.flyTo(position, 14); // fly to the position and zoom in
+      map.flyTo(position, 14);
     }
   }, [position, map]);
 
-  useMapEvents({
-    async click(e) {
-      setPosition(e.latlng);
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
-        const data = await res.json();
-        if (data && data.address) {
-          const addr = data.address;
-          const cleanParts = [addr.road, addr.neighbourhood, addr.suburb, addr.city || addr.town, addr.postcode].filter(Boolean);
-          const cleanAddress = cleanParts.length > 0 ? cleanParts.join(', ') : data.display_name;
-          setAddress(cleanAddress);
-          toast.success('Address auto-filled from map!');
-        }
-      } catch (err) {
-        console.error("Geocoding failed", err);
+  const updateAddress = async (lat, lng) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      if (data && data.address) {
+        const addr = data.address;
+        const cleanParts = [addr.road, addr.neighbourhood, addr.suburb, addr.city || addr.town, addr.postcode].filter(Boolean);
+        const cleanAddress = cleanParts.length > 0 ? cleanParts.join(', ') : data.display_name;
+        setAddress(cleanAddress);
+        toast.success('Address auto-filled from map!');
       }
+    } catch (err) {
+      console.error("Geocoding failed", err);
+    }
+  };
+
+  useMapEvents({
+    click(e) {
+      setPosition(e.latlng);
+      updateAddress(e.latlng.lat, e.latlng.lng);
     },
   });
-  return position ? <Marker position={position} /> : null;
+
+  const eventHandlers = {
+    dragend() {
+      const marker = markerRef.current;
+      if (marker != null) {
+        const latlng = marker.getLatLng();
+        setPosition(latlng);
+        updateAddress(latlng.lat, latlng.lng);
+      }
+    },
+  };
+
+  return position ? (
+    <Marker 
+      draggable={true}
+      eventHandlers={eventHandlers}
+      position={position} 
+      ref={markerRef} 
+    />
+  ) : null;
 }
 
 export default function SubmitComplaint() {

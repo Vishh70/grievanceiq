@@ -35,6 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
+app.set('trust proxy', 1); // Trust first proxy (Render) to properly capture client IPs
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs

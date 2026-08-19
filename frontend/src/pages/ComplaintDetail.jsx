@@ -6,17 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { MapPin, Calendar, Clock, AlertTriangle, Layers, Building, MessageSquare, Maximize2, X, CheckCircle2, ChevronLeft, Map } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-// Fix leaflet default icon issue
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+import ComplaintMap from '../components/ComplaintMap';
 
 export default function ComplaintDetail() {
   const { id } = useParams();
@@ -204,20 +194,11 @@ export default function ComplaintDetail() {
                 </div>
               )}
               {complaint.location?.lat && complaint.location?.lng && (
-                <div style={{ height: 220, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
-                  <MapContainer 
-                    center={[complaint.location.lat, complaint.location.lng]} 
-                    zoom={15} 
-                    dragging={!L.Browser.mobile} tap={!L.Browser.mobile} 
-                    style={{ height: '100%', width: '100%', zIndex: 1 }}
-                  >
-                    <TileLayer
-                      url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                      attribution='&copy; OpenStreetMap'
-                    />
-                    <Marker position={[complaint.location.lat, complaint.location.lng]} />
-                  </MapContainer>
-                </div>
+                <ComplaintMap 
+                  lat={complaint.location.lat} 
+                  lng={complaint.location.lng} 
+                  address={complaint.location.address} 
+                />
               )}
             </div>
 
