@@ -64,3 +64,37 @@ export function getPriorityIcon(priority = 'Medium') {
   const color = PRIORITY_MAP_COLORS[priority] || PRIORITY_MAP_COLORS.Medium;
   return createPinIcon(color, 34);
 }
+
+/**
+ * Custom pulsing blue radar dot for user's current GPS location.
+ */
+export function createUserLocationIcon() {
+  const html = `
+    <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+      <div style="
+        position: absolute;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.35);
+        animation: pin-pulse 1.8s infinite ease-out;
+      "></div>
+      <div style="
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #2563eb;
+        border: 2.5px solid #ffffff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      "></div>
+    </div>
+  `;
+  return L.divIcon({
+    html,
+    className: 'user-gps-pin',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12],
+  });
+}
+
