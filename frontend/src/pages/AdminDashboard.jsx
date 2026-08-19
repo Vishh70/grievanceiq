@@ -148,23 +148,43 @@ export default function AdminDashboard() {
         {/* Primary Issue Metrics */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="mb-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}
+          className="mb-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}
         >
-          <div className="card card-glass flex items-center gap-2">
-            <div style={{ background: 'rgba(99,102,241,0.15)', padding: '1rem', borderRadius: '50%' }}><Layers size={24} color="var(--accent-light)"/></div>
-            <div><p className="text-sm text-muted">Total Issues</p><h2 style={{ fontSize: '1.8rem' }}>{s.total || 0}</h2></div>
+          <div className="card card-glass flex items-center gap-1.5" style={{ padding: '0.85rem 1rem' }}>
+            <div style={{ width: '42px', height: '42px', minWidth: '42px', borderRadius: '50%', background: 'rgba(99,102,241,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Layers size={20} color="var(--accent)"/>
+            </div>
+            <div>
+              <p className="text-xs text-muted" style={{ margin: 0, whiteSpace: 'nowrap', fontWeight: 600 }}>Total Issues</p>
+              <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800 }}>{s.total || 0}</h2>
+            </div>
           </div>
-          <div className="card card-glass flex items-center gap-2">
-            <div style={{ background: 'rgba(239,68,68,0.15)', padding: '1rem', borderRadius: '50%' }}><AlertTriangle size={24} color="var(--danger)"/></div>
-            <div><p className="text-sm text-muted">Critical</p><h2 style={{ fontSize: '1.8rem' }}>{s.highPriority || 0}</h2></div>
+          <div className="card card-glass flex items-center gap-1.5" style={{ padding: '0.85rem 1rem' }}>
+            <div style={{ width: '42px', height: '42px', minWidth: '42px', borderRadius: '50%', background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AlertTriangle size={20} color="var(--danger)"/>
+            </div>
+            <div>
+              <p className="text-xs text-muted" style={{ margin: 0, whiteSpace: 'nowrap', fontWeight: 600 }}>Critical</p>
+              <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800 }}>{s.highPriority || 0}</h2>
+            </div>
           </div>
-          <div className="card card-glass flex items-center gap-2">
-            <div style={{ background: 'rgba(245,158,11,0.15)', padding: '1rem', borderRadius: '50%' }}><Clock size={24} color="var(--warning)"/></div>
-            <div><p className="text-sm text-muted">Pending</p><h2 style={{ fontSize: '1.8rem' }}>{s.pending || 0}</h2></div>
+          <div className="card card-glass flex items-center gap-1.5" style={{ padding: '0.85rem 1rem' }}>
+            <div style={{ width: '42px', height: '42px', minWidth: '42px', borderRadius: '50%', background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Clock size={20} color="var(--warning)"/>
+            </div>
+            <div>
+              <p className="text-xs text-muted" style={{ margin: 0, whiteSpace: 'nowrap', fontWeight: 600 }}>Pending</p>
+              <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800 }}>{s.pending || 0}</h2>
+            </div>
           </div>
-          <div className="card card-glass flex items-center gap-2">
-            <div style={{ background: 'rgba(16,185,129,0.15)', padding: '1rem', borderRadius: '50%' }}><CheckCircle size={24} color="var(--success)"/></div>
-            <div><p className="text-sm text-muted">Resolved</p><h2 style={{ fontSize: '1.8rem' }}>{s.resolved || 0}</h2></div>
+          <div className="card card-glass flex items-center gap-1.5" style={{ padding: '0.85rem 1rem' }}>
+            <div style={{ width: '42px', height: '42px', minWidth: '42px', borderRadius: '50%', background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CheckCircle size={20} color="var(--success)"/>
+            </div>
+            <div>
+              <p className="text-xs text-muted" style={{ margin: 0, whiteSpace: 'nowrap', fontWeight: 600 }}>Resolved</p>
+              <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 800 }}>{s.resolved || 0}</h2>
+            </div>
           </div>
         </motion.div>
 
@@ -175,34 +195,34 @@ export default function AdminDashboard() {
         >
           {/* SLA Performance Cockpit */}
           <div className="card card-glass" style={{ borderLeft: '4px solid var(--accent)' }}>
-            <h3 className="mb-2 flex items-center gap-1">
-              <Timer size={18} color="var(--accent-light)" /> Municipal SLA Performance (48h Target)
+            <h3 className="mb-2 flex items-center gap-1" style={{ fontSize: '1rem' }}>
+              <Timer size={18} color="var(--accent)" /> Municipal SLA Performance (48h Target)
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem' }}>
-              <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p className="text-xs text-muted mb-1">SLA Compliance Rate</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem' }}>
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                <p className="text-xs text-muted mb-1" style={{ fontWeight: 600 }}>SLA Compliance</p>
                 <div style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.4rem',
                   fontWeight: 800,
                   color: analytics.slaComplianceRate == null ? 'var(--text-muted)' : (analytics.slaComplianceRate >= 80 ? 'var(--success)' : analytics.slaComplianceRate >= 60 ? 'var(--warning)' : 'var(--danger)')
                 }}>
                   {analytics.slaComplianceRate != null ? `${analytics.slaComplianceRate}%` : 'N/A'}
                 </div>
-                <p className="text-xs text-muted mt-1">Target $\le$ 48h resolution</p>
+                <p className="text-xs text-muted mt-1">Target $\le$ 48h</p>
               </div>
 
-              <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p className="text-xs text-muted mb-1">Avg Resolution Time</p>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                <p className="text-xs text-muted mb-1" style={{ fontWeight: 600 }}>Avg Resolution</p>
+                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                   {analytics.avgResolutionHours != null ? `${analytics.avgResolutionHours}h` : 'N/A'}
                 </div>
-                <p className="text-xs text-muted mt-1">From submit to resolved</p>
+                <p className="text-xs text-muted mt-1">Submit to resolved</p>
               </div>
 
-              <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <p className="text-xs text-muted mb-1">Active SLA Breaches</p>
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                <p className="text-xs text-muted mb-1" style={{ fontWeight: 600 }}>Active Breaches</p>
                 <div style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.4rem',
                   fontWeight: 800,
                   color: (analytics.activeSlaBreaches || 0) > 0 ? '#ef4444' : 'var(--success)'
                 }}>
@@ -215,15 +235,15 @@ export default function AdminDashboard() {
 
           {/* AI Hazard Intelligence Cockpit */}
           <div className="card card-glass" style={{ borderLeft: '4px solid #f97316' }}>
-            <h3 className="mb-2 flex items-center justify-between">
+            <h3 className="mb-2 flex items-center justify-between" style={{ fontSize: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <span className="flex items-center gap-1">
                 <ShieldAlert size={18} color="#f97316" /> AI Hazard Intelligence
               </span>
               {analytics.avgSeverityScore != null && (
                 <span className="badge" style={{
-                  background: analytics.avgSeverityScore >= 7 ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
-                  color: analytics.avgSeverityScore >= 7 ? '#f87171' : '#fbbf24',
-                  border: '1px solid rgba(255,255,255,0.1)'
+                  background: analytics.avgSeverityScore >= 7 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                  color: analytics.avgSeverityScore >= 7 ? '#dc2626' : '#d97706',
+                  border: `1px solid ${analytics.avgSeverityScore >= 7 ? '#fecaca' : '#fde68a'}`
                 }}>
                   ⚡ Mean Hazard: {analytics.avgSeverityScore}/10
                 </span>
@@ -238,18 +258,18 @@ export default function AdminDashboard() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {analytics.topSafetyHazards.map((item, idx) => (
                   <span key={idx} style={{
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    padding: '4px 10px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    padding: '3px 8px',
                     borderRadius: '20px',
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    color: '#f87171',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    background: '#fef2f2',
+                    color: '#b91c1c',
+                    border: '1px solid #fecaca',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px'
                   }}>
-                    ⚠️ {item.hazard} <strong style={{ color: '#fff', background: 'rgba(0,0,0,0.3)', padding: '1px 6px', borderRadius: '10px', fontSize: '0.72rem' }}>{item.count}</strong>
+                    ⚠️ {item.hazard} <strong style={{ color: '#fff', background: '#dc2626', padding: '1px 6px', borderRadius: '10px', fontSize: '0.7rem' }}>{item.count}</strong>
                   </span>
                 ))}
               </div>
