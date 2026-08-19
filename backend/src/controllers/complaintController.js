@@ -70,6 +70,9 @@ exports.createComplaint = async (req, res) => {
           priority: aiResult.priority,
           recommendedDepartment: aiResult.recommendedDepartment,
           keywords: aiResult.keywords,
+          severityScore: aiResult.severityScore,
+          safetyHazards: aiResult.safetyHazards,
+          suggestedAction: aiResult.suggestedAction,
           similarGroupId: similarGroupId,
           isDuplicate: isDuplicate,
           aiProcessed: true

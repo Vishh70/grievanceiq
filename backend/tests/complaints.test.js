@@ -39,6 +39,9 @@ describe('Complaint Routes', () => {
         priority: 'High',
         recommendedDepartment: 'Water Works Dept',
         keywords: ['burst', 'pipe', 'flooding'],
+        severityScore: 8,
+        safetyHazards: ['Flooding Risk', 'Pedestrian Slipping Hazard'],
+        suggestedAction: 'Isolate main feeder valve and dispatch emergency squad'
       });
 
       const { token } = await registerUser();
@@ -57,8 +60,12 @@ describe('Complaint Routes', () => {
       expect(complaint.category).toBe('Water Supply');
       expect(complaint.priority).toBe('High');
       expect(complaint.recommendedDepartment).toBe('Water Works Dept');
+      expect(complaint.severityScore).toBe(8);
+      expect(complaint.safetyHazards).toEqual(['Flooding Risk', 'Pedestrian Slipping Hazard']);
+      expect(complaint.suggestedAction).toBe('Isolate main feeder valve and dispatch emergency squad');
       expect(complaint.aiProcessed).toBe(true);
     });
+
 
     it('falls back to Other/Medium when Gemini throws an error', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});

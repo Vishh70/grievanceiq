@@ -43,12 +43,16 @@ const complaintSchema = new mongoose.Schema(
       enum:    ['Critical', 'High', 'Medium', 'Low'],
       default: 'Medium',
     },
+    severityScore:         { type: Number, min: 1, max: 10, default: null },
+    safetyHazards:         { type: [String], default: [] },
+    suggestedAction:       { type: String, default: '' },
     embeddingVector:       { type: [Number], default: [] },
     similarGroupId:        { type: String, default: null },
     recommendedDepartment: { type: String, default: '' },
     keywords:              { type: [String], default: [] },
     isDuplicate:           { type: Boolean, default: false },
     aiProcessed:           { type: Boolean, default: false },
+
 
     // Status tracking
     status: {

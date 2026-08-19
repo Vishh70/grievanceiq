@@ -27,7 +27,11 @@ async function analyzeComplaint(text, imageBase64 = null, mimeType = null) {
     return {
       category: 'Other',
       priority: 'Medium',
-      recommendedDepartment: 'General Admin'
+      recommendedDepartment: 'General Admin',
+      keywords: [],
+      severityScore: 5,
+      safetyHazards: [],
+      suggestedAction: 'Field inspection and municipal assessment required'
     };
   }
 
@@ -40,18 +44,26 @@ Priority must be one of: "Critical", "High", "Medium", "Low".
 Determine the most appropriate Indian municipal "recommendedDepartment".
 Extract 3-5 relevant "keywords" summarizing the core issue (e.g., ["pothole", "accident risk", "MG road"]).
 
+Additional Triage Fields:
+- "severityScore": An integer from 1 to 10 rating the hazard severity (10 = immediate life risk / disaster, 1 = minor cosmetic issue).
+- "safetyHazards": Array of 1-3 concise strings identifying detected physical risks (e.g. ["Live Wire Hazard", "Traffic Obstruction", "Flooding Risk"]). If no hazards, return [].
+- "suggestedAction": A concise 1-sentence actionable remediation step for the municipal engineer or field response team.
+
 Rules:
-- "Critical" priority for major safety hazards or immediate health risks (e.g., exposed live wire, severe water contamination, major road collapse).
-- "High" priority for significant disruptions to daily life (e.g., power outage, no water supply for days).
-- "Medium" priority for standard civic issues (e.g., potholes, uncollected garbage, broken streetlights).
-- "Low" priority for minor aesthetic or long-term requests (e.g., park maintenance, faded road signs).
+- "Critical" priority (severityScore 8-10) for major safety hazards or immediate health risks (e.g., exposed live wire, severe water contamination, major road collapse).
+- "High" priority (severityScore 6-7) for significant disruptions to daily life (e.g., power outage, no water supply for days).
+- "Medium" priority (severityScore 4-5) for standard civic issues (e.g., potholes, uncollected garbage, broken streetlights).
+- "Low" priority (severityScore 1-3) for minor aesthetic or long-term requests (e.g., park maintenance, faded road signs).
 
 Respond strictly with ONLY a JSON object in this format:
 {
   "category": "...",
   "priority": "...",
   "recommendedDepartment": "...",
-  "keywords": ["...", "..."]
+  "keywords": ["...", "..."],
+  "severityScore": 8,
+  "safetyHazards": ["...", "..."],
+  "suggestedAction": "..."
 }
 
 Complaint Text: "${text}"
@@ -74,11 +86,16 @@ Complaint Text: "${text}"
     const responseText = result.response.text();
     const json = extractJson(responseText);
 
+    const parsedSeverity = parseInt(json.severityScore, 10);
+
     return {
       category: json.category || 'Other',
       priority: json.priority || 'Medium',
       recommendedDepartment: json.recommendedDepartment || 'General Admin',
-      keywords: json.keywords || []
+      keywords: Array.isArray(json.keywords) ? json.keywords : [],
+      severityScore: (!isNaN(parsedSeverity) && parsedSeverity >= 1 && parsedSeverity <= 10) ? parsedSeverity : 5,
+      safetyHazards: Array.isArray(json.safetyHazards) ? json.safetyHazards : [],
+      suggestedAction: json.suggestedAction || 'Field inspection required'
     };
   } catch (err) {
     console.error('Gemini Analysis Error:', err.message);
@@ -86,9 +103,13 @@ Complaint Text: "${text}"
       category: 'Other',
       priority: 'Medium',
       recommendedDepartment: 'General Admin',
-      keywords: []
+      keywords: [],
+      severityScore: 5,
+      safetyHazards: [],
+      suggestedAction: 'Field inspection and municipal assessment required'
     };
   }
 }
 
 module.exports = { analyzeComplaint };
+
