@@ -2,12 +2,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { Upload, MapPin, Send, Loader2, Navigation, Camera, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, MapPin, Send, Loader2, Navigation, Camera, X, Image as ImageIcon, Search } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import { createPinIcon } from '../utils/mapIcons';
 
 function LocationPicker({ position, setPosition, setAddress }) {
   const map = useMap();
@@ -15,7 +15,7 @@ function LocationPicker({ position, setPosition, setAddress }) {
 
   useEffect(() => {
     if (position) {
-      map.flyTo(position, 14);
+      map.flyTo(position, 16, { animate: true, duration: 1 });
     }
   }, [position, map]);
 
@@ -53,27 +53,61 @@ function LocationPicker({ position, setPosition, setAddress }) {
     },
   };
 
+  const dragPinIcon = createPinIcon('#6366f1', 40);
+
   return position ? (
     <Marker 
       draggable={true}
       eventHandlers={eventHandlers}
       position={position} 
+      icon={dragPinIcon}
       ref={markerRef} 
     />
   ) : null;
 }
 
 export default function SubmitComplaint() {
-  const [form, setForm]       = useState({ text: '', address: '' });
+  const [form, setForm]         = useState({ text: '', address: '' });
   const [position, setPosition] = useState(null); // {lat, lng}
-  const [image, setImage]     = useState(null);
-  const [preview, setPreview] = useState('');
-  const [error, setError]     = useState('');
-  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [image, setImage]       = useState(null);
+  const [preview, setPreview]   = useState('');
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const navigate              = useNavigate();
+  const navigate                = useNavigate();
+
+  const handleLocationSearch = async (e) => {
+    if (e) e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`);
+      const data = await res.json();
+      setSearchResults(data || []);
+      if (!data || data.length === 0) {
+        toast.error('No locations found for this query.');
+      }
+    } catch (err) {
+      toast.error('Location search failed.');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const selectSearchResult = (item) => {
+    const lat = parseFloat(item.lat);
+    const lng = parseFloat(item.lon);
+    setPosition({ lat, lng });
+    setForm(f => ({ ...f, address: item.display_name }));
+    setSearchResults([]);
+    setSearchQuery('');
+    toast.success('Exact location selected!');
+  };
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -146,14 +180,17 @@ export default function SubmitComplaint() {
   const getLocation = () => {
     if (!navigator.geolocation) return toast.error('Geolocation not supported by your browser.');
     
-    const loadingToast = toast.loading('Locating your position...');
+    const loadingToast = toast.loading('Acquiring high-precision GPS coordinates...');
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        toast.success('Location found!', { id: loadingToast });
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const accuracy = Math.round(pos.coords.accuracy || 10);
+        setPosition({ lat, lng });
+        toast.success(`GPS Found! (Accuracy: ±${accuracy}m)`, { id: loadingToast });
         
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
           const data = await res.json();
           if (data && data.address) {
             const addr = data.address;
@@ -167,10 +204,12 @@ export default function SubmitComplaint() {
         }
       },
       () => {
-        toast.error('Could not get GPS location. Please click on the map to drop a pin.', { id: loadingToast });
-      }
+        toast.error('Could not acquire high-precision GPS. Please search or click on the map.', { id: loadingToast });
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -374,14 +413,98 @@ export default function SubmitComplaint() {
             </div>
 
             <div className="form-group">
-              <label className="form-label flex items-center gap-1">
-                <MapPin size={16} /> Location Map
+              <label className="form-label flex items-center justify-between">
+                <span className="flex items-center gap-1"><MapPin size={16} /> Precise Incident Location</span>
+                {position && (
+                  <span className="badge badge-primary" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                    🎯 GPS: {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
+                  </span>
+                )}
               </label>
-              <div style={{ height: 260, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
-                <MapContainer center={position || [28.6139, 77.2090]} zoom={11} dragging={!L.Browser.mobile} tap={!L.Browser.mobile} style={{ height: '100%', width: '100%', zIndex: 1 }}>
+
+              {/* Quick Address Search Box */}
+              <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ paddingLeft: '36px', height: '42px', fontSize: '0.9rem' }}
+                      placeholder="Search landmark, street, or locality (e.g. Shivaji Road Pune, Connaught Place)..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleLocationSearch(e)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleLocationSearch}
+                    disabled={searching}
+                    style={{ height: '42px', padding: '0 1rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {searching ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={16} />}
+                    <span>{searching ? 'Searching...' : 'Find'}</span>
+                  </button>
+                </div>
+
+                {/* Search Suggestions Dropdown */}
+                <AnimatePresence>
+                  {searchResults.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      style={{
+                        position: 'absolute',
+                        top: '46px',
+                        left: 0,
+                        right: 0,
+                        zIndex: 2000,
+                        background: 'var(--bg-card, #ffffff)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-md)',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                        overflow: 'hidden',
+                        maxHeight: '220px',
+                        overflowY: 'auto'
+                      }}
+                    >
+                      {searchResults.map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => selectSearchResult(item)}
+                          style={{
+                            padding: '10px 14px',
+                            borderBottom: idx < searchResults.length - 1 ? '1px solid var(--border)' : 'none',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'background 0.15s'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(99,102,241,0.08)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <MapPin size={14} color="var(--accent)" style={{ flexShrink: 0 }} />
+                          <span style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {item.display_name}
+                          </span>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Leaflet Map with Custom High-Contrast Marker */}
+              <div style={{ height: 280, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
+                <MapContainer center={position || [18.5204, 73.8567]} zoom={12} dragging={!L.Browser.mobile} tap={!L.Browser.mobile} style={{ height: '100%', width: '100%', zIndex: 1 }}>
                   <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; OpenStreetMap'
                   />
                   <LocationPicker position={position} setPosition={setPosition} setAddress={(addr) => setForm(f => ({ ...f, address: addr }))} />
                 </MapContainer>
@@ -403,32 +526,33 @@ export default function SubmitComplaint() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
                     cursor: 'pointer',
                     color: 'var(--accent)',
                     transition: 'transform 0.2s'
                   }}
-                  onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseOver={e => e.currentTarget.style.transform = 'scale(1.08)'}
                   onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-                  title="Use My Location"
+                  title="Use High-Precision GPS"
                 >
                   <Navigation size={20} style={{ transform: 'translate(-1px, 1px)' }} />
                 </button>
               </div>
-              <p className="text-sm text-muted mt-1">Click on the map to drop a pin.</p>
+              <p className="text-sm text-muted mt-1">💡 Click or drag the pulsing pin on the map to pinpoint the exact location.</p>
               
               <div style={{ position: 'relative', marginTop: '1rem' }}>
                 <MapPin size={18} style={{ position: 'absolute', left: '1rem', top: '1rem', color: 'var(--text-secondary)' }} />
                 <textarea
                   className="form-textarea"
                   name="address"
-                  placeholder="Street address or area name (Auto-fills on map click, but you can edit it manually!)"
+                  placeholder="Street address or area name (Auto-fills on map pin selection, or edit manually)"
                   value={form.address}
                   onChange={handleChange}
-                  style={{ paddingLeft: '2.5rem', minHeight: '80px', backgroundColor: '#ffffff', border: '1px solid var(--border)' }}
+                  style={{ paddingLeft: '2.5rem', minHeight: '75px', backgroundColor: '#ffffff', border: '1px solid var(--border)' }}
                 />
               </div>
             </div>
+
 
             <style>{`
               @keyframes spin { 100% { transform: rotate(360deg); } }

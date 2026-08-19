@@ -393,3 +393,28 @@ table tbody tr:hover {
 .mobile-bottom-nav {
   display: none;
 }
+
+/* Custom Leaflet Map Pin & Radar Pulse */
+.custom-map-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+@keyframes pin-pulse {
+  0% {
+    transform: translateX(-50%) scale(0.6);
+    opacity: 0.9;
+  }
+  70% {
+    transform: translateX(-50%) scale(2.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) scale(3.2);
+    opacity: 0;
+  }
+}
+
+.custom-leaflet-marker:hover svg {
+  transform: scale(1.18) translateY(-4px);
+}

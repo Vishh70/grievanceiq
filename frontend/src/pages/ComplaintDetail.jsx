@@ -197,7 +197,8 @@ export default function ComplaintDetail() {
                 <ComplaintMap 
                   lat={complaint.location.lat} 
                   lng={complaint.location.lng} 
-                  address={complaint.location.address} 
+                  address={complaint.location.address}
+                  priority={complaint.priority}
                 />
               )}
             </div>

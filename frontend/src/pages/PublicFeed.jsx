@@ -13,6 +13,8 @@ import { Link } from 'react-router-dom';
 
 
 
+import { getPriorityIcon } from '../utils/mapIcons';
+
 export default function PublicFeed() {
   const { user } = useAuth();
   const [complaints, setComplaints] = useState([]);
@@ -100,10 +102,10 @@ export default function PublicFeed() {
             zoom={12} 
             style={{ height: '100%', width: '100%', zIndex: 1 }}
           >
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' />
             {complaints.map(c => (
               c.location?.lat && c.location?.lng && (
-                <Marker key={c._id} position={[c.location.lat, c.location.lng]}>
+                <Marker key={c._id} position={[c.location.lat, c.location.lng]} icon={getPriorityIcon(c.priority)}>
                   <Popup>
                     <div style={{ padding: '0.5rem', maxWidth: '200px' }}>
                       <div className="flex items-center gap-1 mb-1">
@@ -111,7 +113,7 @@ export default function PublicFeed() {
                         <span style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 600 }}>👍 {c.upvotes || 0}</span>
                       </div>
                       <p style={{ margin: '0 0 0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>{c.text.substring(0, 60)}...</p>
-                      <Link to={`/complaints/${c._id}`} style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>View Details</Link>
+                      <Link to={`/complaints/${c._id}`} style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 600 }}>View Details →</Link>
                     </div>
                   </Popup>
                 </Marker>
@@ -119,6 +121,7 @@ export default function PublicFeed() {
             ))}
           </MapContainer>
         </motion.div>
+
 
         {/* Trending Issues List */}
         <h2 className="mb-1">Trending Issues 🔥</h2>
