@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import Skeleton from '../components/Skeleton';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Calendar, Clock, AlertTriangle, Layers, Building, MessageSquare, Maximize2, X, CheckCircle2, ChevronLeft, Map, Globe, PlusCircle } from 'lucide-react';
+import { MapPin, Calendar, Clock, AlertTriangle, Layers, Building, MessageSquare, Maximize2, X, CheckCircle2, ChevronLeft, Map, Globe, PlusCircle, Zap, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import ComplaintMap from '../components/ComplaintMap';
@@ -23,10 +23,10 @@ export default function ComplaintDetail() {
         setComplaint(data.complaint);
         if (data.complaint.similarGroupId) {
           const simRes = await api.get(`/complaints/${id}/similar`);
-          setSimilar(simRes.data.complaints);
+          setSimilar(simRes.data.similar || []);
         }
       } catch (err) {
-        // Handled cleanly in empty state UI
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -35,77 +35,86 @@ export default function ComplaintDetail() {
   }, [id]);
 
   if (loading) return (
-    <div className="page container" style={{ maxWidth: 1000, padding: '2rem 1rem' }}>
-      <Skeleton style={{ height: 40, width: '40%', marginBottom: '1rem', borderRadius: 8 }} />
-      <Skeleton style={{ height: 20, width: '25%', marginBottom: '2rem', borderRadius: 6 }} />
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-        <Skeleton style={{ height: 380, flex: '2 1 500px', borderRadius: 16 }} />
-        <Skeleton style={{ height: 380, flex: '1 1 280px', borderRadius: 16 }} />
+    <div className="page container">
+      <Skeleton style={{ height: 180, borderRadius: 'var(--radius-md)', marginBottom: '2rem' }} />
+      <div className="grid-responsive-sidebar" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem' }}>
+        <Skeleton style={{ height: 400, borderRadius: 'var(--radius-md)' }} />
+        <Skeleton style={{ height: 400, borderRadius: 'var(--radius-md)' }} />
       </div>
     </div>
   );
 
   if (!complaint) return (
-    <div className="page container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '65vh', padding: '2rem 1rem' }}>
+    <div className="page container" style={{ minHeight: '65vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }} 
-        animate={{ opacity: 1, scale: 1 }} 
-        className="card" 
-        style={{ maxWidth: 480, width: '100%', textAlign: 'center', padding: '3rem 2rem', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.06)' }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="card text-center" 
+        style={{ 
+          maxWidth: '480px', 
+          width: '100%',
+          padding: '2.5rem 2rem', 
+          background: 'rgba(15, 23, 42, 0.95)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+          borderRadius: 'var(--radius-md)'
+        }}
       >
         <div style={{
-          width: '72px',
-          height: '72px',
+          width: '64px',
+          height: '64px',
           borderRadius: '50%',
-          background: 'rgba(239, 68, 68, 0.1)',
-          color: 'var(--danger)',
+          background: 'rgba(239, 68, 68, 0.15)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto 1.5rem',
-          boxShadow: '0 8px 20px rgba(239, 68, 68, 0.15)'
+          margin: '0 auto 1.25rem',
+          color: '#ef4444'
         }}>
-          <AlertTriangle size={36} />
+          <AlertTriangle size={32} />
         </div>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '0.6rem', color: 'var(--text-primary)' }}>
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
           Complaint Not Found
         </h2>
-        <p className="text-muted text-sm mb-3" style={{ lineHeight: 1.6 }}>
-          This grievance issue could not be found. It may have been resolved, archived, or the link in your browser may be incomplete.
+        <p className="text-muted text-sm" style={{ marginBottom: '1.5rem', lineHeight: 1.6 }}>
+          The requested complaint ID does not exist or may have been removed. Explore the community feed to view active civic issues.
         </p>
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/feed" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <Globe size={16} /> Public Feed
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          <Link to="/feed" className="btn btn-primary" style={{ textDecoration: 'none', justifyContent: 'center', gap: '0.4rem', padding: '0.65rem' }}>
+            <Globe size={16} /> Explore Public Civic Feed
           </Link>
-          <Link to="/complaints" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <ChevronLeft size={16} /> My Complaints
-          </Link>
-          <Link to="/complaints/new" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <PlusCircle size={16} /> New Issue
-          </Link>
+          <div style={{ display: 'flex', gap: '0.6rem' }}>
+            <Link to="/complaints" className="btn btn-secondary" style={{ textDecoration: 'none', flex: 1, justifyContent: 'center', fontSize: '0.85rem' }}>
+              My Complaints
+            </Link>
+            <Link to="/submit" className="btn btn-secondary" style={{ textDecoration: 'none', flex: 1, justifyContent: 'center', fontSize: '0.85rem', gap: '0.3rem' }}>
+              <PlusCircle size={14} /> New Issue
+            </Link>
+          </div>
         </div>
       </motion.div>
     </div>
   );
 
-
-  const bColor = 
-    complaint.priority === 'Critical' ? 'var(--danger)' :
-    complaint.priority === 'High' ? 'var(--warning)' :
-    complaint.priority === 'Medium' ? 'var(--info)' : 'var(--success)';
+  const bColor = complaint.priority === 'Critical' ? 'var(--danger)' :
+                 complaint.priority === 'High' ? 'var(--warning)' :
+                 complaint.priority === 'Medium' ? 'var(--accent)' : 'var(--success)';
 
   return (
     <div className="page">
       <div className="container">
         
-        {/* Back button */}
-        <Link to="/complaints" className="flex items-center gap-1 text-muted mb-2 hover:text-accent" style={{ display: 'inline-flex', fontSize: '0.9rem', fontWeight: 600, textDecoration: 'none' }}>
+        {/* Navigation Breadcrumb */}
+        <Link to="/complaints" className="flex items-center gap-1 text-muted mb-2" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>
           <ChevronLeft size={16} /> Back to My Complaints
         </Link>
 
-        {/* Hero Header */}
+        {/* Hero Banner */}
         <motion.div 
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           className="card mb-2"
           style={{ 
             background: 'linear-gradient(135deg, rgba(99,102,241,0.05), rgba(192,132,252,0.05))',
@@ -114,9 +123,19 @@ export default function ComplaintDetail() {
           }}
         >
           <div className="flex items-center justify-between flex-wrap gap-1 mb-1">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               <span className={`badge badge-${complaint.priority.toLowerCase()}`}>{complaint.priority} Priority</span>
               <span className="badge badge-info">{complaint.status}</span>
+              {complaint.severityScore != null && (
+                <span className="badge" style={{
+                  background: complaint.severityScore >= 8 ? 'rgba(239, 68, 68, 0.2)' : complaint.severityScore >= 6 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                  color: complaint.severityScore >= 8 ? '#f87171' : complaint.severityScore >= 6 ? '#fbbf24' : '#60a5fa',
+                  border: `1px solid ${complaint.severityScore >= 8 ? 'rgba(239, 68, 68, 0.35)' : complaint.severityScore >= 6 ? 'rgba(245, 158, 11, 0.35)' : 'rgba(59, 130, 246, 0.35)'}`,
+                  fontWeight: 700
+                }}>
+                  ⚡ Hazard Index: {complaint.severityScore}/10
+                </span>
+              )}
               {complaint.isDuplicate && (
                 <span className="badge badge-critical" style={{ marginLeft: '0.5rem' }}>DUPLICATE ISSUE</span>
               )}
@@ -133,7 +152,6 @@ export default function ComplaintDetail() {
 
         <div className="grid-responsive-sidebar" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem', alignItems: 'start' }}>
           
-          {/* Main Content (Left) */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex-col gap-2">
             <div className="card">
               <h3 className="flex items-center gap-1 mb-1 pb-1" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -156,7 +174,6 @@ export default function ComplaintDetail() {
               </div>
             )}
 
-            {/* Premium Timeline */}
             <div className="card mt-2">
               <h3 className="mb-2 flex items-center gap-1"><Clock size={18}/> Status Timeline</h3>
               <div style={{ position: 'relative', paddingLeft: '1.5rem', marginTop: '1rem' }}>
@@ -191,7 +208,6 @@ export default function ComplaintDetail() {
             </div>
           </motion.div>
 
-          {/* Sidebar (Right) */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex-col gap-2">
             
             <div className="card">
@@ -206,9 +222,34 @@ export default function ComplaintDetail() {
                   <span style={{ fontWeight: 600 }}>{complaint.priority || 'Pending AI'}</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'var(--border)' }}>
+                  <span className="text-muted flex items-center gap-1"><Zap size={14} /> Hazard Index</span>
+                  {complaint.severityScore != null ? (
+                    <span style={{
+                      fontWeight: 700,
+                      color: complaint.severityScore >= 8 ? '#ef4444' : complaint.severityScore >= 6 ? '#f59e0b' : '#3b82f6'
+                    }}>
+                      ⚡ {complaint.severityScore}/10
+                    </span>
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Not assessed</span>
+                  )}
+                </div>
+                <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'var(--border)' }}>
                   <span className="text-muted flex items-center gap-1"><Building size={14} /> Dept.</span>
                   <span style={{ fontWeight: 600, textAlign: 'right' }}>{complaint.recommendedDepartment || 'Pending AI'}</span>
                 </div>
+                {complaint.safetyHazards && complaint.safetyHazards.length > 0 && (
+                  <div className="py-2 border-b" style={{ borderColor: 'var(--border)' }}>
+                    <span className="text-muted flex items-center gap-1 mb-1"><ShieldAlert size={14} color="#ef4444" /> Detected Hazards</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {complaint.safetyHazards.map((hazard, hi) => (
+                        <span key={hi} className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                          ⚠️ {hazard}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {complaint.keywords && complaint.keywords.length > 0 && (
                   <div className="py-2 border-b" style={{ borderColor: 'var(--border)' }}>
                     <span className="text-muted flex items-center gap-1 mb-1"><Layers size={14} /> Detected Keywords</span>
@@ -217,6 +258,22 @@ export default function ComplaintDetail() {
                         <span key={i} className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>{kw}</span>
                       ))}
                     </div>
+                  </div>
+                )}
+                {complaint.suggestedAction && (
+                  <div className="mt-1" style={{
+                    background: 'rgba(99, 102, 241, 0.08)',
+                    borderRadius: 'var(--radius-sm)',
+                    borderLeft: '3px solid var(--accent)',
+                    padding: '0.65rem 0.8rem',
+                    fontSize: '0.85rem'
+                  }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <ShieldAlert size={13} color="var(--accent-light)" /> Recommended Action
+                    </div>
+                    <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                      {complaint.suggestedAction}
+                    </p>
                   </div>
                 )}
                 <div className="text-sm text-center mt-2" style={{ background: 'var(--accent-glow)', padding: '0.5rem', borderRadius: 'var(--radius-sm)', color: 'var(--accent-dark)', fontWeight: 600 }}>
