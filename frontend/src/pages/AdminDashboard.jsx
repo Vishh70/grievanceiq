@@ -335,10 +335,10 @@ export default function AdminDashboard() {
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>Issue Description</th>
+                    <th>Issue & Hazards</th>
                     <th>Category</th>
-                    <th>Priority</th>
-                    <th>Status</th>
+                    <th>Priority & Hazard Index</th>
+                    <th>Status & SLA</th>
                     <th>Date</th>
                     <th>Action</th>
                   </tr>
@@ -347,27 +347,102 @@ export default function AdminDashboard() {
                   <AnimatePresence>
                     {complaints.length === 0 ? (
                       <tr><td colSpan="7" className="text-center text-muted">No complaints found.</td></tr>
-                    ) : complaints.map((c, i) => (
-                      <motion.tr 
-                        key={c._id}
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.05 }}
-                      >
-                        <td data-label="ID"><a href={`/complaints/${c._id}`} className="text-accent" style={{ fontFamily: 'monospace' }}>#{c._id.slice(-5)}</a></td>
-                        <td data-label="Description" style={{ maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={c.text}>{c.text}</td>
-                        <td data-label="Category">{c.category}</td>
-                        <td data-label="Priority"><span className={`badge badge-${c.priority.toLowerCase()}`}>{c.priority}</span></td>
-                        <td data-label="Status">{c.status}</td>
-                        <td data-label="Date">{new Date(c.createdAt).toLocaleDateString()}</td>
-                        <td data-label="Action" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                          <a href={`/complaints/${c._id}`} className="btn btn-sm btn-primary flex items-center" style={{ textDecoration: 'none', padding: '0.4rem 0.6rem' }} title="View Details">
-                            <Eye size={14} /> <span className="nav-text-hide-mobile">View</span>
-                          </a>
-                          <button className="btn btn-sm btn-secondary flex items-center" onClick={() => setStatusModal({ complaintId: c._id })} style={{ padding: '0.4rem 0.6rem' }} title="Update Status">
-                            <Edit size={14} /> <span className="nav-text-hide-mobile">Update</span>
-                          </button>
-                        </td>
-                      </motion.tr>
-                    ))}
+                    ) : complaints.map((c, i) => {
+                      const isPending = c.status === 'Submitted' || c.status === 'In Review';
+                      const hoursPending = (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60);
+                      const isSlaBreached = isPending && hoursPending > 48;
+
+                      return (
+                        <motion.tr 
+                          key={c._id}
+                          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.05 }}
+                        >
+                          <td data-label="ID"><a href={`/complaints/${c._id}`} className="text-accent" style={{ fontFamily: 'monospace' }}>#{c._id.slice(-5)}</a></td>
+                          <td data-label="Description" style={{ maxWidth: '280px' }}>
+                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }} title={c.text}>
+                              {c.text}
+                            </div>
+                            {c.safetyHazards && c.safetyHazards.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                                {c.safetyHazards.map((hazard, hi) => (
+                                  <span key={hi} style={{
+                                    fontSize: '0.68rem',
+                                    fontWeight: 600,
+                                    padding: '1px 6px',
+                                    background: 'rgba(239, 68, 68, 0.15)',
+                                    color: '#f87171',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    borderRadius: '4px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '2px'
+                                  }}>
+                                    ⚠️ {hazard}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td data-label="Category">{c.category}</td>
+                          <td data-label="Priority">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span className={`badge badge-${c.priority.toLowerCase()}`}>{c.priority}</span>
+                              {c.severityScore != null ? (
+                                <span style={{
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  padding: '2px 7px',
+                                  borderRadius: '12px',
+                                  background: c.severityScore >= 8 ? 'rgba(239, 68, 68, 0.2)' : c.severityScore >= 6 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                  color: c.severityScore >= 8 ? '#f87171' : c.severityScore >= 6 ? '#fbbf24' : '#60a5fa',
+                                  border: `1px solid ${c.severityScore >= 8 ? 'rgba(239, 68, 68, 0.35)' : c.severityScore >= 6 ? 'rgba(245, 158, 11, 0.35)' : 'rgba(59, 130, 246, 0.35)'}`,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }} title={`AI Severity Score: ${c.severityScore}/10`}>
+                                  ⚡ {c.severityScore}/10
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }} title="Submitted before AI severity scoring was enabled">
+                                  (Unrated)
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td data-label="Status">
+                            <div>
+                              <span>{c.status}</span>
+                              {isSlaBreached && (
+                                <div style={{
+                                  marginTop: '4px',
+                                  fontSize: '0.68rem',
+                                  fontWeight: 700,
+                                  color: '#ef4444',
+                                  background: 'rgba(239, 68, 68, 0.12)',
+                                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px'
+                                }}>
+                                  <AlertTriangle size={11} color="#ef4444" /> SLA Breach (&gt;48h)
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td data-label="Date">{new Date(c.createdAt).toLocaleDateString()}</td>
+                          <td data-label="Action" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                            <a href={`/complaints/${c._id}`} className="btn btn-sm btn-primary flex items-center" style={{ textDecoration: 'none', padding: '0.4rem 0.6rem' }} title="View Details">
+                              <Eye size={14} /> <span className="nav-text-hide-mobile">View</span>
+                            </a>
+                            <button className="btn btn-sm btn-secondary flex items-center" onClick={() => setStatusModal({ complaintId: c._id })} style={{ padding: '0.4rem 0.6rem' }} title="Update Status">
+                              <Edit size={14} /> <span className="nav-text-hide-mobile">Update</span>
+                            </button>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
                   </AnimatePresence>
                 </tbody>
               </table>
