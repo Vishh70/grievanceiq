@@ -413,35 +413,35 @@ export default function AdminDashboard() {
             )}
         </motion.div>
 
-        <div className="grid-responsive-sidebar" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', alignItems: 'start', marginTop: '3rem' }}>
+        <div className="grid-responsive-sidebar" style={{ marginTop: '2rem', paddingBottom: '6rem' }}>
           
           {/* Main Table Area */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="card">
-            <div className="flex items-center justify-between mb-2 admin-header-wrap">
-              <h3>Issue Tracking Table</h3>
-              <div className="flex gap-1 dashboard-filters">
+            <div className="flex items-center justify-between mb-2 admin-header-wrap" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0 }}>Issue Tracking Table</h3>
+              <div className="flex gap-1 dashboard-filters" style={{ flexWrap: 'wrap', width: '100%', maxWidth: '650px' }}>
                 <input 
                   type="text" 
                   className="form-input" 
                   placeholder="Search category or desc..." 
                   value={filters.search} 
                   onChange={e => applyFilter('search', e.target.value)}
-                  style={{ padding: '0.4rem 1rem', width: '200px' }}
+                  style={{ padding: '0.4rem 0.8rem', minWidth: '150px', flex: 1 }}
                 />
-                <select className="form-select" style={{ padding: '0.4rem 1rem', width: 'auto' }} value={filters.category} onChange={e => applyFilter('category', e.target.value)}>
+                <select className="form-select" style={{ padding: '0.4rem 0.8rem', minWidth: '130px', flex: 1 }} value={filters.category} onChange={e => applyFilter('category', e.target.value)}>
                   <option value="">All Categories</option>
                   {summary?.categoryBreakdown?.map((c, i) => (
                     <option key={i} value={c.name}>{c.name}</option>
                   ))}
                 </select>
-                <select className="form-select" style={{ padding: '0.4rem 1rem', width: 'auto' }} value={filters.status} onChange={e => applyFilter('status', e.target.value)}>
+                <select className="form-select" style={{ padding: '0.4rem 0.8rem', minWidth: '120px', flex: 1 }} value={filters.status} onChange={e => applyFilter('status', e.target.value)}>
                   <option value="">All Statuses</option>
                   <option value="Submitted">Submitted</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
                   <option value="Rejected">Rejected</option>
                 </select>
-                <select className="form-select" style={{ padding: '0.4rem 1rem', width: 'auto' }} value={filters.priority} onChange={e => applyFilter('priority', e.target.value)}>
+                <select className="form-select" style={{ padding: '0.4rem 0.8rem', minWidth: '120px', flex: 1 }} value={filters.priority} onChange={e => applyFilter('priority', e.target.value)}>
                   <option value="">All Priorities</option>
                   <option value="Critical">Critical</option>
                   <option value="High">High</option>

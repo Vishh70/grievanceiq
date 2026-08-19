@@ -35,7 +35,7 @@ export default function Leaderboard() {
 
   return (
     <div className="page">
-      <div className="container" style={{ maxWidth: '800px' }}>
+      <div className="container" style={{ maxWidth: '800px', paddingBottom: '6rem' }}>
         <div className="text-center mb-2">
           <motion.div 
             initial={{ scale: 0 }} 

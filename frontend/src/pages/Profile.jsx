@@ -1,10 +1,12 @@
 // frontend/src/pages/Profile.jsx
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Award, Shield, Star, CheckCircle, UploadCloud, User } from 'lucide-react';
+import { Award, Shield, Star, CheckCircle, UploadCloud, User, LogOut, ShieldAlert } from 'lucide-react';
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
@@ -30,9 +32,14 @@ export default function Profile() {
 
   const badges = user.badges || [];
 
+  const handleSignOut = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="page">
-      <div className="container" style={{ maxWidth: '800px' }}>
+      <div className="container" style={{ maxWidth: '800px', paddingBottom: '6rem' }}>
         <h1 className="mb-2">My Civic Profile</h1>
 
         <div className="grid-responsive-2 mb-2">
@@ -78,7 +85,7 @@ export default function Profile() {
 
         {/* Badges Section */}
         <h2 className="mb-1">Unlocked Badges 🎖️</h2>
-        <div className="card">
+        <div className="card mb-2">
           {badges.length === 0 ? (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
               <Award size={48} style={{ opacity: 0.2, margin: '0 auto 1rem' }} />
@@ -95,6 +102,22 @@ export default function Profile() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Account Controls */}
+        <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>Account Session</div>
+            <div className="text-xs text-muted">Signed in as {user.email} ({user.role})</div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <a href="/admin/login" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <ShieldAlert size={14} color="#ef4444" /> Admin Portal
+            </a>
+            <button className="btn btn-danger btn-sm" onClick={handleSignOut} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <LogOut size={14} /> Sign Out
+            </button>
+          </div>
         </div>
 
       </div>

@@ -46,7 +46,7 @@ export default function MyComplaints() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="page">
-      <div className="container">
+      <div className="container" style={{ paddingBottom: '6rem' }}>
         <div className="flex items-center justify-between mb-2" style={{ flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1>My Complaints</h1>

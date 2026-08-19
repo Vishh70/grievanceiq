@@ -202,7 +202,7 @@ export default function PublicFeed() {
 
   return (
     <div className="page">
-      <div className="container">
+      <div className="container" style={{ paddingBottom: '6rem' }}>
         
         {/* Header */}
         <div className="mb-2 text-center">
