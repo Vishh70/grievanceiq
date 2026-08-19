@@ -28,15 +28,21 @@ function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   return Math.round(R * c * 10) / 10;
 }
 
-function MapViewController({ center, zoom }) {
+function MapViewController({ center, zoom, points }) {
   const map = useMap();
   useEffect(() => {
-    if (center) {
+    if (points && points.length > 1) {
+      const bounds = L.latLngBounds(points);
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+    } else if (points && points.length === 1) {
+      map.flyTo(points[0], 14, { animate: true, duration: 1 });
+    } else if (center) {
       map.flyTo(center, zoom || 12, { animate: true, duration: 1.2 });
     }
-  }, [center, zoom, map]);
+  }, [center, zoom, points, map]);
   return null;
 }
+
 
 export default function PublicFeed() {
   const { user } = useAuth();
@@ -173,6 +179,17 @@ export default function PublicFeed() {
     return list;
   }, [processedComplaints, searchFilter, activeTab, userLocation]);
 
+  const activePoints = useMemo(() => {
+
+    const pts = filteredComplaints
+      .filter(c => c.location?.lat && c.location?.lng)
+      .map(c => [c.location.lat, c.location.lng]);
+    if (userLocation) {
+      pts.push([userLocation.lat, userLocation.lng]);
+    }
+    return pts;
+  }, [filteredComplaints, userLocation]);
+
   if (loading) return (
     <div className="page container">
       <Skeleton style={{ height: 400, marginBottom: '2rem' }} />
@@ -270,8 +287,9 @@ export default function PublicFeed() {
             zoom={mapZoom} 
             style={{ height: '100%', width: '100%', zIndex: 1 }}
           >
-            <MapViewController center={mapCenter} zoom={mapZoom} />
+            <MapViewController center={mapCenter} zoom={mapZoom} points={activePoints} />
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' />
+
             
             {/* User Current Location Marker */}
             {userLocation && (
