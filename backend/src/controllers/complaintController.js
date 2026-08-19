@@ -45,20 +45,27 @@ exports.createComplaint = async (req, res) => {
       try {
         const aiResult = await analyzeComplaint(text, imageBase64, mimeType);
         
-        // Basic similarity grouping using text search (Requires text index)
+        // Category-scoped similarity grouping using text search
         let similarGroupId = complaint._id;
         let isDuplicate = false;
         try {
           const similar = await Complaint.find(
-            { $text: { $search: text }, _id: { $ne: complaint._id } },
+            {
+              $text: { $search: text },
+              category: aiResult.category,
+              _id: { $ne: complaint._id }
+            },
             { score: { $meta: "textScore" } }
           ).sort({ score: { $meta: "textScore" } }).limit(1);
           
           if (similar.length > 0 && similar[0].similarGroupId) {
-             similarGroupId = similar[0].similarGroupId;
-             // If score is high enough, we flag it as a duplicate
-             if (similar[0]._doc.score > 1.5) {
-               isDuplicate = true;
+             const score = similar[0]._doc?.score || 0;
+             // Require strong similarity within the same category to group
+             if (score >= 2.0) {
+               similarGroupId = similar[0].similarGroupId;
+               if (score >= 3.5) {
+                 isDuplicate = true;
+               }
              }
           }
         } catch (err) {
@@ -180,8 +187,12 @@ exports.getSimilarComplaints = async (req, res) => {
 
     const similar = await Complaint.find({
       similarGroupId: complaint.similarGroupId,
+      category: complaint.category,
       _id: { $ne: complaint._id }
-    }).select('text priority createdAt status location');
+    })
+    .select('text priority createdAt status location')
+    .sort({ createdAt: -1 })
+    .limit(5);
 
     res.json({ complaints: similar });
   } catch (error) {
