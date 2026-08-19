@@ -127,25 +127,23 @@ export default function ComplaintDetail() {
             boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)'
           }}
         >
-          <div className="flex items-center justify-between flex-wrap gap-1 mb-1">
-            <div className="flex items-center gap-1 flex-wrap">
-              <span className={`badge badge-${complaint.priority.toLowerCase()}`}>{complaint.priority} Priority</span>
-              <span className="badge badge-info">{complaint.status}</span>
-              {complaint.severityScore != null && (
-                <span className="badge" style={{
-                  background: complaint.severityScore >= 8 ? '#fef2f2' : complaint.severityScore >= 6 ? '#fffbeb' : '#eff6ff',
-                  color: complaint.severityScore >= 8 ? '#b91c1c' : complaint.severityScore >= 6 ? '#b45309' : '#1d4ed8',
-                  border: `1px solid ${complaint.severityScore >= 8 ? '#fecaca' : complaint.severityScore >= 6 ? '#fde68a' : '#bfdbfe'}`,
-                  fontWeight: 700,
-                  gap: '4px'
-                }}>
-                  <Zap size={12} fill="currentColor" /> Hazard {complaint.severityScore}/10
-                </span>
-              )}
-              {complaint.isDuplicate && (
-                <span className="badge badge-critical">DUPLICATE ISSUE</span>
-              )}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.5rem' }}>
+            <span className={`badge badge-${complaint.priority.toLowerCase()}`}>{complaint.priority} Priority</span>
+            <span className="badge badge-info">{complaint.status}</span>
+            {complaint.severityScore != null && (
+              <span className="badge" style={{
+                background: complaint.severityScore >= 8 ? '#fef2f2' : complaint.severityScore >= 6 ? '#fffbeb' : '#eff6ff',
+                color: complaint.severityScore >= 8 ? '#b91c1c' : complaint.severityScore >= 6 ? '#b45309' : '#1d4ed8',
+                border: `1px solid ${complaint.severityScore >= 8 ? '#fecaca' : complaint.severityScore >= 6 ? '#fde68a' : '#bfdbfe'}`,
+                fontWeight: 700,
+                gap: '4px'
+              }}>
+                <Zap size={12} fill="currentColor" /> Hazard {complaint.severityScore}/10
+              </span>
+            )}
+            {complaint.isDuplicate && (
+              <span className="badge badge-critical">DUPLICATE ISSUE</span>
+            )}
             {complaint.aiProcessed && (
                <span className="badge" style={{ background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe' }}>✨ AI Verified</span>
             )}
