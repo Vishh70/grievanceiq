@@ -2,14 +2,14 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import Skeleton from '../components/Skeleton';
-import { Clock, CheckCircle, AlertTriangle, Layers, X, Activity, Link as LinkIcon, Eye, Edit, MapPin } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, Layers, X, Activity, Link as LinkIcon, Eye, Edit, MapPin, Zap, ShieldAlert, Timer, Compass } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-
+import { createPinIcon, PRIORITY_MAP_COLORS } from '../utils/mapIcons';
 
 const PRIORITY_COLORS = {
   'Critical': '#ef4444', // Danger red
@@ -103,12 +103,14 @@ export default function AdminDashboard() {
   );
 
   const s = summary?.summary || {};
+  const analytics = summary?.analytics || {};
   
   // Prepare data for charts
   const priorityData = summary?.priorityBreakdown || [];
   const deptData = summary?.departmentBreakdown || [];
   const trendData = summary?.trend || [];
   const categoryData = summary?.categoryBreakdown || [];
+  const validMapPins = (summary?.mapPins || []).filter(p => p.location?.lat != null && p.location?.lng != null);
 
   return (
     <div className="page">
@@ -143,6 +145,7 @@ export default function AdminDashboard() {
           </motion.button>
         </motion.div>
 
+        {/* Primary Issue Metrics */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="mb-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}
@@ -162,6 +165,95 @@ export default function AdminDashboard() {
           <div className="card card-glass flex items-center gap-2">
             <div style={{ background: 'rgba(16,185,129,0.15)', padding: '1rem', borderRadius: '50%' }}><CheckCircle size={24} color="var(--success)"/></div>
             <div><p className="text-sm text-muted">Resolved</p><h2 style={{ fontSize: '1.8rem' }}>{s.resolved || 0}</h2></div>
+          </div>
+        </motion.div>
+
+        {/* Executive AI & SLA Intelligence Cockpit */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+          className="grid-responsive-2 mb-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}
+        >
+          {/* SLA Performance Cockpit */}
+          <div className="card card-glass" style={{ borderLeft: '4px solid var(--accent)' }}>
+            <h3 className="mb-2 flex items-center gap-1">
+              <Timer size={18} color="var(--accent-light)" /> Municipal SLA Performance (48h Target)
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem' }}>
+              <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <p className="text-xs text-muted mb-1">SLA Compliance Rate</p>
+                <div style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: analytics.slaComplianceRate == null ? 'var(--text-muted)' : (analytics.slaComplianceRate >= 80 ? 'var(--success)' : analytics.slaComplianceRate >= 60 ? 'var(--warning)' : 'var(--danger)')
+                }}>
+                  {analytics.slaComplianceRate != null ? `${analytics.slaComplianceRate}%` : 'N/A'}
+                </div>
+                <p className="text-xs text-muted mt-1">Target $\le$ 48h resolution</p>
+              </div>
+
+              <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <p className="text-xs text-muted mb-1">Avg Resolution Time</p>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {analytics.avgResolutionHours != null ? `${analytics.avgResolutionHours}h` : 'N/A'}
+                </div>
+                <p className="text-xs text-muted mt-1">From submit to resolved</p>
+              </div>
+
+              <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <p className="text-xs text-muted mb-1">Active SLA Breaches</p>
+                <div style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: (analytics.activeSlaBreaches || 0) > 0 ? '#ef4444' : 'var(--success)'
+                }}>
+                  {analytics.activeSlaBreaches || 0}
+                </div>
+                <p className="text-xs text-muted mt-1">Open &gt; 48 hours</p>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Hazard Intelligence Cockpit */}
+          <div className="card card-glass" style={{ borderLeft: '4px solid #f97316' }}>
+            <h3 className="mb-2 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <ShieldAlert size={18} color="#f97316" /> AI Hazard Intelligence
+              </span>
+              {analytics.avgSeverityScore != null && (
+                <span className="badge" style={{
+                  background: analytics.avgSeverityScore >= 7 ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
+                  color: analytics.avgSeverityScore >= 7 ? '#f87171' : '#fbbf24',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  ⚡ Mean Hazard: {analytics.avgSeverityScore}/10
+                </span>
+              )}
+            </h3>
+
+            <p className="text-xs text-muted mb-2">Most frequently detected physical risks across city complaints:</p>
+
+            {(!analytics.topSafetyHazards || analytics.topSafetyHazards.length === 0) ? (
+              <div className="text-sm text-muted py-2">No physical hazards currently flagged.</div>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {analytics.topSafetyHazards.map((item, idx) => (
+                  <span key={idx} style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    color: '#f87171',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    ⚠️ {item.hazard} <strong style={{ color: '#fff', background: 'rgba(0,0,0,0.3)', padding: '1px 6px', borderRadius: '10px', fontSize: '0.72rem' }}>{item.count}</strong>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -234,35 +326,64 @@ export default function AdminDashboard() {
         </div>
 
         {/* Global Geographic Distribution Map */}
-        {summary?.mapPins && summary.mapPins.length > 0 && (
+        {validMapPins.length > 0 && (
           <motion.div className="card mb-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
-            <h3 className="mb-2 flex items-center gap-1">
-              <MapPin size={20} color="var(--accent)" /> Global Geographic Distribution
+            <h3 className="mb-2 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <MapPin size={20} color="var(--accent)" /> City Incident Hotspot Map ({validMapPins.length} Geotagged Issues)
+              </span>
+              <span className="text-xs text-muted flex items-center gap-1">
+                <Compass size={14} /> Color-coded by AI severity (🔴 ≥8, 🟠 ≥6, 🔵 &lt;6)
+              </span>
             </h3>
-            <div style={{ height: 400, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+            <div style={{ height: 420, borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
               <MapContainer 
-                center={[summary.mapPins[0].location.coordinates[1], summary.mapPins[0].location.coordinates[0]]} 
-                zoom={12} 
-                dragging={!L.Browser.mobile} tap={!L.Browser.mobile} 
+                center={[validMapPins[0].location.lat, validMapPins[0].location.lng]} 
+                zoom={11} 
+                dragging={!L.Browser.mobile} 
+                tap={!L.Browser.mobile} 
                 style={{ height: '100%', width: '100%' }}
               >
                 <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; OpenStreetMap'
                 />
-                {summary.mapPins.map(pin => {
-                  if(!pin.location || !pin.location.coordinates || pin.location.coordinates.length < 2) return null;
+                {validMapPins.map(pin => {
+                  const markerColor =
+                    pin.severityScore >= 8 ? '#ef4444' :
+                    pin.severityScore >= 6 ? '#f59e0b' :
+                    '#3b82f6';
+                  const pinIcon = createPinIcon(markerColor, 32);
                   return (
-                    <Marker key={pin._id} position={[pin.location.coordinates[1], pin.location.coordinates[0]]}>
+                    <Marker key={pin._id} position={[pin.location.lat, pin.location.lng]} icon={pinIcon}>
                       <Popup>
-                        <div style={{ width: '200px' }}>
-                          <span className={`badge badge-${(pin.priority || 'medium').toLowerCase()}`}>{pin.priority}</span>
-                          <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', marginBottom: '0.5rem', maxHeight: '60px', overflow: 'hidden', color: '#000' }}>{pin.text}</p>
-                          <a href={`/complaints/${pin._id}`} className="btn btn-sm btn-primary" style={{ textDecoration: 'none', display: 'block', textAlign: 'center' }}>View Details</a>
+                        <div style={{ minWidth: '200px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginBottom: '6px' }}>
+                            <span className={`badge badge-${(pin.priority || 'medium').toLowerCase()}`}>{pin.priority}</span>
+                            {pin.severityScore != null && (
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: pin.severityScore >= 8 ? '#ef4444' : '#f59e0b' }}>
+                                ⚡ {pin.severityScore}/10
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                            {pin.category}
+                          </p>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', maxHeight: '60px', overflow: 'hidden', lineHeight: 1.4 }}>
+                            {pin.text}
+                          </p>
+                          {pin.location?.address && (
+                            <p style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: '8px' }}>
+                              📍 {pin.location.address}
+                            </p>
+                          )}
+                          <a href={`/complaints/${pin._id}`} className="btn btn-sm btn-primary" style={{ textDecoration: 'none', display: 'block', textAlign: 'center', padding: '0.35rem 0.5rem', fontSize: '0.78rem' }}>
+                            View Details →
+                          </a>
                         </div>
                       </Popup>
                     </Marker>
-                  )
+                  );
                 })}
               </MapContainer>
             </div>
