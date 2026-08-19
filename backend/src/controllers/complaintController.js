@@ -130,13 +130,13 @@ exports.getComplaints = async (req, res) => {
 
 exports.getComplaintById = async (req, res) => {
   try {
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ error: 'Complaint not found' });
+    }
+
     const complaint = await Complaint.findById(req.params.id).populate('citizenId', 'name email');
     if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
-    
-    // Auth check
-    if (req.user.role === 'citizen' && complaint.citizenId._id.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
 
     res.json({ complaint });
   } catch (error) {
@@ -146,6 +146,11 @@ exports.getComplaintById = async (req, res) => {
 
 exports.updateStatus = async (req, res) => {
   try {
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ error: 'Complaint not found' });
+    }
+
     const { status, note } = req.body;
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
@@ -162,15 +167,18 @@ exports.updateStatus = async (req, res) => {
 
 exports.getSimilarComplaints = async (req, res) => {
   try {
-    const complaint = await Complaint.findById(req.params.id);
-    if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.json({ complaints: [] });
+    }
 
-    if (!complaint.similarGroupId) return res.json({ complaints: [] });
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint || !complaint.similarGroupId) return res.json({ complaints: [] });
 
     const similar = await Complaint.find({
       similarGroupId: complaint.similarGroupId,
       _id: { $ne: complaint._id }
-    }).select('text priority createdAt status');
+    }).select('text priority createdAt status location');
 
     res.json({ complaints: similar });
   } catch (error) {

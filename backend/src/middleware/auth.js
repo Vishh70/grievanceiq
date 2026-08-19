@@ -23,11 +23,32 @@ exports.protect = async (req, res, next) => {
 };
 
 /**
+ * Optional authentication — attaches req.user if a valid token is present,
+ * but allows the request to proceed if unauthenticated.
+ */
+exports.optionalAuth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select('-passwordHash');
+  } catch (err) {
+    // Ignore invalid token for optional auth
+  }
+  next();
+};
+
+/**
  * Restrict route to specific roles (e.g. 'admin')
  */
 exports.restrictTo = (...roles) => (req, res, next) => {
-  if (!roles.includes(req.user.role)) {
+  if (!req.user || !roles.includes(req.user.role)) {
     return res.status(403).json({ error: 'Access denied — insufficient role' });
   }
   next();
 };
+

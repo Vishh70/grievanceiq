@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import Skeleton from '../components/Skeleton';
 import { useAuth } from '../context/AuthContext';
-import { MapPin, Calendar, Clock, AlertTriangle, Layers, Building, MessageSquare, Maximize2, X, CheckCircle2, ChevronLeft, Map } from 'lucide-react';
+import { MapPin, Calendar, Clock, AlertTriangle, Layers, Building, MessageSquare, Maximize2, X, CheckCircle2, ChevronLeft, Map, Globe, PlusCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import ComplaintMap from '../components/ComplaintMap';
@@ -26,7 +26,7 @@ export default function ComplaintDetail() {
           setSimilar(simRes.data.complaints);
         }
       } catch (err) {
-        toast.error('Failed to load complaint details.');
+        // Handled cleanly in empty state UI
       } finally {
         setLoading(false);
       }
@@ -35,17 +35,59 @@ export default function ComplaintDetail() {
   }, [id]);
 
   if (loading) return (
-    <div className="page container">
-      <Skeleton style={{ height: 40, width: '40%', marginBottom: '1rem' }} />
-      <Skeleton style={{ height: 20, width: '20%', marginBottom: '2rem' }} />
-      <div style={{ display: 'flex', gap: '2rem' }}>
-        <Skeleton style={{ height: 400, flex: 2 }} />
-        <Skeleton style={{ height: 400, flex: 1 }} />
+    <div className="page container" style={{ maxWidth: 1000, padding: '2rem 1rem' }}>
+      <Skeleton style={{ height: 40, width: '40%', marginBottom: '1rem', borderRadius: 8 }} />
+      <Skeleton style={{ height: 20, width: '25%', marginBottom: '2rem', borderRadius: 6 }} />
+      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+        <Skeleton style={{ height: 380, flex: '2 1 500px', borderRadius: 16 }} />
+        <Skeleton style={{ height: 380, flex: '1 1 280px', borderRadius: 16 }} />
       </div>
     </div>
   );
 
-  if (!complaint) return <div className="page container text-center" style={{ padding: '5rem 0' }}><h2>Complaint Not Found</h2></div>;
+  if (!complaint) return (
+    <div className="page container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '65vh', padding: '2rem 1rem' }}>
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }} 
+        animate={{ opacity: 1, scale: 1 }} 
+        className="card" 
+        style={{ maxWidth: 480, width: '100%', textAlign: 'center', padding: '3rem 2rem', border: '1px solid var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.06)' }}
+      >
+        <div style={{
+          width: '72px',
+          height: '72px',
+          borderRadius: '50%',
+          background: 'rgba(239, 68, 68, 0.1)',
+          color: 'var(--danger)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 1.5rem',
+          boxShadow: '0 8px 20px rgba(239, 68, 68, 0.15)'
+        }}>
+          <AlertTriangle size={36} />
+        </div>
+        <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '0.6rem', color: 'var(--text-primary)' }}>
+          Complaint Not Found
+        </h2>
+        <p className="text-muted text-sm mb-3" style={{ lineHeight: 1.6 }}>
+          This grievance issue could not be found. It may have been resolved, archived, or the link in your browser may be incomplete.
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link to="/feed" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Globe size={16} /> Public Feed
+          </Link>
+          <Link to="/complaints" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <ChevronLeft size={16} /> My Complaints
+          </Link>
+          <Link to="/complaints/new" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <PlusCircle size={16} /> New Issue
+          </Link>
+        </div>
+      </motion.div>
+    </div>
+  );
+
 
   const bColor = 
     complaint.priority === 'Critical' ? 'var(--danger)' :
