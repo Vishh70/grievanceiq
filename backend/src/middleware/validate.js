@@ -35,7 +35,9 @@ const validate = (schema) => async (req, res, next) => {
     });
     return next();
   } catch (error) {
-    return res.status(400).json({ error: error.errors.map(e => e.message).join(', ') });
+    const messages = error.errors || error.issues;
+    const msg = Array.isArray(messages) ? messages.map(e => e.message).join(', ') : error.message;
+    return res.status(400).json({ error: msg });
   }
 };
 

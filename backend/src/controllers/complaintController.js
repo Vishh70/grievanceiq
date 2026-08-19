@@ -65,15 +65,15 @@ exports.createComplaint = async (req, res) => {
           console.warn("Text search similarity failed (Index might be missing):", err.message);
         }
 
-        complaint.category = aiResult.category;
-        complaint.priority = aiResult.priority;
-        complaint.recommendedDepartment = aiResult.recommendedDepartment;
-        complaint.keywords = aiResult.keywords;
-        complaint.similarGroupId = similarGroupId;
-        complaint.isDuplicate = isDuplicate;
-        complaint.aiProcessed = true;
-
-        await complaint.save();
+        await Complaint.findByIdAndUpdate(complaint._id, {
+          category: aiResult.category,
+          priority: aiResult.priority,
+          recommendedDepartment: aiResult.recommendedDepartment,
+          keywords: aiResult.keywords,
+          similarGroupId: similarGroupId,
+          isDuplicate: isDuplicate,
+          aiProcessed: true
+        });
         console.log(`Complaint ${complaint._id} AI processed via Gemini.`);
       } catch (aiErr) {
         console.error('Gemini AI processing failed:', aiErr.message);
