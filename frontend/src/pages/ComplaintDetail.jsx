@@ -111,20 +111,20 @@ export default function ComplaintDetail() {
           <ChevronLeft size={16} /> Back to My Complaints
         </Link>
 
-        {/* Hero Banner */}
+        {/* Hero Banner (Light Theme) */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="card mb-2"
           style={{ 
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95))',
-            borderLeft: `4px solid ${bColor}`,
-            padding: '1.75rem 1.5rem',
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            borderLeft: `5px solid ${bColor}`,
+            padding: '1.5rem 1.25rem',
             borderRadius: '16px',
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-            borderRight: '1px solid rgba(255,255,255,0.08)',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.35)'
+            borderTop: '1px solid rgba(226, 232, 240, 0.9)',
+            borderRight: '1px solid rgba(226, 232, 240, 0.9)',
+            borderBottom: '1px solid rgba(226, 232, 240, 0.9)',
+            boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)'
           }}
         >
           <div className="flex items-center justify-between flex-wrap gap-1 mb-1">
@@ -133,9 +133,9 @@ export default function ComplaintDetail() {
               <span className="badge badge-info">{complaint.status}</span>
               {complaint.severityScore != null && (
                 <span className="badge" style={{
-                  background: complaint.severityScore >= 8 ? 'rgba(239, 68, 68, 0.2)' : complaint.severityScore >= 6 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(59, 130, 246, 0.2)',
-                  color: complaint.severityScore >= 8 ? '#f87171' : complaint.severityScore >= 6 ? '#fbbf24' : '#60a5fa',
-                  border: `1px solid ${complaint.severityScore >= 8 ? 'rgba(239, 68, 68, 0.4)' : complaint.severityScore >= 6 ? 'rgba(245, 158, 11, 0.4)' : 'rgba(59, 130, 246, 0.4)'}`,
+                  background: complaint.severityScore >= 8 ? '#fef2f2' : complaint.severityScore >= 6 ? '#fffbeb' : '#eff6ff',
+                  color: complaint.severityScore >= 8 ? '#b91c1c' : complaint.severityScore >= 6 ? '#b45309' : '#1d4ed8',
+                  border: `1px solid ${complaint.severityScore >= 8 ? '#fecaca' : complaint.severityScore >= 6 ? '#fde68a' : '#bfdbfe'}`,
                   fontWeight: 700,
                   gap: '4px'
                 }}>
@@ -143,47 +143,47 @@ export default function ComplaintDetail() {
                 </span>
               )}
               {complaint.isDuplicate && (
-                <span className="badge badge-critical" style={{ marginLeft: '0.25rem' }}>DUPLICATE ISSUE</span>
+                <span className="badge badge-critical">DUPLICATE ISSUE</span>
               )}
             </div>
             {complaint.aiProcessed && (
-               <span className="badge" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#c7d2fe', border: '1px solid rgba(99, 102, 241, 0.3)' }}>✨ AI Verified</span>
+               <span className="badge" style={{ background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe' }}>✨ AI Verified</span>
             )}
           </div>
-          <h1 style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2.2rem)', fontWeight: 800, margin: '0.6rem 0 0.35rem', letterSpacing: '-0.02em', color: '#ffffff' }}>
+          <h1 style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', fontWeight: 800, margin: '0.6rem 0 0.35rem', letterSpacing: '-0.02em', color: '#0f172a' }}>
             Complaint #{complaint._id.slice(-6).toUpperCase()}
           </h1>
-          <p className="text-muted flex items-center gap-1 text-sm">
-            <Calendar size={14} /> Reported on {new Date(complaint.createdAt).toLocaleDateString()} by <strong style={{ color: 'var(--text-secondary)' }}>{complaint.citizenId?.name || 'Citizen'}</strong>
+          <p className="flex items-center gap-1 text-sm" style={{ color: '#64748b', flexWrap: 'wrap' }}>
+            <Calendar size={14} /> Reported on {new Date(complaint.createdAt).toLocaleDateString()} by <strong style={{ color: '#334155' }}>{complaint.citizenId?.name || 'Citizen'}</strong>
           </p>
         </motion.div>
 
-        <div className="grid-responsive-sidebar" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem', alignItems: 'start', paddingBottom: '3rem' }}>
+        <div className="grid-responsive-sidebar" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', alignItems: 'start', paddingBottom: '6rem' }}>
           
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex-col gap-2">
-            <div className="card">
-              <h3 className="flex items-center gap-1 mb-1 pb-1" style={{ borderBottom: '1px solid var(--border)' }}>
-                <MessageSquare size={18} /> Description
+            <div className="card" style={{ background: '#ffffff', border: '1px solid rgba(226, 232, 240, 0.9)', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+              <h3 className="flex items-center gap-1 mb-1 pb-1" style={{ borderBottom: '1px solid var(--border)', color: '#0f172a' }}>
+                <MessageSquare size={18} color="#4f46e5" /> Description
               </h3>
-              <p style={{ fontSize: '1.05rem', whiteSpace: 'pre-wrap', color: 'var(--text-primary)', lineHeight: 1.7 }}>{complaint.text}</p>
+              <p style={{ fontSize: '1rem', whiteSpace: 'pre-wrap', color: '#1e293b', lineHeight: 1.7 }}>{complaint.text}</p>
             </div>
 
             {(complaint.imageBase64 || complaint.imageUrl) && (
-              <div className="card" style={{ padding: '0.5rem' }}>
+              <div className="card" style={{ padding: '0.5rem', background: '#ffffff', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
                 <div 
                   style={{ position: 'relative', cursor: 'zoom-in', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}
                   onClick={() => setLightbox(true)}
                 >
                   <img src={complaint.imageBase64 || complaint.imageUrl} alt="Evidence" style={{ width: '100%', maxHeight: '450px', objectFit: 'cover', display: 'block', transition: 'transform 0.3s' }} onMouseOver={e => e.currentTarget.style.transform='scale(1.02)'} onMouseOut={e => e.currentTarget.style.transform='scale(1)'} />
-                  <div style={{ position: 'absolute', bottom: 15, right: 15, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', padding: '0.5rem 1rem', borderRadius: '30px', color: '#fff', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+                  <div style={{ position: 'absolute', bottom: 15, right: 15, background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(10px)', padding: '0.5rem 1rem', borderRadius: '30px', color: '#fff', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
                     <Maximize2 size={14} /> Click to Enlarge
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="card mt-2">
-              <h3 className="mb-2 flex items-center gap-1"><Clock size={18}/> Status Timeline</h3>
+            <div className="card mt-2" style={{ background: '#ffffff', border: '1px solid rgba(226, 232, 240, 0.9)', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+              <h3 className="mb-2 flex items-center gap-1" style={{ color: '#0f172a' }}><Clock size={18} color="#4f46e5"/> Status Timeline</h3>
               <div style={{ position: 'relative', paddingLeft: '1.5rem', marginTop: '1rem' }}>
                 <div style={{ position: 'absolute', left: '11px', top: '24px', bottom: '24px', width: '2px', background: 'var(--border)' }}></div>
                 {complaint.statusHistory.map((h, i) => {
@@ -198,13 +198,13 @@ export default function ComplaintDetail() {
                       }}>
                         {isResolved ? <CheckCircle2 size={16} /> : <Clock size={16} />}
                       </div>
-                      <div className="card" style={{ padding: '1rem', background: isLast ? 'rgba(99,102,241,0.03)' : 'transparent', border: isLast ? '1px solid var(--border-glow)' : '1px solid var(--border)', boxShadow: 'none' }}>
-                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem' }}>{h.status}</div>
+                      <div className="card" style={{ padding: '1rem', background: isLast ? '#f8fafc' : 'transparent', border: isLast ? '1px solid #cbd5e1' : '1px solid var(--border)', boxShadow: 'none' }}>
+                        <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '1rem' }}>{h.status}</div>
                         <div className="text-sm text-muted mt-1" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <Calendar size={12} /> {new Date(h.date || complaint.createdAt).toLocaleString()}
                         </div>
                         {h.note && (
-                          <div className="text-sm mt-1" style={{ background: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--accent-light)', marginTop: '0.75rem' }}>
+                          <div className="text-sm mt-1" style={{ background: '#f1f5f9', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--accent-light)', marginTop: '0.75rem', color: '#334155' }}>
                             {h.note}
                           </div>
                         )}
@@ -218,63 +218,66 @@ export default function ComplaintDetail() {
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex-col gap-2">
             
-            <div className="card" style={{ background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.85))', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <h3 className="mb-1 flex items-center gap-1"><Layers size={18} color="var(--accent-light)"/> AI Triage & Metadata</h3>
+            {/* AI Triage & Metadata Card (Light Theme) */}
+            <div className="card" style={{ background: '#ffffff', border: '1px solid rgba(226, 232, 240, 0.9)', boxShadow: '0 4px 15px rgba(0,0,0,0.04)' }}>
+              <h3 className="mb-1 flex items-center gap-1" style={{ color: '#0f172a', fontSize: '1.05rem', fontWeight: 700 }}>
+                <Layers size={18} color="#4f46e5"/> AI Triage & Metadata
+              </h3>
               <div className="flex-col gap-1 mt-1">
-                <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'var(--border)' }}>
-                  <span className="text-muted flex items-center gap-1 text-sm"><Layers size={14} /> Category</span>
-                  <span style={{ fontWeight: 600 }}>{complaint.category || 'Pending AI'}</span>
+                <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'rgba(226, 232, 240, 0.8)' }}>
+                  <span className="flex items-center gap-1 text-sm" style={{ color: '#64748b' }}><Layers size={14} /> Category</span>
+                  <span style={{ fontWeight: 600, color: '#0f172a' }}>{complaint.category || 'Pending AI'}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'var(--border)' }}>
-                  <span className="text-muted flex items-center gap-1 text-sm"><AlertTriangle size={14} /> Priority</span>
+                <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'rgba(226, 232, 240, 0.8)' }}>
+                  <span className="flex items-center gap-1 text-sm" style={{ color: '#64748b' }}><AlertTriangle size={14} /> Priority</span>
                   <span className={`badge badge-${(complaint.priority || 'medium').toLowerCase()}`}>{complaint.priority}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'var(--border)' }}>
-                  <span className="text-muted flex items-center gap-1 text-sm"><Zap size={14} color="#f59e0b" /> Hazard Index</span>
+                <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'rgba(226, 232, 240, 0.8)' }}>
+                  <span className="flex items-center gap-1 text-sm" style={{ color: '#64748b' }}><Zap size={14} color="#d97706" /> Hazard Index</span>
                   {complaint.severityScore != null ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
                       <span style={{
                         fontWeight: 800,
                         fontSize: '0.88rem',
-                        color: complaint.severityScore >= 8 ? '#ef4444' : complaint.severityScore >= 6 ? '#f59e0b' : '#3b82f6',
+                        color: complaint.severityScore >= 8 ? '#dc2626' : complaint.severityScore >= 6 ? '#d97706' : '#2563eb',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '3px'
                       }}>
                         ⚡ {complaint.severityScore}/10
                       </span>
-                      <div style={{ width: '80px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+                      <div style={{ width: '80px', height: '5px', background: '#e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
                         <div style={{
                           width: `${(complaint.severityScore / 10) * 100}%`,
                           height: '100%',
-                          background: complaint.severityScore >= 8 ? '#ef4444' : complaint.severityScore >= 6 ? '#f59e0b' : '#3b82f6',
+                          background: complaint.severityScore >= 8 ? '#dc2626' : complaint.severityScore >= 6 ? '#d97706' : '#2563eb',
                           borderRadius: '10px'
                         }} />
                       </div>
                     </div>
                   ) : (
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Not assessed</span>
+                    <span style={{ color: '#94a3b8', fontSize: '0.82rem', fontStyle: 'italic' }}>Not assessed</span>
                   )}
                 </div>
-                <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'var(--border)' }}>
-                  <span className="text-muted flex items-center gap-1 text-sm"><Building size={14} /> Dept.</span>
-                  <span style={{ fontWeight: 600, textAlign: 'right', fontSize: '0.88rem' }}>{complaint.recommendedDepartment || 'Pending AI'}</span>
+                <div className="flex justify-between items-center py-1 border-b" style={{ borderColor: 'rgba(226, 232, 240, 0.8)' }}>
+                  <span className="flex items-center gap-1 text-sm" style={{ color: '#64748b' }}><Building size={14} /> Dept.</span>
+                  <span style={{ fontWeight: 600, textAlign: 'right', fontSize: '0.88rem', color: '#0f172a' }}>{complaint.recommendedDepartment || 'Pending AI'}</span>
                 </div>
                 {complaint.safetyHazards && complaint.safetyHazards.length > 0 && (
-                  <div className="py-2 border-b" style={{ borderColor: 'var(--border)' }}>
-                    <div className="text-xs text-muted flex items-center gap-1 mb-1 font-semibold">
-                      <ShieldAlert size={14} color="#ef4444" /> Detected Physical Hazards
+                  <div className="py-2 border-b" style={{ borderColor: 'rgba(226, 232, 240, 0.8)' }}>
+                    <div className="text-xs flex items-center gap-1 mb-1 font-bold" style={{ color: '#dc2626' }}>
+                      <ShieldAlert size={14} color="#dc2626" /> Detected Physical Hazards
                     </div>
                     <div className="flex gap-1 flex-wrap">
                       {complaint.safetyHazards.map((hazard, hi) => (
                         <span key={hi} style={{
                           fontSize: '0.75rem',
                           fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: '8px',
-                          background: 'rgba(239, 68, 68, 0.15)',
-                          color: '#f87171',
-                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          padding: '3px 9px',
+                          borderRadius: '6px',
+                          background: '#fef2f2',
+                          color: '#b91c1c',
+                          border: '1px solid #fecaca',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '3px'
@@ -286,37 +289,37 @@ export default function ComplaintDetail() {
                   </div>
                 )}
                 {complaint.keywords && complaint.keywords.length > 0 && (
-                  <div className="py-2 border-b" style={{ borderColor: 'var(--border)' }}>
-                    <div className="text-xs text-muted flex items-center gap-1 mb-1 font-semibold">
+                  <div className="py-2 border-b" style={{ borderColor: 'rgba(226, 232, 240, 0.8)' }}>
+                    <div className="text-xs flex items-center gap-1 mb-1 font-semibold" style={{ color: '#64748b' }}>
                       <Layers size={14} /> Detected Keywords
                     </div>
                     <div className="flex gap-1 flex-wrap">
                       {complaint.keywords.map((kw, i) => (
-                        <span key={i} className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border)', fontSize: '0.7rem' }}>{kw}</span>
+                        <span key={i} className="badge" style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #e2e8f0', fontSize: '0.7rem' }}>{kw}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 {complaint.suggestedAction && (
                   <div className="mt-2" style={{
-                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.08))',
-                    borderRadius: 'var(--radius-sm)',
-                    borderLeft: '4px solid var(--accent)',
-                    borderTop: '1px solid rgba(255,255,255,0.06)',
-                    borderRight: '1px solid rgba(255,255,255,0.06)',
-                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    background: '#f8fafc',
+                    borderRadius: '8px',
+                    borderLeft: '4px solid #4f46e5',
+                    borderTop: '1px solid #e2e8f0',
+                    borderRight: '1px solid #e2e8f0',
+                    borderBottom: '1px solid #e2e8f0',
                     padding: '0.85rem 1rem',
                     fontSize: '0.85rem'
                   }}>
-                    <div style={{ fontWeight: 700, color: '#e0e7ff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
-                      <ShieldAlert size={14} color="var(--accent-light)" /> Recommended Municipal Action
+                    <div style={{ fontWeight: 700, color: '#1e1b4b', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
+                      <ShieldAlert size={15} color="#4f46e5" /> Recommended Municipal Action
                     </div>
-                    <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45, fontSize: '0.82rem' }}>
+                    <p style={{ color: '#334155', margin: 0, lineHeight: 1.5, fontSize: '0.84rem' }}>
                       {complaint.suggestedAction}
                     </p>
                   </div>
                 )}
-                <div className="text-xs text-center mt-2" style={{ background: 'var(--accent-glow)', padding: '0.45rem', borderRadius: 'var(--radius-sm)', color: 'var(--accent-dark)', fontWeight: 600 }}>
+                <div className="text-xs text-center mt-2" style={{ background: '#eef2ff', padding: '0.45rem', borderRadius: '6px', color: '#4338ca', fontWeight: 600, border: '1px solid #c7d2fe' }}>
                   ✨ Analyzed via Gemini Vision & NLP
                 </div>
               </div>
