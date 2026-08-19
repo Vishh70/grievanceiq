@@ -158,7 +158,7 @@ export default function ComplaintDetail() {
           </p>
         </motion.div>
 
-        <div className="grid-responsive-sidebar" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', alignItems: 'start', paddingBottom: '6rem' }}>
+        <div className="grid-responsive-sidebar" style={{ paddingBottom: '6rem' }}>
           
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex-col gap-2">
             <div className="card" style={{ background: '#ffffff', border: '1px solid rgba(226, 232, 240, 0.9)', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>

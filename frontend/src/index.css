@@ -331,37 +331,10 @@ table tbody tr:hover {
     grid-template-columns: 1fr !important; 
   }
   .grid-responsive-sidebar { 
-    grid-template-columns: 1fr !important; 
-  }
-
-  /* Advanced Mobile Table (Cards) */
-  .table-wrap { overflow: visible; box-shadow: none; display: block; }
-  .table-wrap table, .table-wrap thead, .table-wrap tbody, .table-wrap th, .table-wrap td, .table-wrap tr { 
-    display: block; 
-  }
-  .table-wrap thead tr { 
-    position: absolute; top: -9999px; left: -9999px; 
-  }
-  .table-wrap tr { 
-    border: 1px solid var(--border); border-radius: var(--radius-md); 
-    margin-bottom: 1rem; padding: 0.5rem; background: #fff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-  }
-  .table-wrap td { 
-    border: none; border-bottom: 1px solid var(--border); 
-    position: relative; padding-left: 40%; text-align: right; 
-    min-height: 40px; display: flex; justify-content: flex-end; align-items: center;
-  }
-  .table-wrap td:last-child { border-bottom: 0; }
-  .table-wrap td::before { 
-    position: absolute; top: 50%; left: 1rem; transform: translateY(-50%);
-    width: 35%; padding-right: 10px; white-space: nowrap; 
-    font-weight: 600; text-align: left; content: attr(data-label); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;
-  }
-  
-  /* Sidebar Order on Mobile */
-  .grid-responsive-sidebar { 
-    display: flex !important; flex-direction: column-reverse; gap: 1rem !important;
+    display: flex !important; 
+    flex-direction: column !important; 
+    width: 100% !important;
+    gap: 1.25rem !important;
   }
   
   /* Admin Dashboard Mobile Overrides */
