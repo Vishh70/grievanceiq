@@ -1,7 +1,7 @@
 // src/components/PWAInstallPrompt.jsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, X } from 'lucide-react';
+import { Smartphone, Download, X, Sparkles } from 'lucide-react';
 
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -9,9 +9,11 @@ export default function PWAInstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // If dismissed in this session, do not annoy user
-    if (sessionStorage.getItem('pwa_prompt_dismissed')) {
-      return;
+    // Check if dismissed within last 7 days
+    const dismissedAt = localStorage.getItem('pwa_prompt_dismissed_at');
+    if (dismissedAt) {
+      const daysSince = (Date.now() - parseInt(dismissedAt, 10)) / (1000 * 60 * 60 * 24);
+      if (daysSince < 7) return;
     }
 
     // Detect iOS
@@ -20,15 +22,17 @@ export default function PWAInstallPrompt() {
     if (isIOSDevice) setIsIOS(true);
 
     const timer = setTimeout(() => {
-      if (!sessionStorage.getItem('pwa_prompt_dismissed')) {
+      const isDismissed = localStorage.getItem('pwa_prompt_dismissed_at');
+      if (!isDismissed) {
         setShowPrompt(true);
       }
-    }, 2500);
+    }, 2000);
 
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      if (!sessionStorage.getItem('pwa_prompt_dismissed')) {
+      const isDismissed = localStorage.getItem('pwa_prompt_dismissed_at');
+      if (!isDismissed) {
         setShowPrompt(true);
       }
     };
@@ -37,6 +41,7 @@ export default function PWAInstallPrompt() {
     window.addEventListener('appinstalled', () => {
       setShowPrompt(false);
       setDeferredPrompt(null);
+      localStorage.setItem('pwa_prompt_dismissed_at', Date.now().toString());
     });
 
     return () => {
@@ -46,7 +51,7 @@ export default function PWAInstallPrompt() {
   }, []);
 
   const handleDismiss = () => {
-    sessionStorage.setItem('pwa_prompt_dismissed', 'true');
+    localStorage.setItem('pwa_prompt_dismissed_at', Date.now().toString());
     setShowPrompt(false);
   };
 
@@ -58,7 +63,7 @@ export default function PWAInstallPrompt() {
     
     if (!deferredPrompt) {
       import('react-hot-toast').then(({ default: toast }) => {
-        toast('Open your browser menu (⋮) and select "Install App"', { icon: 'ℹ️', duration: 4000 });
+        toast('Open your browser menu (⋮) and select "Install App"', { icon: '📱', duration: 4000 });
       });
       handleDismiss();
       return;
@@ -74,91 +79,142 @@ export default function PWAInstallPrompt() {
     <AnimatePresence>
       {showPrompt && (
         <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.95 }}
+          initial={{ opacity: 0, y: 40, scale: 0.92 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 50, scale: 0.95 }}
+          exit={{ opacity: 0, y: 30, scale: 0.92 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           style={{
             position: 'fixed',
-            bottom: '90px', // Placed safely above mobile bottom navigation
+            bottom: '88px', // Positioned above mobile navigation bar
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 99999,
-            width: 'calc(100% - 32px)',
-            maxWidth: '380px',
-            background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
-            borderRadius: '16px',
-            padding: '1rem 1.1rem',
-            boxShadow: '0 12px 30px rgba(79, 70, 229, 0.45)',
+            width: 'calc(100% - 28px)',
+            maxWidth: '420px',
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96))',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            borderRadius: '20px',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
+            padding: '1.1rem 1.2rem',
+            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.55), 0 0 25px rgba(99, 102, 241, 0.3)',
             color: 'white',
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
             gap: '0.85rem'
           }}
         >
-          <div style={{ background: 'rgba(255,255,255,0.22)', padding: '0.55rem', borderRadius: '50%', display: 'flex', flexShrink: 0 }}>
-            <Download size={22} color="white" />
-          </div>
-          
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h4 style={{ margin: '0 0 0.2rem 0', color: 'white', fontSize: '0.95rem', fontWeight: 600 }}>Install GrievanceIQ</h4>
-            {isIOS ? (
-              <p style={{ margin: 0, fontSize: '0.78rem', opacity: 0.92, lineHeight: 1.3 }}>
-                Tap <strong>Share</strong> then <strong>Add to Home Screen</strong>.
-              </p>
-            ) : (
-              <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.92, lineHeight: 1.3 }}>Add to home screen for native speed.</p>
-            )}
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-            {!isIOS && (
-              <button 
-                onClick={handleInstallClick}
-                style={{
-                  background: 'white',
-                  color: '#4f46e5',
-                  border: 'none',
-                  padding: '0.45rem 0.85rem',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontSize: '0.82rem',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-                }}
-              >
-                Install
-              </button>
-            )}
+          {/* Top Row: Icon + Header + Corner Close Button */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                padding: '0.6rem',
+                borderRadius: '12px',
+                display: 'flex',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                flexShrink: 0
+              }}>
+                <Smartphone size={20} color="white" />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <h4 style={{ margin: 0, color: '#ffffff', fontSize: '0.98rem', fontWeight: 700, letterSpacing: '-0.01em' }}>
+                    Install GrievanceIQ
+                  </h4>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    background: 'rgba(99, 102, 241, 0.3)',
+                    color: '#a5b4fc',
+                    border: '1px solid rgba(165, 180, 252, 0.3)',
+                    padding: '1px 6px',
+                    borderRadius: '999px',
+                    fontWeight: 600
+                  }}>
+                    FAST APP
+                  </span>
+                </div>
+                <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8', lineHeight: 1.3 }}>
+                  {isIOS ? 'Tap Share → Add to Home Screen for full app' : 'Add to home screen for instant alerts & GPS accuracy'}
+                </p>
+              </div>
+            </div>
 
-            {/* Easy-to-tap Large Mobile Close Target */}
+            {/* Prominent High-Contrast Close 'X' Button */}
             <button 
               onClick={handleDismiss}
               aria-label="Close Install Banner"
               style={{
-                background: 'rgba(255,255,255,0.25)',
-                color: 'white',
-                border: 'none',
+                background: 'rgba(255, 255, 255, 0.12)',
+                color: '#cbd5e1',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: '50%',
-                width: '32px',
-                height: '32px',
+                width: '34px',
+                height: '34px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
                 touchAction: 'manipulation',
-                transition: 'background 0.2s',
+                transition: 'all 0.2s',
                 flexShrink: 0
               }}
-              onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.4)'}
-              onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
-              title="Dismiss"
+              onMouseOver={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.85)'; e.currentTarget.style.color = '#ffffff'; }}
+              onMouseOut={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'; e.currentTarget.style.color = '#cbd5e1'; }}
+              title="Close"
             >
-              <X size={18} strokeWidth={2.5} />
+              <X size={17} strokeWidth={2.5} />
             </button>
+          </div>
+
+          {/* Action Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.6rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.65rem' }}>
+            <button
+              onClick={handleDismiss}
+              style={{
+                background: 'transparent',
+                color: '#94a3b8',
+                border: 'none',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'color 0.2s'
+              }}
+              onMouseOver={e => e.currentTarget.style.color = '#ffffff'}
+              onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}
+            >
+              Not now
+            </button>
+
+            {!isIOS && (
+              <button 
+                onClick={handleInstallClick}
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  padding: '0.45rem 1.1rem',
+                  borderRadius: '10px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontSize: '0.84rem',
+                  boxShadow: '0 4px 14px rgba(79, 70, 229, 0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Download size={15} />
+                <span>Install Now</span>
+              </button>
+            )}
           </div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
+
 
