@@ -1,18 +1,15 @@
-// Align VM typed arrays with outer Node runtime for native ONNX tensor compatibility
-const outer = new Function('return { Float32Array, BigInt64Array, Int32Array, Uint8Array, Float64Array }')();
-global.Float32Array = outer.Float32Array;
-global.BigInt64Array = outer.BigInt64Array;
-global.Int32Array = outer.Int32Array;
-global.Uint8Array = outer.Uint8Array;
-global.Float64Array = outer.Float64Array;
 
 const request = require('supertest');
 const createApp = require('../src/app');
-const { generateEmbedding, cosineSimilarity } = require('../src/services/embeddingService');
+const { generateEmbedding, cosineSimilarity, disposeExtractor } = require('../src/services/embeddingService');
 
 describe('Phase 1: Semantic Embedding & Cosine Similarity Engine', () => {
   // Allow model download and initial loading time
   jest.setTimeout(60000);
+
+  afterAll(async () => {
+    await disposeExtractor();
+  });
 
   // ── Test 1 — Embedding generation ──────────────────────────────────────────
   describe('Test 1 — Embedding generation', () => {

@@ -52,8 +52,15 @@ async function generateEmbedding(text) {
       throw new Error('Pipeline output is missing tensor data');
     }
 
-    // Convert Float32Array to standard JavaScript Array of numbers
-    return Array.from(output.data);
+    // Extract data explicitly to avoid Jest cross-VM prototype errors like
+    // "A float32 tensor's data must be type of Float32Array"
+    const data = output.data;
+    const length = data.length;
+    const array = new Array(length);
+    for (let i = 0; i < length; i++) {
+      array[i] = Number(data[i]);
+    }
+    return array;
   } catch (error) {
     console.error('Error generating embedding with Xenova/all-MiniLM-L6-v2:', error.message);
     throw error;
@@ -109,8 +116,23 @@ function cosineSimilarity(vectorA, vectorB) {
   return Math.max(-1, Math.min(1, similarity));
 }
 
+async function disposeExtractor() {
+  if (extractorPromise) {
+    try {
+      const extractor = await extractorPromise;
+      if (extractor && typeof extractor.dispose === 'function') {
+        await extractor.dispose();
+      }
+    } catch (e) {
+      // Ignore errors during cleanup
+    }
+    extractorPromise = null;
+  }
+}
+
 module.exports = {
   generateEmbedding,
   cosineSimilarity,
-  getExtractor
+  getExtractor,
+  disposeExtractor
 };

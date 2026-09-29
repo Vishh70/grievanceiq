@@ -1,13 +1,7 @@
 // tests/relationship.test.js
 // Phase 3: Relationship Classification tests
 
-// Align VM typed arrays with outer Node runtime for native ONNX tensor compatibility
-const outer = new Function('return { Float32Array, BigInt64Array, Int32Array, Uint8Array, Float64Array }')();
-global.Float32Array = outer.Float32Array;
-global.BigInt64Array = outer.BigInt64Array;
-global.Int32Array = outer.Int32Array;
-global.Uint8Array = outer.Uint8Array;
-global.Float64Array = outer.Float64Array;
+
 
 const {
   predictRelationship,
@@ -15,9 +9,14 @@ const {
   extractRelationshipFeatures,
   CATEGORIES,
 } = require('../src/services/relationshipService');
+const { disposeExtractor } = require('../src/services/embeddingService');
 
 describe('Phase 3: Relationship Classification', () => {
   jest.setTimeout(60000);
+
+  afterAll(async () => {
+    await disposeExtractor();
+  });
 
   // ── Unit Tests ────────────────────────────────────────────────────────────
 
