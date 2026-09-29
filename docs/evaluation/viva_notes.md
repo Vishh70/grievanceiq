@@ -24,7 +24,7 @@ While AI is excellent at understanding natural language, operational execution r
 Tasks cannot be executed in arbitrary order. A road cannot be resurfaced before the underlying water pipe is repaired. A DAG perfectly models these prerequisites while guaranteeing that execution flows strictly in one direction without circular dependencies.
 
 ## 8. Why Kahn's Topological Sort?
-Kahn's Algorithm inherently detects circular dependencies (cycles) while flattening the DAG. Crucially, tasks that are processed in the same iteration of Kahn's loop have zero inter-dependencies, meaning they can be executed safely in parallel. This allows the system to generate parallel "Execution Stages".
+Kahn's Algorithm inherently detects circular dependencies (cycles) while flattening the DAG. If a cycle exists, Kahn's algorithm detects it; our implementation then reports the unresolved nodes. Crucially, tasks that are processed in the same iteration of Kahn's loop have zero inter-dependencies, meaning they can be executed safely in parallel. This allows the system to generate parallel "Execution Stages".
 
 ## 9. Why use Supabase?
 Supabase is built on PostgreSQL, allowing us to leverage `pgvector` for native, high-performance vector similarity search (cosine distance) directly alongside our relational data schema, avoiding the complexity of maintaining a separate standalone vector database.

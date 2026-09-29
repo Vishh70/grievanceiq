@@ -68,8 +68,8 @@ function createApp() {
       database: 'unknown',
       environment: process.env.NODE_ENV || 'development',
       services: {
-        embedding: 'available', // Local transformer
-        relationshipModel: 'available' // Local xenova
+        embedding: 'configured', // Local transformer (loaded on first use)
+        relationshipModel: 'configured' // Local xenova (loaded on first use)
       },
       time: new Date()
     };

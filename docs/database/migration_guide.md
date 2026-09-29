@@ -33,4 +33,4 @@ Execute the following files found in `docs/database/` in the exact order listed 
    - **Tables**: Creates `task_status_history` for immutable audit logging.
 
 ## Verification
-You can verify the schema by running a simple test insert or checking the Table Editor in the Supabase dashboard to confirm all 6 tables (`complaints`, `civic_issues`, `routing_results`, `workstreams`, `tasks`, `task_dependencies`, `task_status_history`) exist and contain the correct foreign key relationships.
+You can verify the schema by running a simple test insert or checking the Table Editor in the Supabase dashboard to confirm all 7 tables (`complaints`, `civic_issues`, `routing_results`, `workstreams`, `tasks`, `task_dependencies`, `task_status_history`) exist and contain the correct foreign key relationships.

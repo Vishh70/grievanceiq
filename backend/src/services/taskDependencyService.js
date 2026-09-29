@@ -192,7 +192,7 @@ async function getExecutionPlan(civicIssueId) {
     });
 
     taskReadiness[task.id] = {
-      ready: blockedByIncomplete.length === 0 && task.status !== 'COMPLETED',
+      ready: blockedByIncomplete.length === 0 && task.status === 'PENDING',
       blockedBy: blockedByIncomplete
     };
   }
