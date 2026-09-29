@@ -18,18 +18,22 @@ const app = createApp();
     }
 
     if (!existingAdmin) {
-      const bcrypt = require('bcryptjs');
-      const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 12);
-      
-      const { error: insertErr } = await supabase.from('users').insert([{
-        name: 'System Admin',
-        email: adminEmail,
-        password_hash: passwordHash,
-        role: 'admin'
-      }]);
-      
-      if (insertErr) throw insertErr;
-      console.log('✅ Default Admin created in Supabase: system@grievanceiq.com / admin123');
+      if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_PASSWORD) {
+        console.warn('⚠️ No ADMIN_PASSWORD provided in production. Default admin not created.');
+      } else {
+        const bcrypt = require('bcryptjs');
+        const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 12);
+        
+        const { error: insertErr } = await supabase.from('users').insert([{
+          name: 'System Admin',
+          email: adminEmail,
+          password_hash: passwordHash,
+          role: 'admin'
+        }]);
+        
+        if (insertErr) throw insertErr;
+        console.log(`✅ Default Admin created in Supabase: system@grievanceiq.com ${process.env.NODE_ENV === 'production' ? '(password from environment)' : '/ admin123'}`);
+      }
     }
   } catch (err) {
     console.error('Failed to seed admin:', err.message);

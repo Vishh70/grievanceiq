@@ -13,7 +13,10 @@ GrievanceIQ is an end-to-end civic intelligence and operational routing platform
 - **Frontend**: React (Vite), Recharts, Leaflet
 - **Backend**: Node.js, Express
 - **Database**: Supabase (PostgreSQL with `pgvector` for embeddings)
-- **AI/ML**: Local HuggingFace Transformers (`Xenova/all-MiniLM-L6-v2`) running via WebAssembly in Node.js. No external paid APIs are used.
+- **AI/ML**: Hybrid AI Architecture
+  - **Google Gemini**: Initial complaint understanding, category, priority, hazards, suggested action.
+  - **Local Transformers**: `Xenova/all-MiniLM-L6-v2` running via WebAssembly in Node.js for embeddings and semantic similarity.
+  - **Local Random Forest**: For relationship classification.
 
 ## Algorithms Used
 - **Cosine Similarity**: For detecting semantic closeness between texts.
@@ -26,7 +29,7 @@ GrievanceIQ is an end-to-end civic intelligence and operational routing platform
 ## Project Setup & Execution
 
 ### 1. Prerequisites
-- Node.js v18+
+- Node.js v22+
 - Supabase Project (PostgreSQL with `pgvector` enabled)
 
 ### 2. Installation

@@ -14,5 +14,7 @@ services:
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
+      - key: GEMINI_API_KEY
+        sync: false
       - key: CLIENT_URL
         sync: false

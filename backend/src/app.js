@@ -11,13 +11,13 @@ function createApp() {
 
   // Startup Config Validation
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseKey) {
     console.warn('[Startup] ⚠️ Supabase configuration: MISSING (Tests/Mocks may still work)');
   } else {
     console.log('[Startup] ✅ Supabase configuration: OK');
   }
-  console.log('[Startup] ✅ AI configuration: OK (using local transformers/Xenova)');
+  console.log('[Startup] ✅ AI configuration: OK (Hybrid: Gemini + Local Transformers/Xenova)');
 
   // ── Middleware ──────────────────────────────────────────────────────────────
   const allowedOrigins = [
@@ -65,20 +65,25 @@ function createApp() {
   app.get('/api/health', async (_req, res) => {
     const health = {
       status: 'ok',
-      database: 'unknown',
+      database: 'disconnected',
       environment: process.env.NODE_ENV || 'development',
       services: {
-        embedding: 'configured', // Local transformer (loaded on first use)
-        relationshipModel: 'configured' // Local xenova (loaded on first use)
+        ai: 'hybrid', // Gemini + Local Transformers
+        embedding: 'configured', 
+        relationshipModel: 'configured'
       },
       time: new Date()
     };
 
     // Check DB
     try {
-      const supabase = require('./config/supabase');
-      const { error } = await supabase.from('civic_issues').select('id').limit(1);
-      health.database = error ? 'error' : 'connected';
+      if (supabaseUrl && supabaseKey) {
+        const supabase = require('./config/supabase');
+        const { error } = await supabase.from('civic_issues').select('id').limit(1);
+        health.database = error ? 'error' : 'connected';
+      } else {
+        health.database = 'disconnected';
+      }
     } catch (e) {
       health.database = 'disconnected';
     }

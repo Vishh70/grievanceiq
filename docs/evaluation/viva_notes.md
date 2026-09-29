@@ -5,8 +5,8 @@ This document provides concise technical justifications for the architectural de
 ## 1. Why use semantic embeddings instead of keyword matching?
 Keyword matching (like standard SQL `LIKE`) fails when citizens describe the same issue using different vocabulary (e.g., "pothole" vs "broken road"). Semantic embeddings capture the contextual meaning of the text, allowing the system to match complaints that are linguistically different but topically identical.
 
-## 2. Why Xenova/all-MiniLM-L6-v2?
-It is a highly optimized, lightweight (approx. 80MB) transformer model that runs locally via WebAssembly. It provides excellent semantic accuracy without relying on expensive, rate-limited, or privacy-invasive third-party APIs like OpenAI, ensuring data privacy for citizen complaints.
+## 2. Why a Hybrid AI Architecture (Gemini + Xenova/all-MiniLM-L6-v2)?
+The system uses Google Gemini for initial complaint analysis (extracting priority, hazards, and categories) because LLMs excel at complex natural language understanding. However, for semantic matching and deduplication, we use `Xenova/all-MiniLM-L6-v2`. It is a highly optimized, lightweight (approx. 80MB) transformer model that runs locally via WebAssembly. This hybrid approach leverages the intelligence of an external LLM for intake while keeping the high-volume embedding and relationship generation entirely local and cost-free.
 
 ## 3. Why combine semantic similarity + location + time for duplicate detection?
 Semantic similarity alone is insufficient because "Pothole on Main St" and "Pothole on 5th Ave" are semantically identical but physically distinct. By combining text similarity with the Haversine formula (for GPS distance) and a temporal cutoff (e.g., 30 days), we create a robust, multi-dimensional duplicate detection heuristic.
