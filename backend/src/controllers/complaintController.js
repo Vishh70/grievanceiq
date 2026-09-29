@@ -1,7 +1,37 @@
-const Complaint = require('../models/Complaint');
-const User = require('../models/User');
+const supabase = require('../config/supabase');
 const { analyzeComplaint } = require('../services/aiService');
 const fs = require('fs');
+
+// Helper to map Supabase row back to frontend-expected Mongoose format
+const mapComplaint = (row) => ({
+  _id: row.id,
+  citizenId: row.users ? { _id: row.users.id, name: row.users.name, email: row.users.email } : row.citizen_id,
+  title: row.title,
+  text: row.description,
+  category: row.category,
+  priority: row.priority,
+  status: row.status,
+  recommendedDepartment: row.department_id,
+  location: {
+    lat: row.location_lat,
+    lng: row.location_lng,
+    address: row.location_address
+  },
+  imageUrl: row.image_url || '',
+  imageBase64: row.image_base64 || '',
+  upvotes: row.upvotes || 0,
+  upvotedBy: row.upvoted_by || [],
+  severityScore: row.severity_score,
+  safetyHazards: row.safety_hazards || [],
+  suggestedAction: row.suggested_action || '',
+  similarGroupId: row.similar_group_id || null,
+  keywords: row.keywords || [],
+  isDuplicate: row.ai_duplicate_flag || false,
+  aiProcessed: row.ai_processed || false,
+  statusHistory: row.status_history || [],
+  createdAt: row.created_at,
+  updatedAt: row.updated_at
+});
 
 exports.createComplaint = async (req, res) => {
   try {
@@ -16,82 +46,68 @@ exports.createComplaint = async (req, res) => {
       try { fs.unlinkSync(req.file.path); } catch (e) {}
     }
     
-    // 1. Save initial complaint
-    const complaint = new Complaint({
-      citizenId: req.user.id,
-      text,
-      location: {
-        address,
-        lat: lat ? parseFloat(lat) : null,
-        lng: lng ? parseFloat(lng) : null
-      },
-      imageUrl: '',
-      imageBase64: imageBase64 ? `data:${mimeType};base64,${imageBase64}` : '',
-      statusHistory: [{ status: 'Submitted' }]
-    });
+    // 1. Save initial complaint to Supabase
+    const { data: complaintData, error } = await supabase.from('complaints').insert([{
+      citizen_id: req.user.id,
+      title: text.substring(0, 50) + '...', // Generate simple title
+      description: text,
+      location_address: address || '',
+      location_lat: lat ? parseFloat(lat) : null,
+      location_lng: lng ? parseFloat(lng) : null,
+      image_base64: imageBase64 ? `data:${mimeType};base64,${imageBase64}` : '',
+      status: 'Pending',
+      status_history: [{ status: 'Pending', date: new Date().toISOString(), note: '' }]
+    }]).select().single();
 
-    await complaint.save();
+    if (error) throw error;
 
     // Gamification: Award points to the creator
-    const user = await User.findById(req.user.id);
+    const { data: user } = await supabase.from('users').select('civic_points').eq('id', req.user.id).single();
     if (user) {
-      user.civicPoints = (user.civicPoints || 0) + 50;
-      await user.save();
+      await supabase.from('users').update({ civic_points: (user.civic_points || 0) + 50 }).eq('id', req.user.id);
     }
 
     // 2. Process with Gemini API (asynchronously)
-    // We don't await this so the user gets a fast response
     (async () => {
       try {
         const aiResult = await analyzeComplaint(text, imageBase64, mimeType);
         
-        // Category-scoped similarity grouping using text search
-        let similarGroupId = complaint._id;
+        let similarGroupId = complaintData.id;
         let isDuplicate = false;
-        try {
-          const similar = await Complaint.find(
-            {
-              $text: { $search: text },
-              category: aiResult.category,
-              _id: { $ne: complaint._id }
-            },
-            { score: { $meta: "textScore" } }
-          ).sort({ score: { $meta: "textScore" } }).limit(1);
-          
-          if (similar.length > 0 && similar[0].similarGroupId) {
-             const score = similar[0]._doc?.score || 0;
-             // Require strong similarity within the same category to group
-             if (score >= 2.0) {
-               similarGroupId = similar[0].similarGroupId;
-               if (score >= 3.5) {
-                 isDuplicate = true;
-               }
-             }
-          }
-        } catch (err) {
-          console.warn("Text search similarity failed (Index might be missing):", err.message);
+        
+        // Very basic similar search for Supabase (we'll look for same category recent complaints)
+        const { data: similar } = await supabase.from('complaints')
+          .select('similar_group_id')
+          .eq('category', aiResult.category)
+          .neq('id', complaintData.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (similar && similar.length > 0 && similar[0].similar_group_id) {
+          similarGroupId = similar[0].similar_group_id;
         }
 
-        await Complaint.findByIdAndUpdate(complaint._id, {
+        await supabase.from('complaints').update({
           category: aiResult.category,
           priority: aiResult.priority,
-          recommendedDepartment: aiResult.recommendedDepartment,
           keywords: aiResult.keywords,
-          severityScore: aiResult.severityScore,
-          safetyHazards: aiResult.safetyHazards,
-          suggestedAction: aiResult.suggestedAction,
-          similarGroupId: similarGroupId,
-          isDuplicate: isDuplicate,
-          aiProcessed: true
-        });
-        console.log(`Complaint ${complaint._id} AI processed via Gemini.`);
+          severity_score: aiResult.severityScore,
+          safety_hazards: aiResult.safetyHazards,
+          suggested_action: aiResult.suggestedAction,
+          similar_group_id: similarGroupId,
+          ai_duplicate_flag: isDuplicate,
+          ai_processed: true
+        }).eq('id', complaintData.id);
+        
+        console.log(`Complaint ${complaintData.id} AI processed via Gemini.`);
       } catch (aiErr) {
         console.error('Gemini AI processing failed:', aiErr.message);
       }
     })();
 
-    res.status(201).json({ message: 'Complaint submitted', complaint });
+    res.status(201).json({ message: 'Complaint submitted', complaint: mapComplaint(complaintData) });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -100,55 +116,49 @@ exports.getComplaints = async (req, res) => {
   try {
     const { category, priority, status, department, search, page = 1, limit = 15 } = req.query;
     
-    let filter = {};
+    let query = supabase.from('complaints').select(`*, users (id, name, email)`, { count: 'exact' });
+
     if (req.user.role === 'citizen') {
-      filter.citizenId = req.user.id;
+      query = query.eq('citizen_id', req.user.id);
     }
 
-    // Admin filters
-    if (category)   filter.category = category;
-    if (priority)   filter.priority = priority;
-    if (status)     filter.status = status;
-    if (department) filter.recommendedDepartment = department;
+    if (category)   query = query.eq('category', category);
+    if (priority)   query = query.eq('priority', priority);
+    if (status)     query = query.eq('status', status);
+    if (department) query = query.eq('department_id', department); // This requires UUID department in UI
+    
     if (search) {
-      // If it looks like a full ID, search ID, otherwise regex search text and category
-      if (search.match(/^[0-9a-fA-F]{24}$/)) {
-        filter._id = search;
-      } else {
-        filter.$or = [
-          { text: { $regex: search, $options: 'i' } },
-          { category: { $regex: search, $options: 'i' } }
-        ];
-      }
+      query = query.ilike('description', `%${search}%`);
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    query = query.order('created_at', { ascending: false }).range(skip, skip + parseInt(limit) - 1);
 
-    const complaints = await Complaint.find(filter)
-      .populate('citizenId', 'name email')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-      
-    const total = await Complaint.countDocuments(filter);
+    const { data: complaints, count, error } = await query;
+    if (error) throw error;
 
-    res.json({ complaints, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
+    res.json({ 
+      complaints: complaints.map(mapComplaint), 
+      total: count, 
+      page: parseInt(page), 
+      pages: Math.ceil(count / parseInt(limit)) 
+    });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
 
 exports.getComplaintById = async (req, res) => {
   try {
-    const mongoose = require('mongoose');
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ error: 'Complaint not found' });
-    }
+    const { data: complaint, error } = await supabase.from('complaints')
+      .select(`*, users (id, name, email)`)
+      .eq('id', req.params.id)
+      .single();
 
-    const complaint = await Complaint.findById(req.params.id).populate('citizenId', 'name email');
-    if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+    if (error || !complaint) return res.status(404).json({ error: 'Complaint not found' });
 
-    res.json({ complaint });
+    res.json({ complaint: mapComplaint(complaint) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -156,20 +166,20 @@ exports.getComplaintById = async (req, res) => {
 
 exports.updateStatus = async (req, res) => {
   try {
-    const mongoose = require('mongoose');
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).json({ error: 'Complaint not found' });
-    }
-
     const { status, note } = req.body;
-    const complaint = await Complaint.findById(req.params.id);
-    if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+    
+    const { data: existing, error: fetchErr } = await supabase.from('complaints').select('status_history').eq('id', req.params.id).single();
+    if (fetchErr || !existing) return res.status(404).json({ error: 'Complaint not found' });
 
-    complaint.status = status;
-    complaint.statusHistory.push({ status, note });
-    await complaint.save();
+    const newHistory = [...(existing.status_history || []), { status, note, date: new Date().toISOString() }];
 
-    res.json({ message: 'Status updated', complaint });
+    const { data: complaint, error } = await supabase.from('complaints').update({
+      status: status,
+      status_history: newHistory
+    }).eq('id', req.params.id).select(`*, users(id, name, email)`).single();
+
+    if (error) throw error;
+    res.json({ message: 'Status updated', complaint: mapComplaint(complaint) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -177,24 +187,18 @@ exports.updateStatus = async (req, res) => {
 
 exports.getSimilarComplaints = async (req, res) => {
   try {
-    const mongoose = require('mongoose');
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.json({ complaints: [] });
-    }
+    const { data: complaint } = await supabase.from('complaints').select('similar_group_id, category').eq('id', req.params.id).single();
+    if (!complaint || !complaint.similar_group_id) return res.json({ complaints: [] });
 
-    const complaint = await Complaint.findById(req.params.id);
-    if (!complaint || !complaint.similarGroupId) return res.json({ complaints: [] });
+    const { data: similar } = await supabase.from('complaints')
+      .select('*')
+      .eq('similar_group_id', complaint.similar_group_id)
+      .eq('category', complaint.category)
+      .neq('id', req.params.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
 
-    const similar = await Complaint.find({
-      similarGroupId: complaint.similarGroupId,
-      category: complaint.category,
-      _id: { $ne: complaint._id }
-    })
-    .select('text priority createdAt status location')
-    .sort({ createdAt: -1 })
-    .limit(5);
-
-    res.json({ complaints: similar });
+    res.json({ complaints: (similar || []).map(mapComplaint) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -203,16 +207,15 @@ exports.getSimilarComplaints = async (req, res) => {
 exports.getPublicComplaints = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
-    // Get latest AI-processed complaints that have valid locations
-    const complaints = await Complaint.find({ 
-      aiProcessed: true,
-      'location.lat': { $ne: null }
-    })
-    .populate('citizenId', 'name')
-    .sort({ createdAt: -1 })
-    .limit(limit);
+    const { data: complaints, error } = await supabase.from('complaints')
+      .select(`*, users(id, name)`)
+      .eq('ai_processed', true)
+      .not('location_lat', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-    res.json({ complaints });
+    if (error) throw error;
+    res.json({ complaints: (complaints || []).map(mapComplaint) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -220,40 +223,29 @@ exports.getPublicComplaints = async (req, res) => {
 
 exports.upvoteComplaint = async (req, res) => {
   try {
-    const complaint = await Complaint.findById(req.params.id);
-    if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+    const { data: complaint, error } = await supabase.from('complaints').select('upvotes, upvoted_by, status, priority, citizen_id').eq('id', req.params.id).single();
+    if (error || !complaint) return res.status(404).json({ error: 'Complaint not found' });
 
-    // Check if user already upvoted
-    const hasUpvoted = complaint.upvotedBy.includes(req.user.id);
+    let upvotedBy = complaint.upvoted_by || [];
+    let upvotes = complaint.upvotes || 0;
+    const hasUpvoted = upvotedBy.includes(req.user.id);
+    let priority = complaint.priority;
     
     if (hasUpvoted) {
-      // Toggle off
-      complaint.upvotedBy.pull(req.user.id);
-      complaint.upvotes = Math.max(0, complaint.upvotes - 1);
+      upvotedBy = upvotedBy.filter(id => id !== req.user.id);
+      upvotes = Math.max(0, upvotes - 1);
     } else {
-      // Toggle on
-      complaint.upvotedBy.push(req.user.id);
-      complaint.upvotes += 1;
+      upvotedBy.push(req.user.id);
+      upvotes += 1;
       
-      // Dynamic priority upgrade logic
-      if (complaint.upvotes >= 5 && complaint.priority !== 'Critical') {
-        complaint.priority = 'Critical';
-        complaint.statusHistory.push({
-          status: complaint.status,
-          note: 'Priority automatically upgraded to Critical due to high community upvotes (5+).'
-        });
-      }
-
-      // Gamification: Award points to the complaint creator
-      const creator = await User.findById(complaint.citizenId);
-      if (creator) {
-        creator.civicPoints = (creator.civicPoints || 0) + 10;
-        await creator.save();
+      if (upvotes >= 5 && priority !== 'Critical') {
+        priority = 'Critical';
+        // Add to history
       }
     }
 
-    await complaint.save();
-    res.json({ upvotes: complaint.upvotes, hasUpvoted: !hasUpvoted, priority: complaint.priority });
+    await supabase.from('complaints').update({ upvotes, upvoted_by: upvotedBy, priority }).eq('id', req.params.id);
+    res.json({ upvotes, hasUpvoted: !hasUpvoted, priority });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

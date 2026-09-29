@@ -1,6 +1,7 @@
 // src/controllers/authController.js
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const supabase = require('../config/supabase');
 
 function signToken(id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -15,21 +16,24 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: 'Name, email and password are required' });
     }
 
-    const existing = await User.findOne({ email });
+    const { data: existing } = await supabase.from('users').select('*').eq('email', email).single();
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
-    // Only allow admin creation if explicitly requested AND caller is admin
     const assignedRole = role === 'admin' ? 'admin' : 'citizen';
+    const passwordHash = await bcrypt.hash(password, 12);
 
-    const user = await User.create({
+    const { data: user, error } = await supabase.from('users').insert([{
       name,
-      email,
-      passwordHash: password,   // pre-save hook hashes it
-      phone:  phone || '',
-      role:   assignedRole,
-    });
+      email: email.toLowerCase(),
+      password_hash: passwordHash,
+      phone: phone || '',
+      role: assignedRole,
+    }]).select().single();
 
-    const token = signToken(user._id);
+    if (error) throw error;
+
+    const token = signToken(user.id);
+    delete user.password_hash;
     res.status(201).json({ token, user });
   } catch (err) {
     console.error('Register error:', err);
@@ -44,14 +48,22 @@ exports.login = async (req, res) => {
     if (!email || !password)
       return res.status(400).json({ error: 'Email and password are required' });
 
-    const user = await User.findOne({ email });
-    if (!user || !(await user.matchPassword(password))) {
+    const { data: user, error } = await supabase.from('users').select('*').eq('email', email.toLowerCase()).single();
+    
+    if (error || !user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = signToken(user._id);
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const token = signToken(user.id);
+    delete user.password_hash;
     res.json({ token, user });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ error: err.message });
   }
 };

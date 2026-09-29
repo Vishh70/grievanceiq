@@ -1,6 +1,6 @@
 // src/middleware/auth.js
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const supabase = require('../config/supabase');
 
 /**
  * Protect route — requires a valid Bearer JWT
@@ -14,8 +14,12 @@ exports.protect = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-passwordHash');
-    if (!req.user) return res.status(401).json({ error: 'User not found' });
+    
+    const { data: user, error } = await supabase.from('users').select('*').eq('id', decoded.id).single();
+    if (error || !user) return res.status(401).json({ error: 'User not found' });
+    
+    delete user.password_hash;
+    req.user = user;
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Token invalid or expired' });
@@ -35,7 +39,11 @@ exports.optionalAuth = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-passwordHash');
+    const { data: user } = await supabase.from('users').select('*').eq('id', decoded.id).single();
+    if (user) {
+      delete user.password_hash;
+      req.user = user;
+    }
   } catch (err) {
     // Ignore invalid token for optional auth
   }
