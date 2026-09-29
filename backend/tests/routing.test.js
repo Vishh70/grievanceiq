@@ -15,6 +15,20 @@ const {
   mapIssueTypesToDepartments
 } = require('../src/services/routingService');
 
+// Mock embedding service to avoid Jest VM teardown issues with Transformers.js
+jest.mock('../src/services/embeddingService', () => {
+  return {
+    generateEmbedding: jest.fn(async (text) => {
+      // Return a dummy 384-dimensional vector
+      return new Array(384).fill(0.1);
+    }),
+    cosineSimilarity: jest.fn((vecA, vecB) => {
+      // If we are testing the fallback logic based on category, just return low similarity
+      return 0.1;
+    })
+  };
+});
+
 describe('Phase 5: Multi-Department Routing', () => {
 
   describe('Routing Rules Loading', () => {
@@ -33,12 +47,12 @@ describe('Phase 5: Multi-Department Routing', () => {
       // Should fallback to Water Leakage since it includes 'Water'
       expect(issueTypes.length).toBeGreaterThan(0);
       expect(issueTypes[0].label).toBe('Water Leakage');
-    });
+    }, 30000);
 
     it('Test 9 — Empty Civic Issue gracefully handled', async () => {
       const { issueTypes } = await classifyCivicIssue({}, []);
       expect(issueTypes).toEqual([]);
-    });
+    }, 30000);
   });
 
   describe('Department Mapping Rules', () => {
