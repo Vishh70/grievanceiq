@@ -7,7 +7,7 @@ import Skeleton from '../components/Skeleton';
 
 const PRIORITY_CLASS = { Critical: 'critical', High: 'high', Medium: 'medium', Low: 'low' };
 const STATUS_COLORS  = {
-  Submitted:   'var(--info)',
+  Pending:     'var(--info)',
   'In Review': 'var(--warning)',
   'In Progress': 'var(--accent)',
   Assigned:    'var(--accent-light)',

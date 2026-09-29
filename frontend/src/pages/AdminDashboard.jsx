@@ -456,7 +456,7 @@ export default function AdminDashboard() {
                 </select>
                 <select className="form-select" style={{ padding: '0.4rem 0.8rem', minWidth: '120px', flex: 1 }} value={filters.status} onChange={e => applyFilter('status', e.target.value)}>
                   <option value="">All Statuses</option>
-                  <option value="Submitted">Submitted</option>
+                  <option value="Pending">Pending</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
                   <option value="Rejected">Rejected</option>
@@ -489,7 +489,7 @@ export default function AdminDashboard() {
                     {complaints.length === 0 ? (
                       <tr><td colSpan="7" className="text-center text-muted">No complaints found.</td></tr>
                     ) : complaints.map((c, i) => {
-                      const isPending = c.status === 'Submitted' || c.status === 'In Review';
+                      const isPending = c.status === 'Pending' || c.status === 'In Review';
                       const hoursPending = (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60);
                       const isSlaBreached = isPending && hoursPending > 48;
 
@@ -544,7 +544,7 @@ export default function AdminDashboard() {
                                   ⚡ {c.severityScore}/10
                                 </span>
                               ) : (
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }} title="Submitted before AI severity scoring was enabled">
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }} title="Pending before AI severity scoring was enabled">
                                   (Unrated)
                                 </span>
                               )}
@@ -637,7 +637,7 @@ export default function AdminDashboard() {
                 <label className="form-label">Status</label>
                 <select className="form-select" value={newStatus} onChange={e => setNewStatus(e.target.value)}>
                   <option value="">Select Status...</option>
-                  <option value="Submitted">Submitted</option>
+                  <option value="Pending">Pending</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
                   <option value="Rejected">Rejected</option>
