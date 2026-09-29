@@ -30,18 +30,26 @@ export default function AdminDashboard() {
   const [statusModal, setStatusModal] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [statusNote, setStatusNote] = useState('');
+  
+  // Phase 5: Civic Issues State
+  const [civicIssues, setCivicIssues] = useState([]);
+  const [civicIssueModal, setCivicIssueModal] = useState(null);
+  const [civicIssueDetails, setCivicIssueDetails] = useState(null);
+  const [executionPlan, setExecutionPlan] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sumRes, compRes, simRes] = await Promise.all([
+        const [sumRes, compRes, simRes, civicRes] = await Promise.all([
           api.get('/dashboard/summary'),
           api.get('/complaints', { params: { ...filters, page, limit: 10 } }),
-          api.get('/dashboard/similar-groups')
+          api.get('/dashboard/similar-groups'),
+          api.get('/civic-issues').catch(() => ({ data: [] }))
         ]);
         setSummary(sumRes.data);
         setComplaints(compRes.data.complaints);
         setSimilarGroups(simRes.data.groups || []);
+        setCivicIssues(civicRes.data || []);
       } catch (err) {
         toast.error('Failed to load dashboard data.');
       } finally {
@@ -86,6 +94,33 @@ export default function AdminDashboard() {
       toast.success('Status updated', { id: toastId });
     } catch (err) {
       toast.error(err.response?.data?.error || 'Update failed', { id: toastId });
+    }
+  };
+
+  const fetchCivicIssueDetails = async (id) => {
+    try {
+      const [routingRes, planRes] = await Promise.all([
+        api.get(`/civic-issues/${id}/routing`),
+        api.get(`/civic-issues/${id}/execution-plan`)
+      ]);
+      setCivicIssueDetails(routingRes.data);
+      setExecutionPlan(planRes.data);
+      setCivicIssueModal(id);
+    } catch (err) {
+      toast.error('Failed to load civic issue details');
+    }
+  };
+
+  const handleTaskStatusChange = async (taskId, newStatus) => {
+    try {
+      await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
+      toast.success(`Task marked as ${newStatus}`);
+      // Refresh details
+      if (civicIssueModal && civicIssueModal !== 'list') {
+        fetchCivicIssueDetails(civicIssueModal);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to update task');
     }
   };
 
@@ -135,14 +170,23 @@ export default function AdminDashboard() {
             <h1 style={{ fontSize: '2.2rem', marginBottom: '0.25rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Admin Command Center</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>End-to-End Civic Intelligence & Analytics Platform</p>
           </div>
-          <motion.button 
-            whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.4)' }}
-            whileTap={{ scale: 0.95 }}
-            className="btn btn-primary" onClick={exportToCSV}
-            style={{ position: 'relative', zIndex: 1, background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', border: 'none' }}
-          >
-            📥 Export CSV Report
-          </motion.button>
+          <div className="flex gap-1" style={{ position: 'relative', zIndex: 1 }}>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="btn btn-secondary" onClick={() => setCivicIssueModal('list')}
+            >
+              🏛️ Civic Issues ({civicIssues.length})
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(99,102,241,0.4)' }}
+              whileTap={{ scale: 0.95 }}
+              className="btn btn-primary" onClick={exportToCSV}
+              style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-light))', border: 'none' }}
+            >
+              📥 Export CSV Report
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* Primary Issue Metrics */}
@@ -652,6 +696,140 @@ export default function AdminDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Phase 5 Civic Issues Modal */}
+      <AnimatePresence>
+        {civicIssueModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              className="card" style={{ width: '100%', maxWidth: 700, maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}
+            >
+              <button style={{ position: 'absolute', top: 15, right: 15, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => { setCivicIssueModal(null); setCivicIssueDetails(null); setExecutionPlan(null); }}>
+                <X size={20}/>
+              </button>
+
+              {civicIssueModal === 'list' ? (
+                <>
+                  <h2 className="mb-2 border-b pb-1">Civic Issues (Phase 4 & 5)</h2>
+                  {civicIssues.length === 0 ? <p className="text-muted">No Civic Issues formed yet.</p> : (
+                    <div className="flex-col gap-1">
+                      {civicIssues.map(issue => (
+                        <div key={issue.id} className="card card-glass p-2 flex justify-between items-center cursor-pointer hover-bg" onClick={() => fetchCivicIssueDetails(issue.id)}>
+                          <div>
+                            <h4 style={{ margin: 0 }}>{issue.title}</h4>
+                            <div className="text-sm text-muted">Priority: {issue.priority} | Complaints Attached: {issue.complaint_count}</div>
+                          </div>
+                          <button className="btn btn-sm btn-primary">View Routing</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : civicIssueDetails ? (
+                <>
+                  <h2 className="mb-2 border-b pb-1">Issue Routing & Workstreams</h2>
+                  
+                  <div className="mb-2">
+                    <h4 className="mb-1">Multi-Label Issue Types:</h4>
+                    <div className="flex gap-1 flex-wrap">
+                      {civicIssueDetails.issueTypes.map(t => (
+                        <span key={t.label} className="badge" style={{ background: 'rgba(99,102,241,0.2)', color: '#818cf8' }}>
+                          {t.label} ({(t.confidence*100).toFixed(0)}%)
+                        </span>
+                      ))}
+                      {civicIssueDetails.issueTypes.length === 0 && <span className="text-muted">None classified</span>}
+                    </div>
+                  </div>
+
+                  <div className="mb-2">
+                    <h4 className="mb-1">Required Departments:</h4>
+                    <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
+                      {civicIssueDetails.departments.map((d, i) => (
+                        <li key={i} className="text-sm">
+                          <strong>{d.department}</strong> - <span className="text-muted">{d.reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="mb-2">
+                    <h4 className="mb-1">Department Workstreams & Execution Plan:</h4>
+                    
+                    {executionPlan?.progress && (
+                      <div className="mb-2 p-2 card-glass">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Civic Issue Progress</span>
+                          <span>{executionPlan.progress.completionPercentage}% ({executionPlan.progress.completedTasks} / {executionPlan.progress.totalTasks} completed)</span>
+                        </div>
+                        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ width: `${executionPlan.progress.completionPercentage}%`, height: '100%', background: 'var(--success)', transition: 'width 0.3s ease' }} />
+                        </div>
+                      </div>
+                    )}
+
+                    {executionPlan?.stages?.map((stage) => (
+                      <div key={stage.stage} className="mb-2">
+                        <h5 className="text-muted mb-1" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '4px' }}>STAGE {stage.stage}</h5>
+                        {stage.tasks.map(taskId => {
+                          const task = civicIssueDetails.tasks.find(t => t.id === taskId);
+                          const ws = civicIssueDetails.workstreams.find(w => w.id === task?.workstream_id);
+                          const readiness = executionPlan.taskReadiness[taskId];
+                          if (!task) return null;
+
+                          return (
+                            <div key={task.id} className="mb-1 p-2 flex justify-between items-start" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div>
+                                <h5 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)' }}>{task.title}</h5>
+                                <div className="text-xs text-muted mb-1">{task.description}</div>
+                                <div className="text-xs text-accent">{ws?.department_id}</div>
+                                
+                                <div className="mt-1 flex items-center gap-1">
+                                  <span className={`badge badge-${task.status.toLowerCase()}`}>{task.status}</span>
+                                  {task.status === 'PENDING' && readiness && (
+                                    readiness.ready ? (
+                                      <span className="text-xs text-success flex items-center gap-1">▶ Ready</span>
+                                    ) : (
+                                      <div className="text-xs text-danger flex flex-col gap-1">
+                                        <span className="flex items-center gap-1">🔒 Blocked</span>
+                                        <span className="text-muted">Waiting for: {readiness.blockedBy.map(bId => civicIssueDetails.tasks.find(t=>t.id===bId)?.title).join(', ')}</span>
+                                      </div>
+                                    )
+                                  )}
+                                  {task.status === 'COMPLETED' && <span className="text-xs text-success flex items-center gap-1">✓ Completed</span>}
+                                  {task.status === 'IN_PROGRESS' && <span className="text-xs text-warning flex items-center gap-1">🔄 In Progress</span>}
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-col gap-1">
+                                {task.status === 'PENDING' && readiness?.ready && (
+                                  <button className="btn btn-sm btn-primary" onClick={() => handleTaskStatusChange(task.id, 'IN_PROGRESS')}>Start Task</button>
+                                )}
+                                {task.status === 'IN_PROGRESS' && (
+                                  <>
+                                    <button className="btn btn-sm btn-success" onClick={() => handleTaskStatusChange(task.id, 'COMPLETED')}>Complete</button>
+                                    <button className="btn btn-sm btn-danger" onClick={() => handleTaskStatusChange(task.id, 'CANCELLED')}>Cancel</button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                    {executionPlan?.stages?.length === 0 && <span className="text-muted">No workstreams generated.</span>}
+                  </div>
+                </>
+              ) : <div className="text-center p-2"><Activity className="spinner" /> Loading...</div>}
+              
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

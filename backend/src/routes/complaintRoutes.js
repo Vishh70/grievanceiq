@@ -12,7 +12,15 @@ const {
   getSimilarComplaints,
   getPublicComplaints,
   upvoteComplaint,
+  calculateSimilarity,
+  classifyRelationship,
 } = require('../controllers/complaintController');
+
+// Phase 1: Semantic similarity test endpoint
+router.post('/similarity', calculateSimilarity);
+
+// Phase 3: Relationship classification test endpoint
+router.post('/relationship', classifyRelationship);
 
 // Publicly readable endpoints (with optional auth for citizen upvote states)
 router.get('/public', optionalAuth, getPublicComplaints);

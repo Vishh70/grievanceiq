@@ -1,37 +1,50 @@
 const supabase = require('../config/supabase');
 const { analyzeComplaint } = require('../services/aiService');
+const { generateEmbedding, cosineSimilarity } = require('../services/embeddingService');
+const { findBestDuplicate, DUPLICATE_CONFIG } = require('../services/duplicateDetectionService');
+const { predictRelationship } = require('../services/relationshipService');
+const { processCivicIssueGrouping } = require('../services/civicIssueService');
 const fs = require('fs');
 
 // Helper to map Supabase row back to frontend-expected Mongoose format
-const mapComplaint = (row) => ({
-  _id: row.id,
-  citizenId: row.users ? { _id: row.users.id, name: row.users.name, email: row.users.email } : row.citizen_id,
-  title: row.title,
-  text: row.description,
-  category: row.category,
-  priority: row.priority,
-  status: row.status,
-  recommendedDepartment: row.department_id,
-  location: {
-    lat: row.location_lat,
-    lng: row.location_lng,
-    address: row.location_address
-  },
-  imageUrl: row.image_url || '',
-  imageBase64: row.image_base64 || '',
-  upvotes: row.upvotes || 0,
-  upvotedBy: row.upvoted_by || [],
-  severityScore: row.severity_score,
-  safetyHazards: row.safety_hazards || [],
-  suggestedAction: row.suggested_action || '',
-  similarGroupId: row.similar_group_id || null,
-  keywords: row.keywords || [],
-  isDuplicate: row.ai_duplicate_flag || false,
-  aiProcessed: row.ai_processed || false,
-  statusHistory: row.status_history || [],
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-});
+const mapComplaint = (row, includeEmbedding = false) => {
+  const mapped = {
+    _id: row.id,
+    citizenId: row.users ? { _id: row.users.id, name: row.users.name, email: row.users.email } : row.citizen_id,
+    title: row.title,
+    text: row.description,
+    category: row.category,
+    priority: row.priority,
+    status: row.status,
+    recommendedDepartment: row.department_id,
+    location: {
+      lat: row.location_lat,
+      lng: row.location_lng,
+      address: row.location_address
+    },
+    imageUrl: row.image_url || '',
+    imageBase64: row.image_base64 || '',
+    upvotes: row.upvotes || 0,
+    upvotedBy: row.upvoted_by || [],
+    severityScore: row.severity_score,
+    safetyHazards: row.safety_hazards || [],
+    suggestedAction: row.suggested_action || '',
+    similarGroupId: row.similar_group_id || null,
+    keywords: row.keywords || [],
+    isDuplicate: row.ai_duplicate_flag || false,
+    duplicateScore: row.duplicate_score || 0,
+    aiProcessed: row.ai_processed || false,
+    statusHistory: row.status_history || [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+
+  if (includeEmbedding && row.embedding_vector) {
+    mapped.embeddingVector = row.embedding_vector;
+  }
+
+  return mapped;
+};
 
 exports.createComplaint = async (req, res) => {
   try {
@@ -67,27 +80,97 @@ exports.createComplaint = async (req, res) => {
       await supabase.from('users').update({ civic_points: (user.civic_points || 0) + 50 }).eq('id', req.user.id);
     }
 
-    // 2. Process with Gemini API (asynchronously)
+    // 2. Process with Gemini AI + Phase 1 Embeddings + Phase 2 Duplicate Detection (asynchronously)
     (async () => {
       try {
         const aiResult = await analyzeComplaint(text, imageBase64, mimeType);
         
-        let similarGroupId = complaintData.id;
-        let isDuplicate = false;
-        
-        // Very basic similar search for Supabase (we'll look for same category recent complaints)
-        const { data: similar } = await supabase.from('complaints')
-          .select('similar_group_id')
-          .eq('category', aiResult.category)
-          .neq('id', complaintData.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (similar && similar.length > 0 && similar[0].similar_group_id) {
-          similarGroupId = similar[0].similar_group_id;
+        // Phase 1: Generate semantic embedding from citizen's original complaint text
+        let embeddingVector = [];
+        try {
+          embeddingVector = await generateEmbedding(text);
+        } catch (embedErr) {
+          console.error('Embedding generation failed (graceful degradation):', embedErr.message);
         }
 
-        await supabase.from('complaints').update({
+        // ── Phase 2: Real Duplicate Detection ────────────────────────────
+        let similarGroupId = complaintData.id;
+        let isDuplicate = false;
+        let duplicateScore = 0;
+        let duplicateCandidateId = null;
+        let dupSemanticScore = 0;
+        let dupLocationScore = 0;
+        let dupTemporalScore = 0;
+        let candidateComplaints = [];
+
+        try {
+          // Step 1: Retrieve candidate complaints (same category, recent, limit 100)
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - DUPLICATE_CONFIG.CANDIDATE_MAX_AGE_DAYS);
+
+          const { data: candidates } = await supabase.from('complaints')
+            .select('id, description, embedding_vector, location_lat, location_lng, created_at, similar_group_id, category')
+            .eq('category', aiResult.category)
+            .neq('id', complaintData.id)
+            .eq('ai_processed', true)
+            .gte('created_at', cutoffDate.toISOString())
+            .order('created_at', { ascending: false })
+            .limit(DUPLICATE_CONFIG.CANDIDATE_LIMIT);
+
+          if (candidates && candidates.length > 0) {
+            candidateComplaints = candidates;
+            // Build a virtual new-complaint object with the fields the scorer needs
+            const newComplaintForScoring = {
+              embedding_vector: embeddingVector,
+              location_lat: complaintData.location_lat,
+              location_lng: complaintData.location_lng,
+              created_at: complaintData.created_at,
+            };
+
+            const { bestMatch, allScores } = findBestDuplicate(newComplaintForScoring, candidates);
+
+            // Log top 3 candidates for diagnostics
+            const topN = allScores.slice(0, 3);
+            topN.forEach((s, i) => {
+              console.log(
+                `  Duplicate Check [${i + 1}] Candidate: ${s.candidateId} | ` +
+                `Semantic: ${s.semanticScore} | Dist: ${s.distanceMeters !== null ? s.distanceMeters + 'm' : 'N/A'} | ` +
+                `LocScore: ${s.locationScore} | TimeDiff: ${s.timeDiffHours !== null ? s.timeDiffHours + 'h' : 'N/A'} | ` +
+                `TempScore: ${s.temporalScore} | DupScore: ${s.duplicateScore} | ` +
+                `Result: ${s.isDuplicate ? 'DUPLICATE' : 'NOT DUPLICATE'}`
+              );
+            });
+
+            if (bestMatch) {
+              isDuplicate = true;
+              duplicateScore = bestMatch.duplicateScore;
+              duplicateCandidateId = bestMatch.candidateId;
+              dupSemanticScore = bestMatch.semanticScore;
+              dupLocationScore = bestMatch.locationScore;
+              dupTemporalScore = bestMatch.temporalScore;
+
+              // Inherit the matched complaint's similar_group_id
+              const matchedCandidate = candidates.find(c => c.id === bestMatch.candidateId);
+              if (matchedCandidate && matchedCandidate.similar_group_id) {
+                similarGroupId = matchedCandidate.similar_group_id;
+              } else {
+                similarGroupId = bestMatch.candidateId;
+              }
+
+              console.log(
+                `  ✅ DUPLICATE DETECTED: Complaint ${complaintData.id} matches ${bestMatch.candidateId} ` +
+                `(score: ${bestMatch.duplicateScore})`
+              );
+            } else {
+              console.log(`  ✗ No duplicate found for complaint ${complaintData.id} (${allScores.length} candidates checked)`);
+            }
+          }
+        } catch (dupErr) {
+          console.error('Phase 2 duplicate detection failed (graceful degradation):', dupErr.message);
+        }
+
+        // ── Build Supabase Update Payload ─────────────────────────────────
+        const updatePayload = {
           category: aiResult.category,
           priority: aiResult.priority,
           keywords: aiResult.keywords,
@@ -96,12 +179,59 @@ exports.createComplaint = async (req, res) => {
           suggested_action: aiResult.suggestedAction,
           similar_group_id: similarGroupId,
           ai_duplicate_flag: isDuplicate,
-          ai_processed: true
-        }).eq('id', complaintData.id);
+          ai_processed: true,
+          // Phase 2 diagnostic fields
+          duplicate_score: duplicateScore,
+          duplicate_candidate_id: duplicateCandidateId,
+          duplicate_semantic_score: dupSemanticScore,
+          duplicate_location_score: dupLocationScore,
+          duplicate_temporal_score: dupTemporalScore,
+        };
+
+        if (Array.isArray(embeddingVector) && embeddingVector.length > 0) {
+          updatePayload.embedding_vector = embeddingVector;
+        }
+
+        const { error: updateErr } = await supabase.from('complaints').update(updatePayload).eq('id', complaintData.id);
         
-        console.log(`Complaint ${complaintData.id} AI processed via Gemini.`);
+        if (updateErr) {
+          // If new Phase 2 columns are not yet present, strip them and retry
+          const missingColPatterns = ['embedding_vector', 'duplicate_score', 'duplicate_candidate_id',
+            'duplicate_semantic_score', 'duplicate_location_score', 'duplicate_temporal_score'];
+          const isMissingCol = missingColPatterns.some(p => updateErr.message && updateErr.message.includes(p));
+
+          if (isMissingCol) {
+            console.warn('⚠️ Supabase complaints table missing Phase 1/2 columns. Run docs/database/phase1_embedding.sql and phase2_duplicate_detection.sql');
+            // Retry with only the columns that existed in the original schema
+            missingColPatterns.forEach(col => delete updatePayload[col]);
+            await supabase.from('complaints').update(updatePayload).eq('id', complaintData.id);
+          } else {
+            console.error('Failed to update complaint with AI analysis:', updateErr.message);
+          }
+        }
+        
+        console.log(`Complaint ${complaintData.id} AI processed (Gemini + Embedding + Duplicate Detection).`);
+        
+        // ── Phase 4: Civic Issue Grouping ─────────────────────────────────
+        try {
+          // Re-create the full new complaint object for Phase 3/4 processing
+          const newComplaintObj = {
+            id: complaintData.id,
+            text: text,
+            category: aiResult.category,
+            location_lat: complaintData.location_lat,
+            location_lng: complaintData.location_lng,
+            created_at: complaintData.created_at,
+            embedding_vector: embeddingVector
+          };
+          
+          await processCivicIssueGrouping(newComplaintObj, candidateComplaints);
+          console.log(`Complaint ${complaintData.id} Civic Issue grouping complete.`);
+        } catch (grpErr) {
+          console.error('Phase 4 Civic Issue Grouping failed:', grpErr.message);
+        }
       } catch (aiErr) {
-        console.error('Gemini AI processing failed:', aiErr.message);
+        console.error('AI processing failed:', aiErr.message);
       }
     })();
 
@@ -250,3 +380,61 @@ exports.upvoteComplaint = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * Phase 1: Semantic Similarity Test Endpoint
+ * POST /api/complaints/similarity
+ * Body: { textA: string, textB: string }
+ * Response: { similarity: number }
+ */
+exports.calculateSimilarity = async (req, res) => {
+  try {
+    const { textA, textB } = req.body;
+
+    if (!textA || !textB || typeof textA !== 'string' || typeof textB !== 'string') {
+      return res.status(400).json({ error: 'Both textA and textB are required strings.' });
+    }
+
+    const [vectorA, vectorB] = await Promise.all([
+      generateEmbedding(textA),
+      generateEmbedding(textB)
+    ]);
+
+    const similarity = cosineSimilarity(vectorA, vectorB);
+
+    res.json({
+      similarity: Number(similarity.toFixed(4))
+    });
+  } catch (error) {
+    console.error('Similarity calculation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Phase 3: Relationship Classification Endpoint
+ * POST /api/complaints/relationship
+ * Body: { complaintA: object, complaintB: object }
+ * Response: { relationship, confidence, probabilities, features }
+ */
+exports.classifyRelationship = async (req, res) => {
+  try {
+    const { complaintA, complaintB } = req.body;
+
+    if (!complaintA || !complaintB) {
+      return res.status(400).json({ error: 'Both complaintA and complaintB are required.' });
+    }
+
+    const result = await predictRelationship(complaintA, complaintB);
+    
+    if (result.error) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Relationship classification error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+

@@ -1,0 +1,23 @@
+{
+  "name": "Demo Setup 1 - Water Leakage Cascade",
+  "complaints": [
+    {
+      "text": "Water pipe has burst near the main road.",
+      "category": "Infrastructure",
+      "location": { "lat": 12.971598, "lng": 77.594562 },
+      "priority": "High"
+    },
+    {
+      "text": "Road is flooded because water is leaking from the pipe.",
+      "category": "Roads",
+      "location": { "lat": 12.971600, "lng": 77.594600 },
+      "priority": "High"
+    },
+    {
+      "text": "Electrical box is exposed near the flooded road.",
+      "category": "Electricity",
+      "location": { "lat": 12.971580, "lng": 77.594500 },
+      "priority": "Critical"
+    }
+  ]
+}

@@ -1,118 +1,105 @@
-# GrievanceIQ — AI-Powered Citizen Complaint Intelligence Platform
+# GrievanceIQ
 
-> Built from the project proposal and end-to-end guide documents.
+GrievanceIQ is an end-to-end civic intelligence and operational routing platform. It transforms unstructured citizen complaints into structured, dependency-aware workflows for municipal departments using a hybrid of AI and deterministic graph algorithms.
 
-## Architecture
+## What GrievanceIQ Does
+1. **Intelligent Intake**: Accepts citizen complaints and generates local semantic embeddings.
+2. **Deduplication & Clustering**: Uses similarity, location, and time to detect duplicates and uses graph connected-components to cluster related issues into a unified `Civic Issue`.
+3. **Multi-Label Routing**: Evaluates complex issues (e.g., "pipe burst caused road flood") and assigns them to multiple required departments simultaneously.
+4. **Dependency-Aware Execution**: Converts assigned departmental workstreams into a Directed Acyclic Graph (DAG) of executable tasks.
+5. **Execution Tracking**: Provides a strict state machine to track resolution progress without allowing operators to skip required prerequisites.
 
-```
-frontend/    React + Vite (PWA)          → Vercel
-backend/     Node.js + Express + MongoDB → Render
-AI Service   Google Gemini API           → External API Call
-```
+## Architecture & Technology Stack
+- **Frontend**: React (Vite), Recharts, Leaflet
+- **Backend**: Node.js, Express
+- **Database**: Supabase (PostgreSQL with `pgvector` for embeddings)
+- **AI/ML**: Local HuggingFace Transformers (`Xenova/all-MiniLM-L6-v2`) running via WebAssembly in Node.js. No external paid APIs are used.
 
-## Quick Start
+## Algorithms Used
+- **Cosine Similarity**: For detecting semantic closeness between texts.
+- **Haversine Formula**: For calculating geographical distance penalties.
+- **Graph Connected Components**: For clustering pairs of relationships into broad civic issues.
+- **Directed Acyclic Graph (DAG)**: For modeling task prerequisites.
+- **Kahn's Topological Sort**: For flattening the DAG into parallel, executable work stages.
+- **Cycle Detection (DFS)**: For preventing impossible operational loops.
 
-### Prerequisites
-- Node.js 18+ (`node -v`)
-- MongoDB running locally OR MongoDB Atlas connection string
-- Google Gemini API Key
+## Project Setup & Execution
 
----
+### 1. Prerequisites
+- Node.js v18+
+- Supabase Project (PostgreSQL with `pgvector` enabled)
 
-### 1. Backend
-
+### 2. Installation
+Clone the repository and install dependencies for both components:
 ```bash
 cd backend
-# Copy .env.example → .env and fill in MONGO_URI and GEMINI_API_KEY
-copy .env.example .env
-
 npm install
-npm run dev
-# Server: http://localhost:5000
-# Health: http://localhost:5000/health
+cd ../frontend
+npm install
 ```
 
----
+### 3. Environment variables
+Create a `.env` file in the `backend/` directory:
+```text
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_key
+NODE_ENV=development
+```
+*(Never place actual secret values in README or commit them to version control).*
 
-### 2. Frontend
+### 4. Supabase setup
+Ensure your Supabase project is active and that the `pgvector` extension is enabled via the SQL editor:
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
 
+### 5. Database migrations
+Execute the following files found in `docs/database/` in the exact order below via the Supabase SQL Editor. See `docs/database/migration_guide.md` for verification details.
+1. `phase1_embedding.sql`
+2. `phase2_duplicate_detection.sql`
+3. `phase4_civic_issue.sql`
+4. `phase5_routing_tasks.sql`
+5. `phase6_task_dependencies.sql`
+6. `phase7_task_execution.sql`
+
+### 6. Backend startup
+```bash
+cd backend
+npm run dev
+```
+
+### 7. Frontend startup
 ```bash
 cd frontend
-npm install
 npm run dev
-# App: http://localhost:5173
 ```
 
----
+### 8. Running tests
+The backend includes a comprehensive suite. We use custom npm scripts to handle Node's experimental VM modules needed for local AI:
+```bash
+cd backend
+npm test                 # Run all tests
+npm run test:e2e         # Run end-to-end pipeline evaluation
+npm run test:integration # Run Supabase live integration tests
+```
 
-## API Reference
+### 9. Demo setup
+To automatically inject a reproducible demonstration scenario (a cascading multi-department failure) into the database:
+```bash
+cd backend
+npm run demo
+```
+This data is explicitly tagged with `[DEMO]` to prevent confusion with real complaints.
 
-### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Create citizen or admin account |
-| POST | `/api/auth/login` | Authenticate, receive JWT |
-| GET  | `/api/auth/me` | Get current user (protected) |
+### 10. Demo reset
+To safely remove all generated demo data without affecting real complaints:
+```bash
+cd backend
+npm run demo:reset
+```
 
-### Complaints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST   | `/api/complaints` | Submit complaint (text + optional image + location) |
-| GET    | `/api/complaints` | List complaints (citizen: own; admin: all with filters) |
-| GET    | `/api/complaints/:id` | Full complaint detail + status history |
-| PATCH  | `/api/complaints/:id/status` | Admin: update status + note |
-| GET    | `/api/complaints/:id/similar` | Get similar/duplicate complaint group |
-
-### Dashboard (admin only)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/dashboard/summary` | Summary cards + chart data + trend |
-
----
-
-## Features
-
-| Module | Description |
-|--------|-------------|
-| 🔐 Auth | JWT-based login/register for citizens and admins |
-| 📝 Complaint Submission | Text + image (Camera/Upload) + GPS location via Map |
-| 🤖 AI Classification | Real-time categorization using Google Gemini API |
-| ⚡ Priority Prediction | Critical / High / Medium / Low via Gemini |
-| 🏛 Dept Recommendation | Auto-routing to correct government department |
-| 📊 Admin Dashboard | Charts, filters, status updates, trend analysis |
-| 📋 Status Tracking | Full timeline visible to citizens |
-| 📱 PWA Support | Installable Progressive Web App with caching |
-
----
-
-## Technology Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, Vite, Recharts, React Router, Lucide, Framer Motion |
-| Backend | Node.js, Express.js, Mongoose, JWT, Multer |
-| Database | MongoDB Atlas |
-| AI/ML | Google Gemini API (`@google/generative-ai`) |
-| Deployment | Vercel (Frontend), Render (Backend) |
-
----
-
-## Troubleshooting
-
-| Symptom | Fix |
-|---------|-----|
-| `MongoNetworkError` | Check MONGO_URI in backend .env or Atlas IP Whitelist (`0.0.0.0/0`) |
-| AI Analysis Failing | Ensure `GEMINI_API_KEY` is set in the `.env` (it will fallback gracefully if missing) |
-| Server sleeping / Timeout | Free-tier Render takes ~45s to wake up on the first request. Wait 1 min and retry. |
-| 401 Unauthorized | Re-login; check JWT_SECRET matches |
-| Dashboard charts empty | Check category/priority values are case-exact |
-
----
-
-## Security Notes
-
-- Passwords hashed with **bcrypt** (12 rounds)
-- JWT signed with long random secret
-- File upload: images only, 5 MB max
-- Role-based access: citizens cannot reach admin routes
-- **Never commit `.env` files to Git**
+## Known Limitations
+Please review `docs/evaluation/limitations.md` for a comprehensive list of architectural and prototype boundaries. Most notably:
+- The AI models run locally and are evaluated on synthetic/prototype datasets.
+- Progress metrics treat all tasks equally (no effort-based weighting).
+- There is no live physical workforce dispatching or external municipal legacy system integration.

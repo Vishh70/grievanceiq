@@ -1,0 +1,29 @@
+# Final Project Readiness Checklist
+
+- [x] Frontend starts
+- [x] Backend starts
+- [x] Supabase connection works
+- [x] Authentication works
+- [x] Complaint submission works
+- [x] Embeddings work
+- [x] Duplicate detection works
+- [x] Relationship classification works
+- [x] Civic Issue grouping works
+- [x] Multi-label issue classification works
+- [x] Department mapping works
+- [x] Workstreams work
+- [x] Tasks generate correctly
+- [x] Dependencies generate correctly
+- [x] Cycle detection works
+- [x] Execution plan works
+- [x] Blocked tasks cannot start
+- [x] Ready tasks can start
+- [x] Completed tasks unlock downstream work
+- [x] Progress updates correctly
+- [x] Audit history works
+- [x] Admin dashboard shows execution state
+- [x] Regression tests pass
+- [x] Demo scenario works
+- [x] Database migrations documented
+- [x] Environment variables documented
+- [x] Known limitations documented

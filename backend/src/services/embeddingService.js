@@ -1,0 +1,116 @@
+// src/services/embeddingService.js
+const path = require('path');
+const fs = require('fs');
+
+// Ensure Windows native dependencies are accessible if running on win32
+if (process.platform === 'win32') {
+  const win64Dir = path.resolve(__dirname, '../../node_modules/onnxruntime-node/bin/napi-v3/win32/x64');
+  if (fs.existsSync(win64Dir)) {
+    process.env.PATH = win64Dir + ';' + (process.env.PATH || '');
+  }
+}
+
+// Helper for dynamic import that works in standard Node, bundlers, and Jest VM environments
+const dynamicImport = new Function('specifier', 'return import(specifier)');
+
+let extractorPromise = null;
+
+/**
+ * Lazily loads and caches the Transformers.js feature extraction pipeline.
+ * Uses the Xenova/all-MiniLM-L6-v2 pretrained model.
+ */
+async function getExtractor() {
+  if (!extractorPromise) {
+    extractorPromise = (async () => {
+      const { pipeline } = await dynamicImport('@xenova/transformers');
+      return await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    })();
+  }
+  return await extractorPromise;
+}
+
+/**
+ * Generates a 384-dimensional dense semantic embedding vector for the given text.
+ * Uses mean pooling and L2 normalization.
+ * 
+ * @param {string} text - Input text to embed
+ * @returns {Promise<number[]>} - Array of floating point numbers
+ */
+async function generateEmbedding(text) {
+  if (!text || typeof text !== 'string' || text.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    const extractor = await getExtractor();
+    const output = await extractor(text.trim(), {
+      pooling: 'mean',
+      normalize: true
+    });
+
+    if (!output || !output.data) {
+      throw new Error('Pipeline output is missing tensor data');
+    }
+
+    // Convert Float32Array to standard JavaScript Array of numbers
+    return Array.from(output.data);
+  } catch (error) {
+    console.error('Error generating embedding with Xenova/all-MiniLM-L6-v2:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Calculates the cosine similarity between two numerical vectors.
+ * 
+ * Formula: (A · B) / (||A|| * ||B||)
+ * 
+ * @param {number[]} vectorA 
+ * @param {number[]} vectorB 
+ * @returns {number} Cosine similarity score between -1 and 1 (or 0 for invalid inputs)
+ */
+function cosineSimilarity(vectorA, vectorB) {
+  if (!Array.isArray(vectorA) || !Array.isArray(vectorB)) {
+    return 0;
+  }
+
+  if (vectorA.length === 0 || vectorB.length === 0) {
+    return 0;
+  }
+
+  if (vectorA.length !== vectorB.length) {
+    return 0;
+  }
+
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+
+  for (let i = 0; i < vectorA.length; i++) {
+    const a = Number(vectorA[i]);
+    const b = Number(vectorB[i]);
+
+    if (!Number.isFinite(a) || !Number.isFinite(b)) {
+      return 0;
+    }
+
+    dotProduct += a * b;
+    normA += a * a;
+    normB += b * b;
+  }
+
+  if (normA === 0 || normB === 0) {
+    return 0;
+  }
+
+  const similarity = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  
+  // Guard against slight floating point inaccuracies exceeding [-1, 1]
+  return Math.max(-1, Math.min(1, similarity));
+}
+
+module.exports = {
+  generateEmbedding,
+  cosineSimilarity,
+  getExtractor
+};

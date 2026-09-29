@@ -1,0 +1,107 @@
+{
+  "relationship_evaluation": [
+    {
+      "complaintA": "Water pipe burst near college gate.",
+      "complaintB": "Severe water leakage at the college main gate.",
+      "expectedRelationship": "Duplicate"
+    },
+    {
+      "complaintA": "Water pipe burst near college gate.",
+      "complaintB": "Road flooded near college gate.",
+      "expectedRelationship": "Related"
+    },
+    {
+      "complaintA": "Pothole on Main Street.",
+      "complaintB": "Pothole on 5th Avenue.",
+      "expectedRelationship": "Similar"
+    },
+    {
+      "complaintA": "Streetlight broken on Oak Street.",
+      "complaintB": "Garbage not collected at Pine Street.",
+      "expectedRelationship": "Independent"
+    },
+    {
+      "complaintA": "Tree fell on power lines causing blackout.",
+      "complaintB": "No electricity in Sector 4 since morning.",
+      "expectedRelationship": "Related"
+    },
+    {
+      "complaintA": "Stray dogs biting people in the park.",
+      "complaintB": "Aggressive stray dogs at Central Park.",
+      "expectedRelationship": "Duplicate"
+    },
+    {
+      "complaintA": "Traffic light at 4th intersection is stuck on red.",
+      "complaintB": "Major traffic jam at 4th intersection.",
+      "expectedRelationship": "Related"
+    },
+    {
+      "complaintA": "Graffiti on the community center wall.",
+      "complaintB": "Vandalism at the community center.",
+      "expectedRelationship": "Duplicate"
+    },
+    {
+      "complaintA": "Water pipe burst.",
+      "complaintB": "No electricity.",
+      "expectedRelationship": "Independent"
+    },
+    {
+      "complaintA": "Blocked drainage causing mosquito breeding.",
+      "complaintB": "Mosquito infestation in the neighborhood due to stagnant water.",
+      "expectedRelationship": "Duplicate"
+    }
+  ],
+  "multi_label_evaluation": [
+    {
+      "complaints": [
+        "Water pipe burst causing flooding.",
+        "Road damaged by water.",
+        "Exposed electrical wires in the floodwater."
+      ],
+      "expectedIssueTypes": [
+        "Water Leakage",
+        "Road Flooding",
+        "Road Damage",
+        "Electrical Hazard"
+      ]
+    },
+    {
+      "complaints": [
+        "Garbage overflowing onto the street.",
+        "Stray dogs tearing garbage bags."
+      ],
+      "expectedIssueTypes": [
+        "Garbage Accumulation",
+        "Stray Animal Hazard"
+      ]
+    },
+    {
+      "complaints": [
+        "Pothole causing accidents.",
+        "Traffic light not working at the same intersection."
+      ],
+      "expectedIssueTypes": [
+        "Road Damage",
+        "Traffic Light Malfunction"
+      ]
+    }
+  ],
+  "duplicate_detection_evaluation": [
+    {
+      "scenario": "same wording + nearby GPS + nearby time",
+      "expected": "Duplicate"
+    },
+    {
+      "scenario": "same wording + far-away GPS",
+      "expected": "Not Duplicate"
+    },
+    {
+      "scenario": "same place + unrelated text",
+      "expected": "Not Duplicate"
+    },
+    {
+      "scenario": "same issue + old timestamp (>30 days)",
+      "expected": "Not Duplicate"
+    }
+  ]
+}

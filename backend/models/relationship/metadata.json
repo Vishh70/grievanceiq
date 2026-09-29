@@ -1,0 +1,111 @@
+{
+  "version": "1.0.0",
+  "phase": 3,
+  "trainingDate": "2026-09-29T15:30:22.312Z",
+  "datasetPath": "E:\\new project\\backend\\data\\relationship_pairs.csv",
+  "datasetSize": 60,
+  "trainSize": 48,
+  "testSize": 12,
+  "features": [
+    "semantic_similarity",
+    "location_score",
+    "temporal_score",
+    "duplicate_score",
+    "duplicate_flag",
+    "same_category",
+    "category_a_Roads",
+    "category_a_Water_Supply",
+    "category_a_Electricity",
+    "category_a_Drainage",
+    "category_a_Waste_Management",
+    "category_a_Public_Infrastructure",
+    "category_a_Other",
+    "category_b_Roads",
+    "category_b_Water_Supply",
+    "category_b_Electricity",
+    "category_b_Drainage",
+    "category_b_Waste_Management",
+    "category_b_Public_Infrastructure",
+    "category_b_Other"
+  ],
+  "featureCount": 20,
+  "labels": [
+    "Duplicate",
+    "Similar",
+    "Related",
+    "Independent"
+  ],
+  "hyperparameters": {
+    "nEstimators": 100,
+    "maxFeatures": 0.8,
+    "seed": 42,
+    "testSplit": 0.2
+  },
+  "trainMetrics": {
+    "accuracy": 1,
+    "perClass": [
+      {
+        "label": "Duplicate",
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "support": 11
+      },
+      {
+        "label": "Similar",
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "support": 12
+      },
+      {
+        "label": "Related",
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "support": 12
+      },
+      {
+        "label": "Independent",
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "support": 13
+      }
+    ]
+  },
+  "testMetrics": {
+    "accuracy": 1,
+    "perClass": [
+      {
+        "label": "Duplicate",
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "support": 4
+      },
+      {
+        "label": "Similar",
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "support": 3
+      },
+      {
+        "label": "Related",
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "support": 3
+      },
+      {
+        "label": "Independent",
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "support": 2
+      }
+    ]
+  },
+  "notes": "Seed dataset — metrics are preliminary. Add more labelled pairs for reliable evaluation."
+}

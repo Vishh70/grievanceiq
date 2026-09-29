@@ -1,0 +1,61 @@
+text_a,text_b,category_a,category_b,lat_a,lng_a,lat_b,lng_b,time_diff_hours,label
+"Large pothole near college gate causing accidents","Deep pothole outside college entrance very dangerous",Roads,Roads,18.6298,73.7997,18.6302,73.7999,2,Duplicate
+"Water pipe burst on 5th main road","Pipe leaking and flooding 5th main road",Water Supply,Water Supply,18.5314,73.8446,18.5316,73.8448,1,Duplicate
+"Complete power outage in Kothrud area since morning","Electricity failure affecting entire Kothrud locality",Electricity,Electricity,18.5074,73.8077,18.5076,73.8079,3,Duplicate
+"Broken streetlight on FC Road near cafe","Streetlight not working at FC Road junction",Public Infrastructure,Public Infrastructure,18.5314,73.8446,18.5316,73.8444,4,Duplicate
+"Garbage dumped near children park in Baner","Trash piled up outside public park Baner",Waste Management,Waste Management,18.5590,73.7868,18.5592,73.7870,2,Duplicate
+"Drain blocked on Tilak Road causing waterlogging","Drainage completely clogged on Tilak Road",Drainage,Drainage,18.5194,73.8457,18.5196,73.8459,1,Duplicate
+"Open manhole near Swargate bus stop very risky","Uncovered manhole on road near Swargate bus stand",Drainage,Drainage,18.5018,73.8636,18.5020,73.8638,3,Duplicate
+"Road cave-in at Shivaji Nagar intersection","Road collapsed at Shivaji Nagar junction after rain",Roads,Roads,18.5308,73.8475,18.5310,73.8477,2,Duplicate
+"Sewage overflow on our residential street","Sewage water leaking all over our street",Drainage,Drainage,18.5362,73.8939,18.5364,73.8941,1,Duplicate
+"No water supply for two days in Viman Nagar","Water not coming since 48 hours Viman Nagar",Water Supply,Water Supply,18.5679,73.9143,18.5681,73.9145,5,Duplicate
+"Transformer sparking dangerously at night in Hadapsar","Electrical transformer making sparks Hadapsar colony",Electricity,Electricity,18.5089,73.9260,18.5091,73.9262,2,Duplicate
+"Footpath broken with exposed iron rebar Camp area","Damaged footpath with iron rods sticking out near Camp",Public Infrastructure,Public Infrastructure,18.5133,73.8784,18.5135,73.8786,3,Duplicate
+"Construction debris blocking entire road Aundh","Rubble from construction site dumped on road Aundh",Roads,Roads,18.5580,73.8077,18.5582,73.8079,4,Duplicate
+"Fire hydrant leaking water continuously Deccan","Broken fire hydrant spraying water near Deccan area",Water Supply,Water Supply,18.5196,73.8411,18.5198,73.8413,1,Duplicate
+"Bus shelter roof completely broken Katraj","Damaged bus stop shelter in Katraj needs repair",Public Infrastructure,Public Infrastructure,18.4580,73.8660,18.4582,73.8662,2,Duplicate
+"Pothole on MG Road near traffic signal","Pothole on FC Road near restaurant",Roads,Roads,18.5155,73.8788,18.5314,73.8446,24,Similar
+"Streetlight broken on Main Street Kothrud","Streetlight not functioning on Park Avenue Baner",Electricity,Electricity,18.5074,73.8077,18.5590,73.7868,48,Similar
+"Garbage not collected in sector 5 Viman Nagar","Garbage pickup missed again in sector 12 Hadapsar",Waste Management,Waste Management,18.5679,73.9143,18.5089,73.9260,12,Similar
+"Water supply irregular in Koregaon Park","Water supply very low pressure in Viman Nagar",Water Supply,Water Supply,18.5362,73.8939,18.5679,73.9143,36,Similar
+"Drain blocked in Hadapsar causing problems","Drainage clogged in Katraj residential area",Drainage,Drainage,18.5089,73.9260,18.4580,73.8660,24,Similar
+"Road surface deteriorated badly near school","Road in terrible condition near district hospital",Roads,Roads,18.6298,73.7997,18.5308,73.8475,48,Similar
+"Power fluctuation damaging appliances in apartment","Voltage drops every evening in residential society",Electricity,Electricity,18.5580,73.8077,18.5314,73.8446,8,Similar
+"Public toilet not maintained at market area","Community toilet in extremely unhygienic condition",Public Infrastructure,Public Infrastructure,18.5018,73.8636,18.5155,73.8788,72,Similar
+"Overflowing dustbin near vegetable market","Garbage bin full and stinking badly near mall entrance",Waste Management,Waste Management,18.5194,73.8457,18.5590,73.7868,24,Similar
+"Broken bench in Empress Garden park","Damaged seating arrangement in Pu La Deshpande garden",Public Infrastructure,Public Infrastructure,18.5133,73.8784,18.5362,73.8939,48,Similar
+"Speed breaker too high causing vehicle damage","Speed bump needs urgent repair on main road",Roads,Roads,18.5580,73.8077,18.5074,73.8077,36,Similar
+"Water meter showing incorrect readings","Water bill displaying wrong consumption figures",Water Supply,Water Supply,18.5679,73.9143,18.5089,73.9260,24,Similar
+"Street drain cover missing on busy road","Manhole cover absent creating danger on road",Drainage,Drainage,18.5194,73.8457,18.5314,73.8446,72,Similar
+"Illegal dumping of construction waste on plot","Unauthorized debris dumped on empty plot near road",Waste Management,Waste Management,18.6298,73.7997,18.5580,73.8077,48,Similar
+"Daily power cut during peak evening hours","Regular electricity outage every evening in area",Electricity,Electricity,18.5074,73.8077,18.5308,73.8475,12,Similar
+"Water pipeline burst on main road","Road surface damaged due to water leakage underneath",Water Supply,Roads,18.5314,73.8446,18.5318,73.8450,12,Related
+"Open drainage causing stagnant water","Dengue and mosquito breeding reported in locality",Drainage,Other,18.5074,73.8077,18.5078,73.8081,48,Related
+"Large tree fallen across road after storm","Power line damaged and snapped by fallen tree",Other,Electricity,18.5308,73.8475,18.5310,73.8477,1,Related
+"Construction debris dumped blocking road","Heavy traffic congestion because road is blocked",Roads,Roads,18.6298,73.7997,18.6300,73.7999,6,Related
+"Severe street flooding due to heavy rain","Drainage system failure causing water accumulation",Roads,Drainage,18.5590,73.7868,18.5594,73.7872,2,Related
+"Garbage not collected for a week","Stray dogs gathering and fighting near waste pile",Waste Management,Other,18.5679,73.9143,18.5681,73.9145,24,Related
+"Broken water main causing flooding","Waterlogging making road unusable for vehicles",Water Supply,Roads,18.5018,73.8636,18.5022,73.8640,8,Related
+"Electrical pole leaning dangerously over road","Road needs closure for public safety near pole",Electricity,Roads,18.5194,73.8457,18.5196,73.8459,3,Related
+"Sewage mixing with drinking water supply","Multiple health complaints from contaminated water",Drainage,Other,18.5133,73.8784,18.5137,73.8788,48,Related
+"Illegal construction blocking natural drainage path","Adjacent houses flooding because drainage diverted",Other,Drainage,18.4580,73.8660,18.4584,73.8664,72,Related
+"Road digging for cable laying left unfinished","Unfinished road repair creating dangerous trench",Roads,Roads,18.5362,73.8939,18.5364,73.8941,24,Related
+"Overflowing drain near primary school","Children falling sick from sewage contamination",Drainage,Other,18.5580,73.8077,18.5584,73.8081,36,Related
+"Transformer overloaded beyond capacity","Frequent electrical short circuits in nearby homes",Electricity,Electricity,18.5155,73.8788,18.5159,73.8792,12,Related
+"Water tank overflow from municipal tank","Road surface slippery and damaged from water flow",Water Supply,Roads,18.5089,73.9260,18.5093,73.9264,6,Related
+"Public park lights not working at all","Crime and safety incidents increasing in dark park",Public Infrastructure,Other,18.6298,73.7997,18.6302,73.8001,48,Related
+"Large pothole on main road needs repair","No water supply in residential colony",Roads,Water Supply,18.5155,73.8788,18.5679,73.9143,72,Independent
+"Streetlight has been broken for weeks","Garbage not collected from our lane",Electricity,Waste Management,18.5074,73.8077,18.5590,73.7868,48,Independent
+"Drain blocked in our locality","Complete power outage in apartment complex",Drainage,Electricity,18.5308,73.8475,18.6298,73.7997,24,Independent
+"Road resurfacing needed urgently","Water meter giving faulty readings",Roads,Water Supply,18.5194,73.8457,18.5089,73.9260,96,Independent
+"Footpath tiles broken and dangerous","Bad smell from sewer near house",Public Infrastructure,Drainage,18.5133,73.8784,18.5580,73.8077,48,Independent
+"Transformer making loud humming noise","Garbage dumping on vacant plot",Electricity,Waste Management,18.4580,73.8660,18.5362,73.8939,72,Independent
+"Water contamination suspected in supply","New speed breaker needed on highway",Water Supply,Roads,18.5590,73.7868,18.5018,73.8636,120,Independent
+"Park bench vandalized by miscreants","Electricity bill dispute with provider",Public Infrastructure,Electricity,18.5362,73.8939,18.5074,73.8077,96,Independent
+"Unauthorized construction on government land","Water pipeline repair needed in old city",Other,Water Supply,18.5308,73.8475,18.5155,73.8788,48,Independent
+"Bus shelter advertising board fallen","Drain overflow in commercial area",Public Infrastructure,Drainage,18.5196,73.8411,18.5679,73.9143,72,Independent
+"Road marking completely faded at intersection","Water tanker not arriving on schedule",Roads,Water Supply,18.6298,73.7997,18.5089,73.9260,24,Independent
+"Streetlight timer needs adjustment","Garbage segregation rules not being followed",Electricity,Waste Management,18.5074,73.8077,18.4580,73.8660,120,Independent
+"Manhole cover missing from road","Trees need pruning in residential area",Drainage,Other,18.5194,73.8457,18.5590,73.7868,96,Independent
+"Water pressure very low in morning","Property tax office causing delays",Water Supply,Other,18.5314,73.8446,18.5308,73.8475,48,Independent
+"Noise pollution from construction site","Pothole causing accidents on highway",Other,Roads,18.5580,73.8077,18.5018,73.8636,72,Independent

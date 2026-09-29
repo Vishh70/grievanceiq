@@ -1,0 +1,34 @@
+# GrievanceIQ Release Checklist
+
+- [x] Backend starts
+- [x] Frontend starts
+- [x] Supabase configuration documented
+- [x] Required migrations documented
+- [x] Authentication works
+- [x] Complaint submission works
+- [x] Embedding service works
+- [x] Duplicate detection works
+- [x] Relationship classification works
+- [x] Civic Issue grouping works
+- [x] Multi-label classification works
+- [x] Department routing works
+- [x] Workstreams work
+- [x] Tasks generate correctly
+- [x] Dependencies work
+- [x] Cycle detection works
+- [x] Execution stages work
+- [x] Task blocking works
+- [x] Task starting works
+- [x] Task completion works
+- [x] Progress updates work
+- [x] Demo data can be created safely
+- [x] Demo can be reset safely
+- [x] Error states are understandable
+- [x] Mobile UI is usable
+- [x] README is current
+- [x] Architecture documentation is current
+- [x] Limitations are documented
+- [x] Viva notes exist
+- [x] Final regression tests completed
+- [x] No secret values are committed
+- [x] No unsupported accuracy claims are present

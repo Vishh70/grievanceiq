@@ -1,0 +1,57 @@
+[
+  {
+    "source": "Water Leakage",
+    "relation": "can_cause",
+    "target": "Road Damage"
+  },
+  {
+    "source": "Water Leakage",
+    "relation": "can_cause",
+    "target": "Road Flooding"
+  },
+  {
+    "source": "Drainage Overflow",
+    "relation": "can_cause",
+    "target": "Road Flooding"
+  },
+  {
+    "source": "Drainage Overflow",
+    "relation": "can_cause",
+    "target": "Health Hazard"
+  },
+  {
+    "source": "Electrical Pole Damage",
+    "relation": "can_cause",
+    "target": "Power Outage"
+  },
+  {
+    "source": "Transformer Failure",
+    "relation": "can_cause",
+    "target": "Power Outage"
+  },
+  {
+    "source": "Heavy Rain",
+    "relation": "can_cause",
+    "target": "Drainage Overflow"
+  },
+  {
+    "source": "Heavy Rain",
+    "relation": "can_cause",
+    "target": "Tree Fall"
+  },
+  {
+    "source": "Tree Fall",
+    "relation": "can_cause",
+    "target": "Road Blockage"
+  },
+  {
+    "source": "Tree Fall",
+    "relation": "can_cause",
+    "target": "Power Outage"
+  },
+  {
+    "source": "Construction Debris",
+    "relation": "can_cause",
+    "target": "Drainage Blockage"
+  }
+]
