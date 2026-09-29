@@ -104,5 +104,6 @@ npm run demo:reset
 ## Known Limitations
 Please review `docs/evaluation/limitations.md` for a comprehensive list of architectural and prototype boundaries. Most notably:
 - The AI models run locally and are evaluated on synthetic/prototype datasets.
+- The system is "CI-certified" (passing all automated GitHub Action tests) but is not validated on real-world municipal production scale workloads.
 - Progress metrics treat all tasks equally (no effort-based weighting).
 - There is no live physical workforce dispatching or external municipal legacy system integration.

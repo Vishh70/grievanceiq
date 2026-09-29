@@ -9,7 +9,7 @@ This document objectively outlines the architectural, dataset, and implementatio
 
 ## 2. Testing and Evaluation
 - **Synthetic Evaluation Data**: All E2E validations rely on synthetic, idealized scenarios (e.g., "Water pipe burst"). Real civic data is noisier and more ambiguous.
-- **Windows Jest / Transformer VM Teardown**: There is an unresolved upstream issue with running Node.js experimental VM modules containing local ONNX Transformers on Windows. This causes hanging teardowns in Jest (`Jest did not exit one second after the test run has completed`). It is an environment/test-runner warning and does not affect production execution.
+- **CI-Certified vs. Production-Validated**: While the system is "CI-certified" (the automated backend test suite passes completely within GitHub Actions infrastructure), it has not been stress-tested on live municipal production workloads. The CI certification proves algorithmic correctness in the prototype environment, not real-world deployment readiness.
 
 ## 3. Workflow and Architecture
 - **Equal Task Weighting in Progress**: The Civic Issue progress calculation treats all tasks equally (e.g., "Inspect leakage" is mathematically equal to "Rebuild entire road segment"). True progress tracking would require effort/time estimations per task.

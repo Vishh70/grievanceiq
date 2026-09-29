@@ -36,7 +36,7 @@ The system employs a cascading hybrid architecture:
 The intelligent components were validated against synthetic prototype datasets specifically constructed to represent challenging civic ambiguities (e.g., related cascading failures). Deterministic algorithms (Topological Sorting, Graph Traversal, and state transitions) were heavily validated via an isolated end-to-end regression test suite. 
 
 ## Limitations
-The project relies on a small prototype dataset for its relationship classification model and hard-coded zero-shot thresholds. It successfully calculates logical task dependencies but lacks physical resource-aware scheduling (truck routing, workforce availability) and does not integrate into legacy government dispatch systems.
+The project relies on a small prototype dataset for its relationship classification model and hard-coded zero-shot thresholds. While the system is fully "CI-certified"—meaning the codebase successfully executes its automated end-to-end regression suite (including real AI model inference and graph traversals) inside GitHub Actions—it has not been validated on real-world municipal production workloads. It successfully calculates logical task dependencies but lacks physical resource-aware scheduling (truck routing, workforce availability) and does not integrate into legacy government dispatch systems.
 
 ## Future Work
 Subsequent iterations would focus on training the sequence classifier on a massive corpus of verified municipal data, extending the topological sort to support resource-constrained critical path analysis, and providing geospatial dashboards for live worker dispatching.
