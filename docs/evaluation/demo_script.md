@@ -3,7 +3,7 @@
 This script provides a reproducible 5–10 minute demonstration sequence for the final-year project presentation.
 
 ## Setup
-Ensure the local development server is running (`npm run dev` in frontend, `npm start` in backend).
+Ensure the local development server is running (`npm run dev` in both frontend and backend).
 Open the GrievanceIQ application at `http://localhost:5173`.
 
 ## Sequence
