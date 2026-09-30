@@ -24,7 +24,7 @@ GrievanceIQ is an end-to-end civic intelligence and operational routing platform
 - **Graph Connected Components**: For clustering pairs of relationships into broad civic issues.
 - **Directed Acyclic Graph (DAG)**: For modeling task prerequisites.
 - **Kahn's Topological Sort**: For flattening the DAG into parallel, executable work stages.
-- **Cycle Detection (DFS)**: For preventing impossible operational loops.
+- **Cycle Detection (Kahn's residual-node validation)**: For preventing impossible operational loops.
 
 ## Project Setup & Execution
 
