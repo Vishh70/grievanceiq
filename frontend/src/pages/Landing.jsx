@@ -23,6 +23,15 @@ export default function Landing() {
   if (loading) return null;
   if (user) return <Navigate to={user.role === 'admin' ? '/admin' : '/complaints'} replace />;
 
+  const features = [
+    { icon: <MapPin size={24} color="var(--primary)" />, title: 'Report', desc: 'Submit rich civic issues with precision geolocation.' },
+    { icon: <Zap size={24} color="var(--accent)" />, title: 'Understand', desc: 'Multi-label classification via Semantic AI.' },
+    { icon: <ShieldCheck size={24} color="var(--success)" />, title: 'Connect', desc: 'Link related complaints via vector similarity.' },
+    { icon: <BarChart3 size={24} color="var(--warning)" />, title: 'Aggregate', desc: 'Detect and group duplicate incident reports.' },
+    { icon: <ShieldCheck size={24} color="var(--info)" />, title: 'Coordinate', desc: 'Dynamic routing across multiple departments.' },
+    { icon: <Zap size={24} color="var(--error)" />, title: 'Track', desc: 'Monitor resolution via dependency graphs.' },
+  ];
+
   return (
     <div className="landing-page" style={{ overflow: 'hidden' }}>
       {/* Animated Background Blobs */}
@@ -41,13 +50,13 @@ export default function Landing() {
         </div>
       </nav>
 
-      <main className="container" style={{ position: 'relative', zIndex: 10, textAlign: 'center', paddingTop: '8vh' }}>
+      <main className="container" style={{ position: 'relative', zIndex: 10, textAlign: 'center', paddingTop: '8vh', paddingBottom: '4rem' }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }}>
           <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', lineHeight: 1.1, marginBottom: '1.5rem', background: 'linear-gradient(135deg, var(--text-primary), var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Next-Gen Civic <br/> Intelligence Platform
+            Report → Understand → Connect<br />Aggregate → Coordinate → Track
           </h1>
-          <p style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '0 auto 3rem' }}>
-            Submit, track, and manage civic issues. Powered by AI to automatically route your complaints to the right department for faster resolution.
+          <p style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', maxWidth: 700, margin: '0 auto 3rem' }}>
+            GrievanceIQ is a complete Civic Intelligence Platform. From precision reporting to semantic vector deduplication and multi-department task orchestration, we turn chaotic civic feedback into coordinated action.
           </p>
           <div className="flex gap-1" style={{ justifyContent: 'center' }}>
             <Link to="/register" className="btn btn-primary btn-lg">Report an Issue</Link>
@@ -60,14 +69,9 @@ export default function Landing() {
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          style={{ marginTop: '5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem' }}
+          style={{ marginTop: '5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}
         >
-          {[
-            { icon: <Zap size={24} color="var(--accent)" />, title: 'AI Classification', desc: 'Automatically categorizes issues using Gemini AI.' },
-            { icon: <MapPin size={24} color="var(--warning)" />, title: 'Precision Mapping', desc: 'Pinpoint exact locations for rapid civic response.' },
-            { icon: <ShieldCheck size={24} color="var(--success)" />, title: 'Smart Routing', desc: 'Issues are sent straight to the correct department.' },
-            { icon: <BarChart3 size={24} color="var(--info)" />, title: 'Admin Analytics', desc: 'Real-time dashboard for city administrators.' },
-          ].map((f, i) => (
+          {features.map((f, i) => (
             <motion.div 
               key={i} 
               variants={itemVariants}
