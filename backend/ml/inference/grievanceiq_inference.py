@@ -25,7 +25,8 @@ from flask_cors import CORS
 # ── Paths ────────────────────────────────────────────────────────────────────
 
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(BASE_DIR, 'models')
+ML_DIR     = os.path.dirname(BASE_DIR)
+MODELS_DIR = os.path.join(ML_DIR, 'models')
 
 MODEL_PATH      = os.path.join(MODELS_DIR, 'multilabel_classifier.joblib')
 LABELS_PATH     = os.path.join(MODELS_DIR, 'issue_labels.json')
