@@ -222,32 +222,40 @@ exports.createComplaint = async (req, res) => {
           updatePayload.embedding_vector = embeddingVector;
         }
 
-        const { error: updateErr } = await supabase.from('complaints').update(updatePayload).eq('id', complaintData.id);
-
-        if (updateErr) {
-          // If new Phase 2/10 columns are not yet present, strip them conditionally and retry
-          const isPhase2Missing = ['embedding_vector', 'duplicate_score', 'duplicate_candidate_id', 'duplicate_semantic_score', 'duplicate_location_score', 'duplicate_temporal_score'].some(p => updateErr.message && updateErr.message.includes(p));
-          const isPhase10Missing = ['ml_labels', 'ml_probabilities', 'ml_departments'].some(p => updateErr.message && updateErr.message.includes(p));
-
-          if (isPhase2Missing || isPhase10Missing) {
-            console.warn(`⚠️ Supabase schema missing columns (Error: ${updateErr.message}). Retrying gracefully...`);
-            let retryPayload = { ...updatePayload };
-            
-            if (isPhase2Missing) {
-              ['embedding_vector', 'duplicate_score', 'duplicate_candidate_id', 'duplicate_semantic_score', 'duplicate_location_score', 'duplicate_temporal_score'].forEach(col => delete retryPayload[col]);
-            }
-            
-            if (isPhase10Missing) {
-              ['ml_labels', 'ml_probabilities', 'ml_departments'].forEach(col => delete retryPayload[col]);
-            }
-
-            const { error: retryErr } = await supabase.from('complaints').update(retryPayload).eq('id', complaintData.id);
-            if (retryErr) {
-              console.error('Graceful retry also failed:', retryErr.message);
-            }
-          } else {
-            console.error('Failed to update complaint with AI analysis:', updateErr.message);
+        let currentPayload = { ...updatePayload };
+        let updateSuccess = false;
+        let attempts = 0;
+        
+        while (!updateSuccess && attempts < 10) {
+          attempts++;
+          const { error: updateErr } = await supabase.from('complaints').update(currentPayload).eq('id', complaintData.id);
+          
+          if (!updateErr) {
+            updateSuccess = true;
+            break;
           }
+          
+          // Check if error is about a missing column
+          let badCol = null;
+          if (updateErr.message) {
+            if (updateErr.message.includes('does not exist')) {
+              const match = updateErr.message.match(/column "(.*?)" of relation/);
+              if (match) badCol = match[1];
+            } else if (updateErr.message.includes('Could not find the')) {
+              const match = updateErr.message.match(/find the '(.*?)' column/);
+              if (match) badCol = match[1];
+            }
+          }
+          
+          if (badCol) {
+            console.warn(`⚠️ Supabase schema missing column '${badCol}'. Stripping and retrying...`);
+            delete currentPayload[badCol];
+            continue;
+          }
+          
+          // If it's some other error, or we couldn't parse the column, stop retrying
+          console.error('Failed to update complaint with AI analysis:', updateErr.message);
+          break;
         }
         
         console.log(`Complaint ${complaintData.id} AI processed (Gemini + Embedding + Duplicate Detection).`);
