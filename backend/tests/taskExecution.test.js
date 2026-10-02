@@ -33,16 +33,46 @@ jest.mock('../src/services/taskDependencyService', () => ({
   })
 }));
 
+let mockCurrentTaskId = 'T1';
+
 jest.mock('../src/config/supabase', () => {
   return {
     from: jest.fn().mockImplementation((table) => {
       return {
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        insert: jest.fn().mockReturnThis(),
+        eq: jest.fn(function (field, value) {
+          if (field === 'id') mockCurrentTaskId = value;
+          const chainObj = {
+            single: jest.fn().mockImplementation(() => {
+              if (table === 'tasks') {
+                const t = mockTasks.find(t => t.id === mockCurrentTaskId) || mockTasks[0];
+                return { data: t, error: null };
+              }
+              if (table === 'workstreams') return { data: { status: 'PENDING' }, error: null };
+              if (table === 'civic_issues') return { data: { status: 'PENDING' }, error: null };
+              return { data: null, error: null };
+            }),
+            data: table === 'tasks' ? mockTasks : [{ id: 'ws-1' }],
+            error: null
+          };
+          chainObj.eq = this.eq;
+          chainObj.in = this.in;
+          return chainObj;
+        }),
+        in: jest.fn(function (field, value) {
+          const chainObj = {
+            single: jest.fn().mockImplementation(() => { return { data: null, error: null }; }),
+            data: [],
+            error: null
+          };
+          chainObj.eq = this.eq;
+          chainObj.in = this.in;
+          return chainObj;
+        }),
+        insert: jest.fn().mockReturnValue({ error: null }),
         update: jest.fn((updates) => {
           if (table === 'tasks') {
-            const taskId = updates.id || 'T1';
+            const taskId = updates.id || mockCurrentTaskId;
             const task = mockTasks.find(t => t.id === taskId);
             if (task) Object.assign(task, updates);
           }
@@ -59,43 +89,21 @@ jest.mock('../src/config/supabase', () => {
   };
 });
 
-
-
 describe('Phase 7: Task Execution & Progress Tracking', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTasks[0].status = 'PENDING';
+    mockTasks[1].status = 'PENDING';
+    mockTasks[2].status = 'PENDING';
   });
 
   it('Test 2 — Cannot start blocked task', async () => {
-    // Override single() mock for T2
-    const supabase = require('../src/config/supabase');
-    supabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        eq: () => ({
-          single: () => ({ data: mockTasks[1], error: null })
-        })
-      })
-    }));
-
     await expect(
       executionService.updateTaskStatus('T2', 'IN_PROGRESS', 'test@user.com')
     ).rejects.toThrow(/Blocked by/);
   });
 
   it('Test 1 — Start ready task & Test 11 — Timestamp tracking', async () => {
-    const supabase = require('../src/config/supabase');
-    supabase.from.mockImplementationOnce(() => ({
-      select: () => ({ eq: () => ({ single: () => ({ data: mockTasks[0], error: null }) }) })
-    })).mockImplementationOnce(() => ({
-      update: () => ({ eq: () => ({ error: null }) })
-    })).mockImplementationOnce(() => ({
-      insert: () => ({ error: null })
-    })).mockImplementationOnce(() => ({
-      select: () => ({ eq: () => ({ data: mockTasks }) })
-    })).mockImplementationOnce(() => ({
-      select: () => ({ eq: () => ({ data: [{ id: 'ws-1' }] }) })
-    }));
-
     const res = await executionService.updateTaskStatus('T1', 'IN_PROGRESS', 'test@user.com');
     expect(res.status).toBe('IN_PROGRESS');
     expect(res.started_at).toBeDefined();
@@ -103,11 +111,6 @@ describe('Phase 7: Task Execution & Progress Tracking', () => {
 
   it('Test 4 — Invalid transition', async () => {
     mockTasks[0].status = 'IN_PROGRESS';
-    const supabase = require('../src/config/supabase');
-    supabase.from.mockImplementationOnce(() => ({
-      select: () => ({ eq: () => ({ single: () => ({ data: mockTasks[0], error: null }) }) })
-    }));
-
     await expect(
       executionService.updateTaskStatus('T1', 'PENDING', 'test@user.com')
     ).rejects.toThrow(/Invalid status transition/);

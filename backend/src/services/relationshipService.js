@@ -127,9 +127,21 @@ function extractRelationshipFeatures(complaintA, complaintB) {
     // Graceful degradation — duplicate features stay at 0
   }
 
-  // 5. Same category
-  const catA = complaintA.category || 'Other';
-  const catB = complaintB.category || 'Other';
+  // 5. Same category (Normalized to 7 original training categories)
+  const normalizeCategory = (cat) => {
+    const c = cat || 'Other';
+    if (c === 'Road Damage' || c === 'Road Flooding') return 'Roads';
+    if (c === 'Water Leakage') return 'Water Supply';
+    if (c === 'Electrical Hazard' || c === 'Streetlight Failure' || c === 'Power Outage') return 'Electricity';
+    if (c === 'Drainage Overflow') return 'Drainage';
+    if (c === 'Garbage Accumulation') return 'Waste Management';
+    if (c === 'Public Safety Hazard') return 'Public Infrastructure';
+    if (CATEGORIES.includes(c)) return c;
+    return 'Other';
+  };
+
+  const catA = normalizeCategory(complaintA.category);
+  const catB = normalizeCategory(complaintB.category);
   const sameCategory = catA === catB ? 1 : 0;
 
   // 6. One-hot encoded categories

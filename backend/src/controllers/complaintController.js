@@ -222,7 +222,8 @@ exports.createComplaint = async (req, res) => {
         if (updateErr) {
           // If new Phase 2 columns are not yet present, strip them and retry
           const missingColPatterns = ['embedding_vector', 'duplicate_score', 'duplicate_candidate_id',
-            'duplicate_semantic_score', 'duplicate_location_score', 'duplicate_temporal_score'];
+            'duplicate_semantic_score', 'duplicate_location_score', 'duplicate_temporal_score',
+            'ml_labels', 'ml_probabilities', 'ml_departments'];
           const isMissingCol = missingColPatterns.some(p => updateErr.message && updateErr.message.includes(p));
 
           if (isMissingCol) {

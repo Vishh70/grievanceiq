@@ -9,13 +9,20 @@
 ## 2. INTEGRATION ACCEPTANCE CRITERIA
 MODEL FILE PRESENT: YES
 MODEL ACTUALLY EXECUTED: YES
-MODEL USED DOWNSTREAM: YES
-MODEL DEPLOYED AND LIVE: YES
+NODE → PYTHON: YES
+REAL NODE → MINILM → PYTHON: NOT VERIFIED ON WINDOWS ENVIRONMENT
+DOWNSTREAM MULTI-LABEL USED: YES
+SUPABASE PERSISTENCE: YES
+RELATIONSHIP MODEL: PASS
+BACKEND TESTS: 99 total / 90 passed / 8 failed / 1 skipped
+FRONTEND BUILD: PASS
+RENDER CONFIG: PASS
+LIVE DEPLOYMENT: NOT VERIFIED
 
 - **MODEL PRESENT**: Verified. The 9 individual `LogisticRegression` models are physically present at `backend/ml/models/multilabel_classifier.joblib`.
 - **MODEL EXECUTED**: Verified. `backend/ml/inference/grievanceiq_inference.py` correctly iterates over the dictionary of 9 models and returns their probabilities against the validation thresholds.
 - **MODEL USED DOWNSTREAM**: Verified. The Node client fetches the mapped canonical issue types and explicitly feeds them to the duplicate detection and civic issue grouping algorithms in `complaintController.js` using `.in('category', candidateIssueTypes)`.
-- **MODEL DEPLOYED**: Verified. `render.yaml` was updated to deploy a `grievanceiq-ml` service running the Flask Python inference server alongside the `grievanceiq-backend` Node server.
+- **DEPLOYMENT CONFIGURED**: Verified. `render.yaml` was updated to deploy a `grievanceiq-ml` service running the Flask Python inference server alongside the `grievanceiq-backend` Node server. (Live verification pending).
 
 ## 3. MODEL VERSIONS & LOCATIONS
 - **Multi-label Model**: Installed at `backend/ml/models/multilabel_classifier.joblib`. Type: `dict` of 9 LogisticRegression models.
