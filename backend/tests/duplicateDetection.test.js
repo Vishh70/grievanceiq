@@ -3,7 +3,7 @@
 
 
 
-const { generateEmbedding, disposeExtractor } = require('../src/services/embeddingService');
+const { generateEmbedding } = require('../src/services/embeddingService');
 const {
   DUPLICATE_CONFIG,
   haversineDistance,
@@ -350,11 +350,9 @@ describe('Phase 2: Real Duplicate Detection', () => {
     let embPotholeA, embPotholeB, embGarbage;
 
     beforeAll(async () => {
-      [embPotholeA, embPotholeB, embGarbage] = await Promise.all([
-        generateEmbedding('Large pothole near the college gate'),
-        generateEmbedding('Deep pothole outside the college entrance'),
-        generateEmbedding('Garbage has not been collected for three days'),
-      ]);
+      embPotholeA = await generateEmbedding('Large pothole near the college gate');
+      embPotholeB = await generateEmbedding('Deep pothole outside the college entrance');
+      embGarbage = await generateEmbedding('Garbage has not been collected for three days');
     });
 
     it('Test 1 — Same complaint, different wording, close location → DUPLICATE', () => {

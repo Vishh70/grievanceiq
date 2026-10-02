@@ -34,3 +34,9 @@ jobs:
       env:
         NODE_OPTIONS: --experimental-vm-modules
         NODE_ENV: test
+
+    - name: Run real MiniLM smoke test
+      working-directory: ./backend
+      run: node scripts/test_real_embedding.js
+      env:
+        USE_REAL_MODEL: true

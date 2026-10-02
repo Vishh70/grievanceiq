@@ -1,0 +1,642 @@
+
+> grievanceiq-backend@1.0.0 test
+> node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles --forceExit
+
+(node:15524) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL tests/embedding.test.js
+  ● Console
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at Object.<anonymous> (tests/embedding.test.js:18:25)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 0)
+      at Object.<anonymous> (tests/embedding.test.js:48:28)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (tests/embedding.test.js:48:28)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 0)
+      at Object.<anonymous> (tests/embedding.test.js:69:48)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (tests/embedding.test.js:69:48)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 2)
+      at Object.<anonymous> (tests/embedding.test.js:69:48)
+
+    console.warn
+      [Startup] ⚠️ Supabase configuration: MISSING (Tests/Mocks may still work)
+
+    [0m [90m 14 |[39m   [36mconst[39m supabaseKey [33m=[39m process[33m.[39menv[33m.[39m[33mSUPABASE_ANON_KEY[39m [33m||[39m process[33m.[39menv[33m.[39m[33mSUPABASE_KEY[39m [33m||[39m process[33m.[39menv[33m.[39m[33mVITE_SUPABASE_ANON_KEY[39m[33m;[39m
+     [90m 15 |[39m   [36mif[39m ([33m![39msupabaseUrl [33m||[39m [33m![39msupabaseKey) {
+    [31m[1m>[22m[39m[90m 16 |[39m     console[33m.[39mwarn([32m'[Startup] ⚠️ Supabase configuration: MISSING (Tests/Mocks may still work)'[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 17 |[39m   } [36melse[39m {
+     [90m 18 |[39m     console[33m.[39mlog([32m'[Startup] ✅ Supabase configuration: OK'[39m)[33m;[39m
+     [90m 19 |[39m   }[0m
+
+      at warn (src/app.js:16:13)
+      at Object.createApp (tests/embedding.test.js:122:13)
+
+    console.log
+      [Startup] ✅ AI configuration: OK (Hybrid: Gemini + Local Transformers/Xenova)
+
+      at log (src/app.js:20:11)
+
+    console.warn
+      ⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.
+
+    [0m [90m  9 |[39m     process[33m.[39mexit([35m1[39m)[33m;[39m
+     [90m 10 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 11 |[39m     console[33m.[39mwarn([32m'⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.'[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 12 |[39m   }
+     [90m 13 |[39m }
+     [90m 14 |[39m[0m
+
+      at Object.warn (src/config/supabase.js:11:13)
+      at Object.require (src/controllers/authController.js:4:18)
+      at Object.require (src/routes/authRoutes.js:4:36)
+      at require (src/app.js:57:32)
+      at Object.createApp (tests/embedding.test.js:122:13)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 0)
+      at Object.<anonymous>.exports.calculateSimilarity (src/controllers/complaintController.js:446:32)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 1)
+      at Object.<anonymous>.exports.calculateSimilarity (src/controllers/complaintController.js:446:32)
+
+    console.error
+      Similarity calculation error: Error: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+          at Object..node (node:internal/modules/cjs/loader:2030:18)
+          at Module.load (node:internal/modules/cjs/loader:1594:32)
+          at Module._load (node:internal/modules/cjs/loader:1396:12)
+          at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+          at Module.require (node:internal/modules/cjs/loader:1617:12)
+          at require (node:internal/modules/helpers:153:16)
+          at Runtime._loadModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:1018:29)
+          at Runtime.requireModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:882:12)
+          at Runtime.requireModuleOrMock (E:\new project\backend\node_modules\jest-runtime\build\index.js:1048:21)
+          at Object.<anonymous> (E:\new project\backend\node_modules\onnxruntime-node\lib\binding.ts:41:5)
+          at Runtime._execModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:1439:24)
+          at Runtime._loadModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:1022:12)
+          at Runtime.requireModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:882:12)
+          at Runtime.requireModuleOrMock (E:\new project\backend\node_modules\jest-runtime\build\index.js:1048:21)
+          at Object.<anonymous> (E:\new project\backend\node_modules\onnxruntime-node\lib\backend.ts:6:1)
+          at Runtime._execModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:1439:24)
+          at Runtime._loadModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:1022:12)
+          at Runtime.requireModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:882:12)
+          at Runtime.requireModuleOrMock (E:\new project\backend\node_modules\jest-runtime\build\index.js:1048:21)
+          at Object.<anonymous> (E:\new project\backend\node_modules\onnxruntime-node\lib\index.ts:6:1)
+          at Runtime._execModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:1439:24)
+          at Runtime._loadModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:1022:12)
+          at Runtime.requireModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:882:12)
+          at Runtime.requireModuleOrMock (E:\new project\backend\node_modules\jest-runtime\build\index.js:1048:21)
+          at Runtime.loadCjsAsEsm (E:\new project\backend\node_modules\jest-runtime\build\index.js:726:22)
+          at Runtime.resolveModule (E:\new project\backend\node_modules\jest-runtime\build\index.js:684:17) {
+        code: 'ERR_DLOPEN_FAILED'
+      }
+
+    [0m [90m 455 |[39m     })[33m;[39m
+     [90m 456 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 457 |[39m     console[33m.[39merror([32m'Similarity calculation error:'[39m[33m,[39m error)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 458 |[39m     res[33m.[39mstatus([35m500[39m)[33m.[39mjson({ error[33m:[39m error[33m.[39mmessage })[33m;[39m
+     [90m 459 |[39m   }
+     [90m 460 |[39m }[33m;[39m[0m
+
+      at error (src/controllers/complaintController.js:457:13)
+
+  ● Phase 1: Semantic Embedding & Cosine Similarity Engine › Test 1 — Embedding generation › generates a valid, non-empty numerical embedding vector for complaint text
+
+    The specified module could not be found.
+    \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+      at Runtime._loadModule (node_modules/jest-runtime/build/index.js:1018:29)
+      at Object.<anonymous> (node_modules/onnxruntime-node/lib/binding.ts:41:5)
+      at Object.<anonymous> (node_modules/onnxruntime-node/lib/backend.ts:6:1)
+      at Object.<anonymous> (node_modules/onnxruntime-node/lib/index.ts:6:1)
+
+  ● Phase 1: Semantic Embedding & Cosine Similarity Engine › Test 2 — Similar sentences › produces reasonably high cosine similarity for semantically equivalent complaints
+
+    The specified module could not be found.
+    \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+      at Runtime._loadModule (node_modules/jest-runtime/build/index.js:1018:29)
+      at Object.<anonymous> (node_modules/onnxruntime-node/lib/binding.ts:41:5)
+      at Object.<anonymous> (node_modules/onnxruntime-node/lib/backend.ts:6:1)
+      at Object.<anonymous> (node_modules/onnxruntime-node/lib/index.ts:6:1)
+
+  ● Phase 1: Semantic Embedding & Cosine Similarity Engine › Test 3 — Different subjects › ensures similar sentences have higher similarity than unrelated sentences (relative assertion)
+
+    The specified module could not be found.
+    \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+      at Runtime._loadModule (node_modules/jest-runtime/build/index.js:1018:29)
+      at Object.<anonymous> (node_modules/onnxruntime-node/lib/binding.ts:41:5)
+      at Object.<anonymous> (node_modules/onnxruntime-node/lib/backend.ts:6:1)
+      at Object.<anonymous> (node_modules/onnxruntime-node/lib/index.ts:6:1)
+
+  ● Phase 1: Semantic Embedding & Cosine Similarity Engine › Test 5 — HTTP API Endpoint: POST /api/complaints/similarity › returns 200 with similarity score for valid pair of complaint texts
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+    [0m [90m 131 |[39m         })[33m;[39m
+     [90m 132 |[39m
+    [31m[1m>[22m[39m[90m 133 |[39m       expect(res[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 134 |[39m       expect(res[33m.[39mbody)[33m.[39mtoHaveProperty([32m'similarity'[39m)[33m;[39m
+     [90m 135 |[39m       expect([36mtypeof[39m res[33m.[39mbody[33m.[39msimilarity)[33m.[39mtoBe([32m'number'[39m)[33m;[39m
+     [90m 136 |[39m       expect(res[33m.[39mbody[33m.[39msimilarity)[33m.[39mtoBeGreaterThan([35m0.70[39m)[33m;[39m[0m
+
+      at Object.toBe (tests/embedding.test.js:133:26)
+
+FAIL tests/relationship.test.js
+  ● Console
+
+    console.log
+      ✅ Phase 3 relationship model loaded from E:\new project\backend\models\relationship\model.json
+
+      at log (src/services/relationshipService.js:204:13)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:300:28)
+      at Object.<anonymous> (tests/relationship.test.js:65:22)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:308:28)
+      at Object.<anonymous> (tests/relationship.test.js:65:22)
+
+    console.log
+      Test 1 (Duplicate) Result: Duplicate 0.4
+
+      at Object.log (tests/relationship.test.js:85:15)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:300:28)
+      at Object.<anonymous> (tests/relationship.test.js:89:22)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:308:28)
+      at Object.<anonymous> (tests/relationship.test.js:89:22)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:300:28)
+      at Object.<anonymous> (tests/relationship.test.js:111:22)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:308:28)
+      at Object.<anonymous> (tests/relationship.test.js:111:22)
+
+    console.log
+      Test 3 (Similar) Result: Independent 0.7
+
+      at Object.log (tests/relationship.test.js:129:15)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:300:28)
+      at Object.<anonymous> (tests/relationship.test.js:133:22)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:308:28)
+      at Object.<anonymous> (tests/relationship.test.js:133:22)
+
+    console.log
+      Test 4 (Independent) Result: Independent 0.9667
+
+      at Object.log (tests/relationship.test.js:151:15)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:300:28)
+      at Object.<anonymous> (tests/relationship.test.js:155:22)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: The specified module could not be found.
+      \\?\E:\new project\backend\node_modules\onnxruntime-node\bin\napi-v3\win32\x64\onnxruntime_binding.node
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+      at predictRelationship (src/services/relationshipService.js:308:28)
+      at Object.<anonymous> (tests/relationship.test.js:155:22)
+
+  ● Phase 3: Relationship Classification › predictRelationship (Integration with Random Forest) › Test 2 — Different issue types but clear causal/domain connection → Related
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: "Independent"
+    Received array: ["Related", "Similar"]
+
+    [0m [90m 103 |[39m         }
+     [90m 104 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 105 |[39m       expect([[32m'Related'[39m[33m,[39m [32m'Similar'[39m])[33m.[39mtoContain(result[33m.[39mrelationship)[33m;[39m
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 106 |[39m       
+     [90m 107 |[39m       console[33m.[39mlog([32m'Test 2 (Related) Result:'[39m[33m,[39m result[33m.[39mrelationship[33m,[39m result[33m.[39mconfidence)[33m;[39m
+     [90m 108 |[39m     })[33m;[39m[0m
+
+      at Object.toContain (tests/relationship.test.js:105:38)
+
+FAIL tests/duplicateDetection.test.js
+  ● Console
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: Test environment has been torn down
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 0)
+      at Object.<anonymous> (tests/duplicateDetection.test.js:356:48)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: Test environment has been torn down
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (tests/duplicateDetection.test.js:356:48)
+
+    console.error
+      Error generating embedding with Xenova/all-MiniLM-L6-v2: Test environment has been torn down
+
+    [0m [90m 63 |[39m     [36mreturn[39m array[33m;[39m
+     [90m 64 |[39m   } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 65 |[39m     console[33m.[39merror([32m'Error generating embedding with Xenova/all-MiniLM-L6-v2:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mthrow[39m error[33m;[39m
+     [90m 67 |[39m   }
+     [90m 68 |[39m }[0m
+
+      at error (src/services/embeddingService.js:65:13)
+          at async Promise.all (index 2)
+      at Object.<anonymous> (tests/duplicateDetection.test.js:356:48)
+
+  ● Phase 2: Real Duplicate Detection › Integration: real embeddings + duplicate scoring › Test 1 — Same complaint, different wording, close location → DUPLICATE
+
+    Test environment has been torn down
+
+      at invariant (node_modules/jest-util/build/invariant.js:16:11)
+      at eval (eval at Object.<anonymous> (src/services/embeddingService.js:14:23), <anonymous>:3:15)
+      at dynamicImport (src/services/embeddingService.js:25:34)
+      at getExtractor (src/services/embeddingService.js:27:6)
+      at getExtractor (src/services/embeddingService.js:45:29)
+      at Object.generateEmbedding (tests/duplicateDetection.test.js:357:9)
+
+  ● Phase 2: Real Duplicate Detection › Integration: real embeddings + duplicate scoring › Test 2 — Same wording, different location (8km) → NOT DUPLICATE
+
+    Test environment has been torn down
+
+      at invariant (node_modules/jest-util/build/invariant.js:16:11)
+      at eval (eval at Object.<anonymous> (src/services/embeddingService.js:14:23), <anonymous>:3:15)
+      at dynamicImport (src/services/embeddingService.js:25:34)
+      at getExtractor (src/services/embeddingService.js:27:6)
+      at getExtractor (src/services/embeddingService.js:45:29)
+      at Object.generateEmbedding (tests/duplicateDetection.test.js:357:9)
+
+  ● Phase 2: Real Duplicate Detection › Integration: real embeddings + duplicate scoring › Test 3 — Same location, unrelated text → NOT DUPLICATE
+
+    Test environment has been torn down
+
+      at invariant (node_modules/jest-util/build/invariant.js:16:11)
+      at eval (eval at Object.<anonymous> (src/services/embeddingService.js:14:23), <anonymous>:3:15)
+      at dynamicImport (src/services/embeddingService.js:25:34)
+      at getExtractor (src/services/embeddingService.js:27:6)
+      at getExtractor (src/services/embeddingService.js:45:29)
+      at Object.generateEmbedding (tests/duplicateDetection.test.js:357:9)
+
+PASS tests/taskDependency.test.js
+  ● Console
+
+    console.warn
+      ⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.
+
+    [0m [90m  9 |[39m     process[33m.[39mexit([35m1[39m)[33m;[39m
+     [90m 10 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 11 |[39m     console[33m.[39mwarn([32m'⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.'[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 12 |[39m   }
+     [90m 13 |[39m }
+     [90m 14 |[39m[0m
+
+      at Object.warn (src/config/supabase.js:11:13)
+      at Object.require (src/services/taskDependencyService.js:2:18)
+      at Object.require (tests/taskDependency.test.js:4:45)
+
+PASS tests/taskExecution.test.js
+  ● Console
+
+    console.warn
+      [Startup] ⚠️ Supabase configuration: MISSING (Tests/Mocks may still work)
+
+    [0m [90m 14 |[39m   [36mconst[39m supabaseKey [33m=[39m process[33m.[39menv[33m.[39m[33mSUPABASE_ANON_KEY[39m [33m||[39m process[33m.[39menv[33m.[39m[33mSUPABASE_KEY[39m [33m||[39m process[33m.[39menv[33m.[39m[33mVITE_SUPABASE_ANON_KEY[39m[33m;[39m
+     [90m 15 |[39m   [36mif[39m ([33m![39msupabaseUrl [33m||[39m [33m![39msupabaseKey) {
+    [31m[1m>[22m[39m[90m 16 |[39m     console[33m.[39mwarn([32m'[Startup] ⚠️ Supabase configuration: MISSING (Tests/Mocks may still work)'[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 17 |[39m   } [36melse[39m {
+     [90m 18 |[39m     console[33m.[39mlog([32m'[Startup] ✅ Supabase configuration: OK'[39m)[33m;[39m
+     [90m 19 |[39m   }[0m
+
+      at warn (src/app.js:16:13)
+      at Object.createApp (tests/taskExecution.test.js:9:13)
+
+    console.log
+      [Startup] ✅ AI configuration: OK (Hybrid: Gemini + Local Transformers/Xenova)
+
+      at log (src/app.js:20:11)
+
+PASS tests/civicGraph.test.js
+  ● Console
+
+    console.warn
+      ⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.
+
+    [0m [90m  9 |[39m     process[33m.[39mexit([35m1[39m)[33m;[39m
+     [90m 10 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 11 |[39m     console[33m.[39mwarn([32m'⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.'[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 12 |[39m   }
+     [90m 13 |[39m }
+     [90m 14 |[39m[0m
+
+      at Object.warn (src/config/supabase.js:11:13)
+      at Object.require (src/services/civicIssueService.js:2:18)
+      at Object.require (tests/civicGraph.test.js:6:89)
+
+PASS tests/routing.test.js
+  ● Console
+
+    console.warn
+      ⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.
+
+    [0m [90m  9 |[39m     process[33m.[39mexit([35m1[39m)[33m;[39m
+     [90m 10 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 11 |[39m     console[33m.[39mwarn([32m'⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.'[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 12 |[39m   }
+     [90m 13 |[39m }
+     [90m 14 |[39m[0m
+
+      at Object.warn (src/config/supabase.js:11:13)
+      at Object.require (src/services/routingService.js:3:18)
+      at Object.require (tests/routing.test.js:10:5)
+
+PASS tests/endToEnd.test.js
+  ● Console
+
+    console.warn
+      ⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.
+
+    [0m [90m  9 |[39m     process[33m.[39mexit([35m1[39m)[33m;[39m
+     [90m 10 |[39m   } [36melse[39m {
+    [31m[1m>[22m[39m[90m 11 |[39m     console[33m.[39mwarn([32m'⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.'[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 12 |[39m   }
+     [90m 13 |[39m }
+     [90m 14 |[39m[0m
+
+      at Object.warn (src/config/supabase.js:11:13)
+      at Object.require (src/services/routingService.js:3:18)
+      at Object.require (tests/endToEnd.test.js:6:71)
+
+
+Test Suites: 3 failed, 1 skipped, 5 passed, 8 of 9 total
+Tests:       8 failed, 1 skipped, 73 passed, 82 total
+Snapshots:   0 total
+Time:        6.788 s
+Ran all test suites.

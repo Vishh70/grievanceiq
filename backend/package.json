@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles --forceExit",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles",
     "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration/ --runInBand",
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/endToEnd.test.js",
     "demo": "node scripts/seedDemoData.js",

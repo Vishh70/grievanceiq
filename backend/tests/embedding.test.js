@@ -1,7 +1,7 @@
 
 const request = require('supertest');
 const createApp = require('../src/app');
-const { generateEmbedding, cosineSimilarity, disposeExtractor } = require('../src/services/embeddingService');
+const { generateEmbedding, cosineSimilarity } = require('../src/services/embeddingService');
 
 describe('Phase 1: Semantic Embedding & Cosine Similarity Engine', () => {
   // Allow model download and initial loading time
@@ -42,10 +42,8 @@ describe('Phase 1: Semantic Embedding & Cosine Similarity Engine', () => {
       const textA = 'Large pothole near the college gate';
       const textB = 'Deep pothole outside the college entrance';
 
-      const [embA, embB] = await Promise.all([
-        generateEmbedding(textA),
-        generateEmbedding(textB),
-      ]);
+      const embA = await generateEmbedding(textA);
+      const embB = await generateEmbedding(textB);
 
       const similarity = cosineSimilarity(embA, embB);
 
@@ -63,11 +61,9 @@ describe('Phase 1: Semantic Embedding & Cosine Similarity Engine', () => {
       const textSimilar = 'Deep pothole outside the college entrance';
       const textUnrelated = 'Garbage has not been collected for three days';
 
-      const [embA, embSimilar, embUnrelated] = await Promise.all([
-        generateEmbedding(textA),
-        generateEmbedding(textSimilar),
-        generateEmbedding(textUnrelated),
-      ]);
+      const embA = await generateEmbedding(textA);
+      const embSimilar = await generateEmbedding(textSimilar);
+      const embUnrelated = await generateEmbedding(textUnrelated);
 
       const simSimilar = cosineSimilarity(embA, embSimilar);
       const simUnrelated = cosineSimilarity(embA, embUnrelated);
