@@ -129,9 +129,14 @@ exports.createComplaint = async (req, res) => {
           const cutoffDate = new Date();
           cutoffDate.setDate(cutoffDate.getDate() - DUPLICATE_CONFIG.CANDIDATE_MAX_AGE_DAYS);
 
+          // Use .or() to search BOTH the primary category AND the ml_labels text array.
+          // category.in.(A,B) or ml_labels.ov.{A,B}
+          const typesForIn = candidateIssueTypes.map(t => `"${t}"`).join(',');
+          const orQuery = `category.in.(${typesForIn}),ml_labels.ov.{${typesForIn}}`;
+
           const { data: candidates } = await supabase.from('complaints')
             .select('id, description, embedding_vector, location_lat, location_lng, created_at, similar_group_id, category')
-            .in('category', candidateIssueTypes)
+            .or(orQuery)
             .neq('id', complaintData.id)
             .eq('ai_processed', true)
             .gte('created_at', cutoffDate.toISOString())
@@ -218,19 +223,28 @@ exports.createComplaint = async (req, res) => {
         }
 
         const { error: updateErr } = await supabase.from('complaints').update(updatePayload).eq('id', complaintData.id);
-        
-        if (updateErr) {
-          // If new Phase 2 columns are not yet present, strip them and retry
-          const missingColPatterns = ['embedding_vector', 'duplicate_score', 'duplicate_candidate_id',
-            'duplicate_semantic_score', 'duplicate_location_score', 'duplicate_temporal_score',
-            'ml_labels', 'ml_probabilities', 'ml_departments'];
-          const isMissingCol = missingColPatterns.some(p => updateErr.message && updateErr.message.includes(p));
 
-          if (isMissingCol) {
-            console.warn('⚠️ Supabase complaints table missing Phase 1/2 columns. Run docs/database/phase1_embedding.sql and phase2_duplicate_detection.sql');
-            // Retry with only the columns that existed in the original schema
-            missingColPatterns.forEach(col => delete updatePayload[col]);
-            await supabase.from('complaints').update(updatePayload).eq('id', complaintData.id);
+        if (updateErr) {
+          // If new Phase 2/10 columns are not yet present, strip them conditionally and retry
+          const isPhase2Missing = ['embedding_vector', 'duplicate_score', 'duplicate_candidate_id', 'duplicate_semantic_score', 'duplicate_location_score', 'duplicate_temporal_score'].some(p => updateErr.message && updateErr.message.includes(p));
+          const isPhase10Missing = ['ml_labels', 'ml_probabilities', 'ml_departments'].some(p => updateErr.message && updateErr.message.includes(p));
+
+          if (isPhase2Missing || isPhase10Missing) {
+            console.warn(`⚠️ Supabase schema missing columns (Error: ${updateErr.message}). Retrying gracefully...`);
+            let retryPayload = { ...updatePayload };
+            
+            if (isPhase2Missing) {
+              ['embedding_vector', 'duplicate_score', 'duplicate_candidate_id', 'duplicate_semantic_score', 'duplicate_location_score', 'duplicate_temporal_score'].forEach(col => delete retryPayload[col]);
+            }
+            
+            if (isPhase10Missing) {
+              ['ml_labels', 'ml_probabilities', 'ml_departments'].forEach(col => delete retryPayload[col]);
+            }
+
+            const { error: retryErr } = await supabase.from('complaints').update(retryPayload).eq('id', complaintData.id);
+            if (retryErr) {
+              console.error('Graceful retry also failed:', retryErr.message);
+            }
           } else {
             console.error('Failed to update complaint with AI analysis:', updateErr.message);
           }
