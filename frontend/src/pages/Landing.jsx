@@ -24,12 +24,12 @@ export default function Landing() {
   if (user) return <Navigate to={user.role === 'admin' ? '/admin' : '/complaints'} replace />;
 
   const features = [
-    { icon: <MapPin size={24} color="var(--primary)" />, title: 'Report', desc: 'Submit rich civic issues with precision geolocation.' },
+    { icon: <MapPin size={24} color="var(--info)" />, title: 'Report', desc: 'Submit rich civic issues with precision geolocation.' },
     { icon: <Zap size={24} color="var(--accent)" />, title: 'Understand', desc: 'Multi-label classification via Semantic AI.' },
     { icon: <ShieldCheck size={24} color="var(--success)" />, title: 'Connect', desc: 'Link related complaints via vector similarity.' },
     { icon: <BarChart3 size={24} color="var(--warning)" />, title: 'Aggregate', desc: 'Detect and group duplicate incident reports.' },
     { icon: <ShieldCheck size={24} color="var(--info)" />, title: 'Coordinate', desc: 'Dynamic routing across multiple departments.' },
-    { icon: <Zap size={24} color="var(--error)" />, title: 'Track', desc: 'Monitor resolution via dependency graphs.' },
+    { icon: <Zap size={24} color="var(--danger)" />, title: 'Track', desc: 'Monitor resolution via dependency graphs.' },
   ];
 
   return (
