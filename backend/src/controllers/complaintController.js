@@ -114,6 +114,10 @@ exports.createComplaint = async (req, res) => {
           ? mlPrediction.issueTypes
           : [aiResult.category];
 
+        const candidateMlLabels = mlPrediction.labels && mlPrediction.labels.length > 0
+          ? mlPrediction.labels
+          : [];
+
         // ── Phase 2: Real Duplicate Detection ────────────────────────────
         let similarGroupId = complaintData.id;
         let isDuplicate = false;
@@ -130,9 +134,12 @@ exports.createComplaint = async (req, res) => {
           cutoffDate.setDate(cutoffDate.getDate() - DUPLICATE_CONFIG.CANDIDATE_MAX_AGE_DAYS);
 
           // Use .or() to search BOTH the primary category AND the ml_labels text array.
-          // category.in.(A,B) or ml_labels.ov.{A,B}
           const typesForIn = candidateIssueTypes.map(t => `"${t}"`).join(',');
-          const orQuery = `category.in.(${typesForIn}),ml_labels.ov.{${typesForIn}}`;
+          let orQuery = `category.in.(${typesForIn})`;
+          if (candidateMlLabels.length > 0) {
+            const labelsForOv = candidateMlLabels.map(l => `"${l}"`).join(',');
+            orQuery = `category.in.(${typesForIn}),ml_labels.ov.{${labelsForOv}}`;
+          }
 
           const { data: candidates } = await supabase.from('complaints')
             .select('id, description, embedding_vector, location_lat, location_lng, created_at, similar_group_id, category')
