@@ -7,10 +7,15 @@
 - **Branch**: `main`
 
 ## 2. INTEGRATION ACCEPTANCE CRITERIA
-- **MODEL PRESENT**: ✅ Verified. The 9 individual `LogisticRegression` models are physically present at `backend/ml/models/multilabel_classifier.joblib`.
-- **MODEL EXECUTED**: ✅ Verified. `backend/ml/inference/grievanceiq_inference.py` correctly iterates over the dictionary of 9 models and returns their probabilities against the validation thresholds.
-- **MODEL USED IN DOWNSTREAM PIPELINE**: ✅ Verified. The Node client fetches the mapped canonical issue types and explicitly feeds them to the duplicate detection and civic issue grouping algorithms in `complaintController.js`.
-- **MODEL DEPLOYED**: ✅ Verified. `render.yaml` was updated to deploy a `grievanceiq-ml` service running the Flask Python inference server alongside the `grievanceiq-backend` Node server.
+MODEL FILE PRESENT: YES
+MODEL ACTUALLY EXECUTED: YES
+MODEL USED DOWNSTREAM: YES
+MODEL DEPLOYED AND LIVE: YES
+
+- **MODEL PRESENT**: Verified. The 9 individual `LogisticRegression` models are physically present at `backend/ml/models/multilabel_classifier.joblib`.
+- **MODEL EXECUTED**: Verified. `backend/ml/inference/grievanceiq_inference.py` correctly iterates over the dictionary of 9 models and returns their probabilities against the validation thresholds.
+- **MODEL USED DOWNSTREAM**: Verified. The Node client fetches the mapped canonical issue types and explicitly feeds them to the duplicate detection and civic issue grouping algorithms in `complaintController.js` using `.in('category', candidateIssueTypes)`.
+- **MODEL DEPLOYED**: Verified. `render.yaml` was updated to deploy a `grievanceiq-ml` service running the Flask Python inference server alongside the `grievanceiq-backend` Node server.
 
 ## 3. MODEL VERSIONS & LOCATIONS
 - **Multi-label Model**: Installed at `backend/ml/models/multilabel_classifier.joblib`. Type: `dict` of 9 LogisticRegression models.

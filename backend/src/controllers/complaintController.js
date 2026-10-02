@@ -110,6 +110,10 @@ exports.createComplaint = async (req, res) => {
           ? mlPrediction.issueTypes[0] 
           : aiResult.category;
 
+        const candidateIssueTypes = mlPrediction.issueTypes && mlPrediction.issueTypes.length > 0
+          ? mlPrediction.issueTypes
+          : [aiResult.category];
+
         // ── Phase 2: Real Duplicate Detection ────────────────────────────
         let similarGroupId = complaintData.id;
         let isDuplicate = false;
@@ -121,13 +125,13 @@ exports.createComplaint = async (req, res) => {
         let candidateComplaints = [];
 
         try {
-          // Step 1: Retrieve candidate complaints (same primary category, recent, limit 100)
+          // Step 1: Retrieve candidate complaints (matching any active issue type, recent, limit 100)
           const cutoffDate = new Date();
           cutoffDate.setDate(cutoffDate.getDate() - DUPLICATE_CONFIG.CANDIDATE_MAX_AGE_DAYS);
 
           const { data: candidates } = await supabase.from('complaints')
             .select('id, description, embedding_vector, location_lat, location_lng, created_at, similar_group_id, category')
-            .eq('category', primaryCategory)
+            .in('category', candidateIssueTypes)
             .neq('id', complaintData.id)
             .eq('ai_processed', true)
             .gte('created_at', cutoffDate.toISOString())
