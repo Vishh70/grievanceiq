@@ -93,6 +93,18 @@ exports.createComplaint = async (req, res) => {
           console.error('Embedding generation failed (graceful degradation):', embedErr.message);
         }
 
+        // ── Phase 1.5: Multilabel Issue Classification (Python ML Service) ──
+        let mlPrediction = { labels: [], probabilities: {}, departments: [], serviceAvailable: false };
+        try {
+          const { predictIssueLabels } = require('../services/mlService');
+          mlPrediction = await predictIssueLabels(embeddingVector, text);
+          if (mlPrediction.serviceAvailable) {
+            console.log(`  ML Multilabel prediction: ${mlPrediction.labels.join(', ')}`);
+          }
+        } catch (mlErr) {
+          console.error('ML Issue Classification failed:', mlErr.message);
+        }
+
         // ── Phase 2: Real Duplicate Detection ────────────────────────────
         let similarGroupId = complaintData.id;
         let isDuplicate = false;
@@ -186,6 +198,10 @@ exports.createComplaint = async (req, res) => {
           duplicate_semantic_score: dupSemanticScore,
           duplicate_location_score: dupLocationScore,
           duplicate_temporal_score: dupTemporalScore,
+          // ML Service Multilabel Results
+          ml_labels: mlPrediction.labels,
+          ml_probabilities: mlPrediction.probabilities,
+          ml_departments: mlPrediction.departments
         };
 
         if (Array.isArray(embeddingVector) && embeddingVector.length > 0) {

@@ -1,0 +1,14 @@
+relation_id,source_category,relation_type,target_category
+KG001,Water Leakage,can_cause,Roadside Flooding
+KG002,Water Leakage,can_cause,Road Damage
+KG003,Drainage,can_cause,Roadside Flooding
+KG004,Roadside Flooding,can_cause,Road Damage
+KG005,Electric Pole,can_cause,Streetlight
+KG006,Tree Hazard,can_damage,Electric Pole
+KG007,Tree Hazard,can_block,Road Damage
+KG008,Garbage,can_block,Drainage
+KG009,Garbage,can_cause,Roadside Flooding
+KG010,Road Damage,can_affect,Traffic Signal
+KG011,Road Damage,can_disrupt,Traffic Signal
+KG012,Streetlight,can_affect,Electric Pole
+KG013,Traffic Signal,can_affect,Road Damage

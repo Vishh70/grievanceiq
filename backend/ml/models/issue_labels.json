@@ -1,0 +1,11 @@
+[
+  "road_damage_flag",
+  "roadside_flooding_flag",
+  "water_leakage_flag",
+  "electric_pole_flag",
+  "streetlight_flag",
+  "traffic_signal_flag",
+  "garbage_flag",
+  "tree_hazard_flag",
+  "drainage_flag"
+]

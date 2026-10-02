@@ -1,0 +1,26 @@
+{
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "classifier": "LogisticRegression",
+  "solver": "liblinear",
+  "max_iter": 3000,
+  "class_weight": "balanced",
+  "random_state": 42,
+  "number_of_labels": 9,
+  "labels": [
+    "road_damage_flag",
+    "roadside_flooding_flag",
+    "water_leakage_flag",
+    "electric_pole_flag",
+    "streetlight_flag",
+    "traffic_signal_flag",
+    "garbage_flag",
+    "tree_hazard_flag",
+    "drainage_flag"
+  ],
+  "training_records": 4196,
+  "validation_records": 904,
+  "test_records": 900,
+  "group_split": true,
+  "group_column": "issue_id"
+}

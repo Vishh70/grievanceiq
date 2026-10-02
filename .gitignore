@@ -1,7 +1,32 @@
 node_modules/
 dist/
 .env
+.env.*
 uploads/
 .DS_Store
-
 .vercel
+
+# Python inference service
+backend/ml/.venv/
+backend/ml/venv/
+backend/ml/__pycache__/
+backend/ml/inference/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Training data caches (large files — not needed at runtime)
+training_data/grievanceiq/cache/*.npy
+training_data/grievanceiq/relationship/relationship_training_features_16000.csv
+training_data/grievanceiq/relationship/relationship_pairs_16000_prepared.csv
+
+# Large training CSVs (too big for GitHub — use Git LFS or host separately)
+# Uncomment if you want to exclude them:
+# training_data/grievanceiq/grievanceiq_relationship_pairs_16000.csv
+# training_data/grievanceiq/grievanceiq_complaints_multilabel_6000.csv
+
+# Backup directories created during model replacement
+backend/models/relationship_backup_before_final_model/
+
+# ONNX and HuggingFace model caches (downloaded at runtime)
+backend/.cache/
+.cache/

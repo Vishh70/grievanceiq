@@ -1,0 +1,139 @@
+workflow_rule_id,trigger_issue_types,department,task_order_hint,task_description,depends_on_task_description,execution_type,parallel_group,rule_purpose
+WR0001,Road Damage,Road Department,1,Inspect damaged road section,,Start/Sequential,,task_generation_and_dependency
+WR0002,Road Damage,Road Department,2,Repair road surface,Inspect damaged road section,Sequential,,task_generation_and_dependency
+WR0003,Road Damage,Road Department,3,Final road safety inspection,Repair road surface,Sequential,,task_generation_and_dependency
+WR0004,Roadside Flooding,Drainage Department,1,Inspect flooded road section,,Start/Sequential,,task_generation_and_dependency
+WR0005,Roadside Flooding,Drainage Department,2,Clear surface water / restore road,Inspect flooded road section,Sequential,,task_generation_and_dependency
+WR0006,Roadside Flooding,Drainage Department,3,Verify drainage flow,Clear surface water / restore road,Sequential,,task_generation_and_dependency
+WR0007,Drainage,Drainage Department,1,Inspect drainage line,,Start/Sequential,,task_generation_and_dependency
+WR0008,Drainage,Drainage Department,2,Clear or repair drainage,Inspect drainage line,Sequential,,task_generation_and_dependency
+WR0009,Drainage,Drainage Department,3,Test drainage flow,Clear or repair drainage,Sequential,,task_generation_and_dependency
+WR0010,Water Leakage,Water Department,1,Inspect water pipeline,,Start/Sequential,,task_generation_and_dependency
+WR0011,Water Leakage,Water Department,2,Repair water pipeline / stop leakage,Inspect water pipeline,Sequential,,task_generation_and_dependency
+WR0012,Water Leakage,Water Department,3,Test repaired pipeline,Repair water pipeline / stop leakage,Sequential,,task_generation_and_dependency
+WR0013,Electric Pole,Electricity Department,1,Inspect electrical pole / wiring,,Start/Sequential,,task_generation_and_dependency
+WR0014,Electric Pole,Electricity Department,2,Repair or replace electric pole,Inspect electrical pole / wiring,Sequential,,task_generation_and_dependency
+WR0015,Electric Pole,Electricity Department,3,Test electrical connection,Repair or replace electric pole,Sequential,,task_generation_and_dependency
+WR0016,Streetlight,Electricity Department,1,Inspect streetlight circuit,,Start/Sequential,,task_generation_and_dependency
+WR0017,Streetlight,Electricity Department,2,Repair streetlight / wiring,Inspect streetlight circuit,Sequential,,task_generation_and_dependency
+WR0018,Streetlight,Electricity Department,3,Test streetlight operation,Repair streetlight / wiring,Sequential,,task_generation_and_dependency
+WR0019,Traffic Signal,Traffic Department,1,Inspect traffic signal controller,,Start/Sequential,,task_generation_and_dependency
+WR0020,Traffic Signal,Traffic Department,2,Repair signal controller / lamp,Inspect traffic signal controller,Sequential,,task_generation_and_dependency
+WR0021,Traffic Signal,Traffic Department,3,Test junction signal,Repair signal controller / lamp,Sequential,,task_generation_and_dependency
+WR0022,Garbage,Sanitation Department,1,Inspect waste accumulation,,Start/Sequential,,task_generation_and_dependency
+WR0023,Garbage,Sanitation Department,2,Remove accumulated waste,Inspect waste accumulation,Sequential,,task_generation_and_dependency
+WR0024,Garbage,Sanitation Department,3,Verify area is clean,Remove accumulated waste,Sequential,,task_generation_and_dependency
+WR0025,Tree Hazard,Garden Department,1,Inspect hazardous tree / branch,,Start/Sequential,,task_generation_and_dependency
+WR0026,Tree Hazard,Garden Department,2,Trim or remove hazardous tree,Inspect hazardous tree / branch,Sequential,,task_generation_and_dependency
+WR0027,Tree Hazard,Garden Department,3,Clear debris and reopen area,Trim or remove hazardous tree,Sequential,,task_generation_and_dependency
+WR0028,Drainage|Garbage,Drainage Department,1,Inspect drainage line,,Parallel/Start,INSPECT,multi_department_coordination
+WR0029,Drainage|Garbage,Sanitation Department,1,Inspect waste accumulation,,Parallel/Start,INSPECT,multi_department_coordination
+WR0030,Drainage|Garbage,Drainage Department,3,Clear or repair drainage,Inspect drainage line,Sequential,,multi_department_coordination
+WR0031,Drainage|Garbage,Sanitation Department,4,Remove accumulated waste,Clear or repair drainage,Sequential,,multi_department_coordination
+WR0032,Drainage|Garbage,Drainage Department,5,Test drainage flow,Remove accumulated waste,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0033,Drainage|Garbage,Sanitation Department,5,Verify area is clean,Remove accumulated waste,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0034,Drainage|Garbage|Roadside Flooding,Drainage Department,1,Inspect drainage line,,Parallel/Start,INSPECT,multi_department_coordination
+WR0035,Drainage|Garbage|Roadside Flooding,Sanitation Department,1,Inspect waste accumulation,,Parallel/Start,INSPECT,multi_department_coordination
+WR0036,Drainage|Garbage|Roadside Flooding,Drainage Department,1,Inspect flooded road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0037,Drainage|Garbage|Roadside Flooding,Drainage Department,4,Clear or repair drainage,Inspect drainage line,Sequential,,multi_department_coordination
+WR0038,Drainage|Garbage|Roadside Flooding,Sanitation Department,5,Remove accumulated waste,Clear or repair drainage,Sequential,,multi_department_coordination
+WR0039,Drainage|Garbage|Roadside Flooding,Drainage Department,6,Clear surface water / restore road,Remove accumulated waste,Sequential,,multi_department_coordination
+WR0040,Drainage|Garbage|Roadside Flooding,Drainage Department,7,Test drainage flow,Clear surface water / restore road,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0041,Drainage|Garbage|Roadside Flooding,Sanitation Department,7,Verify area is clean,Clear surface water / restore road,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0042,Drainage|Garbage|Roadside Flooding,Drainage Department,7,Verify drainage flow,Clear surface water / restore road,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0043,Drainage|Road Damage,Drainage Department,1,Inspect drainage line,,Parallel/Start,INSPECT,multi_department_coordination
+WR0044,Drainage|Road Damage,Road Department,1,Inspect damaged road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0045,Drainage|Road Damage,Drainage Department,3,Clear or repair drainage,Inspect drainage line,Sequential,,multi_department_coordination
+WR0046,Drainage|Road Damage,Road Department,4,Repair road surface,Clear or repair drainage,Sequential,,multi_department_coordination
+WR0047,Drainage|Road Damage,Drainage Department,5,Test drainage flow,Repair road surface,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0048,Drainage|Road Damage,Road Department,5,Final road safety inspection,Repair road surface,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0049,Drainage|Roadside Flooding,Drainage Department,1,Inspect drainage line,,Parallel/Start,INSPECT,multi_department_coordination
+WR0050,Drainage|Roadside Flooding,Drainage Department,1,Inspect flooded road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0051,Drainage|Roadside Flooding,Drainage Department,3,Clear or repair drainage,Inspect drainage line,Sequential,,multi_department_coordination
+WR0052,Drainage|Roadside Flooding,Drainage Department,4,Clear surface water / restore road,Clear or repair drainage,Sequential,,multi_department_coordination
+WR0053,Drainage|Roadside Flooding,Drainage Department,5,Test drainage flow,Clear surface water / restore road,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0054,Drainage|Roadside Flooding,Drainage Department,5,Verify drainage flow,Clear surface water / restore road,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0055,Electric Pole|Streetlight,Electricity Department,1,Inspect electrical pole / wiring,,Parallel/Start,INSPECT,multi_department_coordination
+WR0056,Electric Pole|Streetlight,Electricity Department,1,Inspect streetlight circuit,,Parallel/Start,INSPECT,multi_department_coordination
+WR0057,Electric Pole|Streetlight,Electricity Department,3,Repair or replace electric pole,Inspect electrical pole / wiring,Sequential,,multi_department_coordination
+WR0058,Electric Pole|Streetlight,Electricity Department,4,Repair streetlight / wiring,Repair or replace electric pole,Sequential,,multi_department_coordination
+WR0059,Electric Pole|Streetlight,Electricity Department,5,Test electrical connection,Repair streetlight / wiring,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0060,Electric Pole|Streetlight,Electricity Department,5,Test streetlight operation,Repair streetlight / wiring,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0061,Electric Pole|Streetlight|Tree Hazard,Electricity Department,1,Inspect electrical pole / wiring,,Parallel/Start,INSPECT,multi_department_coordination
+WR0062,Electric Pole|Streetlight|Tree Hazard,Electricity Department,1,Inspect streetlight circuit,,Parallel/Start,INSPECT,multi_department_coordination
+WR0063,Electric Pole|Streetlight|Tree Hazard,Garden Department,1,Inspect hazardous tree / branch,,Parallel/Start,INSPECT,multi_department_coordination
+WR0064,Electric Pole|Streetlight|Tree Hazard,Electricity Department,4,Repair or replace electric pole,Inspect electrical pole / wiring,Sequential,,multi_department_coordination
+WR0065,Electric Pole|Streetlight|Tree Hazard,Electricity Department,5,Repair streetlight / wiring,Repair or replace electric pole,Sequential,,multi_department_coordination
+WR0066,Electric Pole|Streetlight|Tree Hazard,Garden Department,6,Trim or remove hazardous tree,Repair streetlight / wiring,Sequential,,multi_department_coordination
+WR0067,Electric Pole|Streetlight|Tree Hazard,Electricity Department,7,Test electrical connection,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0068,Electric Pole|Streetlight|Tree Hazard,Electricity Department,7,Test streetlight operation,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0069,Electric Pole|Streetlight|Tree Hazard,Garden Department,7,Clear debris and reopen area,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0070,Electric Pole|Tree Hazard,Electricity Department,1,Inspect electrical pole / wiring,,Parallel/Start,INSPECT,multi_department_coordination
+WR0071,Electric Pole|Tree Hazard,Garden Department,1,Inspect hazardous tree / branch,,Parallel/Start,INSPECT,multi_department_coordination
+WR0072,Electric Pole|Tree Hazard,Electricity Department,3,Repair or replace electric pole,Inspect electrical pole / wiring,Sequential,,multi_department_coordination
+WR0073,Electric Pole|Tree Hazard,Garden Department,4,Trim or remove hazardous tree,Repair or replace electric pole,Sequential,,multi_department_coordination
+WR0074,Electric Pole|Tree Hazard,Electricity Department,5,Test electrical connection,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0075,Electric Pole|Tree Hazard,Garden Department,5,Clear debris and reopen area,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0076,Garbage|Roadside Flooding,Sanitation Department,1,Inspect waste accumulation,,Parallel/Start,INSPECT,multi_department_coordination
+WR0077,Garbage|Roadside Flooding,Drainage Department,1,Inspect flooded road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0078,Garbage|Roadside Flooding,Sanitation Department,3,Remove accumulated waste,Inspect waste accumulation,Sequential,,multi_department_coordination
+WR0079,Garbage|Roadside Flooding,Drainage Department,4,Clear surface water / restore road,Remove accumulated waste,Sequential,,multi_department_coordination
+WR0080,Garbage|Roadside Flooding,Sanitation Department,5,Verify area is clean,Clear surface water / restore road,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0081,Garbage|Roadside Flooding,Drainage Department,5,Verify drainage flow,Clear surface water / restore road,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0082,Road Damage|Roadside Flooding|Water Leakage,Road Department,1,Inspect damaged road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0083,Road Damage|Roadside Flooding|Water Leakage,Drainage Department,1,Inspect flooded road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0084,Road Damage|Roadside Flooding|Water Leakage,Water Department,1,Inspect water pipeline,,Parallel/Start,INSPECT,multi_department_coordination
+WR0085,Road Damage|Roadside Flooding|Water Leakage,Road Department,4,Repair road surface,Inspect damaged road section,Sequential,,multi_department_coordination
+WR0086,Road Damage|Roadside Flooding|Water Leakage,Drainage Department,5,Clear surface water / restore road,Repair road surface,Sequential,,multi_department_coordination
+WR0087,Road Damage|Roadside Flooding|Water Leakage,Water Department,6,Repair water pipeline / stop leakage,Clear surface water / restore road,Sequential,,multi_department_coordination
+WR0088,Road Damage|Roadside Flooding|Water Leakage,Road Department,7,Final road safety inspection,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0089,Road Damage|Roadside Flooding|Water Leakage,Drainage Department,7,Verify drainage flow,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0090,Road Damage|Roadside Flooding|Water Leakage,Water Department,7,Test repaired pipeline,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0091,Road Damage|Traffic Signal,Road Department,1,Inspect damaged road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0092,Road Damage|Traffic Signal,Traffic Department,1,Inspect traffic signal controller,,Parallel/Start,INSPECT,multi_department_coordination
+WR0093,Road Damage|Traffic Signal,Road Department,3,Repair road surface,Inspect damaged road section,Sequential,,multi_department_coordination
+WR0094,Road Damage|Traffic Signal,Traffic Department,4,Repair signal controller / lamp,Repair road surface,Sequential,,multi_department_coordination
+WR0095,Road Damage|Traffic Signal,Road Department,5,Final road safety inspection,Repair signal controller / lamp,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0096,Road Damage|Traffic Signal,Traffic Department,5,Test junction signal,Repair signal controller / lamp,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0097,Road Damage|Traffic Signal|Tree Hazard,Road Department,1,Inspect damaged road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0098,Road Damage|Traffic Signal|Tree Hazard,Traffic Department,1,Inspect traffic signal controller,,Parallel/Start,INSPECT,multi_department_coordination
+WR0099,Road Damage|Traffic Signal|Tree Hazard,Garden Department,1,Inspect hazardous tree / branch,,Parallel/Start,INSPECT,multi_department_coordination
+WR0100,Road Damage|Traffic Signal|Tree Hazard,Road Department,4,Repair road surface,Inspect damaged road section,Sequential,,multi_department_coordination
+WR0101,Road Damage|Traffic Signal|Tree Hazard,Traffic Department,5,Repair signal controller / lamp,Repair road surface,Sequential,,multi_department_coordination
+WR0102,Road Damage|Traffic Signal|Tree Hazard,Garden Department,6,Trim or remove hazardous tree,Repair signal controller / lamp,Sequential,,multi_department_coordination
+WR0103,Road Damage|Traffic Signal|Tree Hazard,Road Department,7,Final road safety inspection,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0104,Road Damage|Traffic Signal|Tree Hazard,Traffic Department,7,Test junction signal,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0105,Road Damage|Traffic Signal|Tree Hazard,Garden Department,7,Clear debris and reopen area,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0106,Road Damage|Traffic Signal|Water Leakage,Road Department,1,Inspect damaged road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0107,Road Damage|Traffic Signal|Water Leakage,Traffic Department,1,Inspect traffic signal controller,,Parallel/Start,INSPECT,multi_department_coordination
+WR0108,Road Damage|Traffic Signal|Water Leakage,Water Department,1,Inspect water pipeline,,Parallel/Start,INSPECT,multi_department_coordination
+WR0109,Road Damage|Traffic Signal|Water Leakage,Road Department,4,Repair road surface,Inspect damaged road section,Sequential,,multi_department_coordination
+WR0110,Road Damage|Traffic Signal|Water Leakage,Traffic Department,5,Repair signal controller / lamp,Repair road surface,Sequential,,multi_department_coordination
+WR0111,Road Damage|Traffic Signal|Water Leakage,Water Department,6,Repair water pipeline / stop leakage,Repair signal controller / lamp,Sequential,,multi_department_coordination
+WR0112,Road Damage|Traffic Signal|Water Leakage,Road Department,7,Final road safety inspection,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0113,Road Damage|Traffic Signal|Water Leakage,Traffic Department,7,Test junction signal,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0114,Road Damage|Traffic Signal|Water Leakage,Water Department,7,Test repaired pipeline,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0115,Road Damage|Tree Hazard,Road Department,1,Inspect damaged road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0116,Road Damage|Tree Hazard,Garden Department,1,Inspect hazardous tree / branch,,Parallel/Start,INSPECT,multi_department_coordination
+WR0117,Road Damage|Tree Hazard,Road Department,3,Repair road surface,Inspect damaged road section,Sequential,,multi_department_coordination
+WR0118,Road Damage|Tree Hazard,Garden Department,4,Trim or remove hazardous tree,Repair road surface,Sequential,,multi_department_coordination
+WR0119,Road Damage|Tree Hazard,Road Department,5,Final road safety inspection,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0120,Road Damage|Tree Hazard,Garden Department,5,Clear debris and reopen area,Trim or remove hazardous tree,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0121,Road Damage|Water Leakage,Road Department,1,Inspect damaged road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0122,Road Damage|Water Leakage,Water Department,1,Inspect water pipeline,,Parallel/Start,INSPECT,multi_department_coordination
+WR0123,Road Damage|Water Leakage,Road Department,3,Repair road surface,Inspect damaged road section,Sequential,,multi_department_coordination
+WR0124,Road Damage|Water Leakage,Water Department,4,Repair water pipeline / stop leakage,Repair road surface,Sequential,,multi_department_coordination
+WR0125,Road Damage|Water Leakage,Road Department,5,Final road safety inspection,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0126,Road Damage|Water Leakage,Water Department,5,Test repaired pipeline,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0127,Roadside Flooding|Traffic Signal,Drainage Department,1,Inspect flooded road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0128,Roadside Flooding|Traffic Signal,Traffic Department,1,Inspect traffic signal controller,,Parallel/Start,INSPECT,multi_department_coordination
+WR0129,Roadside Flooding|Traffic Signal,Drainage Department,3,Clear surface water / restore road,Inspect flooded road section,Sequential,,multi_department_coordination
+WR0130,Roadside Flooding|Traffic Signal,Traffic Department,4,Repair signal controller / lamp,Clear surface water / restore road,Sequential,,multi_department_coordination
+WR0131,Roadside Flooding|Traffic Signal,Drainage Department,5,Verify drainage flow,Repair signal controller / lamp,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0132,Roadside Flooding|Traffic Signal,Traffic Department,5,Test junction signal,Repair signal controller / lamp,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0133,Roadside Flooding|Water Leakage,Drainage Department,1,Inspect flooded road section,,Parallel/Start,INSPECT,multi_department_coordination
+WR0134,Roadside Flooding|Water Leakage,Water Department,1,Inspect water pipeline,,Parallel/Start,INSPECT,multi_department_coordination
+WR0135,Roadside Flooding|Water Leakage,Drainage Department,3,Clear surface water / restore road,Inspect flooded road section,Sequential,,multi_department_coordination
+WR0136,Roadside Flooding|Water Leakage,Water Department,4,Repair water pipeline / stop leakage,Clear surface water / restore road,Sequential,,multi_department_coordination
+WR0137,Roadside Flooding|Water Leakage,Drainage Department,5,Verify drainage flow,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination
+WR0138,Roadside Flooding|Water Leakage,Water Department,5,Test repaired pipeline,Repair water pipeline / stop leakage,Parallel/After-Resolution,VERIFY,multi_department_coordination

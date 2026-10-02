@@ -1,0 +1,391 @@
+{
+  "complaint_text": "Residents report that the road surface is badly damaged near the junction, the traffic signal is not responding correctly, and water is leaking from the roadside pipeline. The situation is dangerous for vehicles and needs coordinated action.",
+  "location": "Thergaon",
+  "coordinates": {
+    "latitude": 18.5972,
+    "longitude": 73.7471
+  },
+  "timestamp": "2026-09-12 09:00:00",
+  "issue_types": [
+    "Road Damage",
+    "Water Leakage",
+    "Traffic Signal"
+  ],
+  "issue_probabilities": {
+    "road_damage_flag": 0.9789125614152818,
+    "roadside_flooding_flag": 0.09925389912856088,
+    "water_leakage_flag": 0.9838738636485469,
+    "electric_pole_flag": 0.0037973184814719817,
+    "streetlight_flag": 0.007098196200955858,
+    "traffic_signal_flag": 0.8532735424010072,
+    "garbage_flag": 0.0015479444263682535,
+    "tree_hazard_flag": 0.0310889981516937,
+    "drainage_flag": 0.0041299834735096345
+  },
+  "urgency": {
+    "level": "High",
+    "score": 65,
+    "critical_keywords": [],
+    "high_keywords": [
+      "dangerous"
+    ]
+  },
+  "responsible_departments": [
+    "Road Department",
+    "Water Department",
+    "Traffic Department"
+  ],
+  "relationship_results": [
+    {
+      "complaint_id": "C00268",
+      "complaint_text": "Residents report that a large broken patch is making the road unsafe, the signal is causing confusion for vehicles and a damaged water connection is causing leakage near Thergaon. Coordinated action is requested.",
+      "issue_types": "Road Damage|Traffic Signal|Water Leakage",
+      "relationship": "Related",
+      "semantic_similarity": 0.6897201538085938,
+      "distance_km": 0.04686584648920182,
+      "time_difference_hours": 61.75
+    },
+    {
+      "complaint_id": "C01963",
+      "complaint_text": "Residents noticed that a damaged water connection is causing leakage near Wakad Main Road. Residents are requesting action.",
+      "issue_types": "Water Leakage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.6202983260154724,
+      "distance_km": 1.7687701837335041,
+      "time_difference_hours": 434.0
+    },
+    {
+      "complaint_id": "C00266",
+      "complaint_text": "A citizen reports that the asphalt has come off near the junction, the signal remains red for too long and the water supply line is leaking at the roadside near Thergaon. Coordinated action is requested.",
+      "issue_types": "Road Damage|Traffic Signal|Water Leakage",
+      "relationship": "Duplicate",
+      "semantic_similarity": 0.6036280989646912,
+      "distance_km": 0.10576368954027936,
+      "time_difference_hours": 44.75
+    },
+    {
+      "complaint_id": "C01964",
+      "complaint_text": "Please check whether a water pipeline is leaking near Wakad Main Road. The problem is affecting nearby residents.",
+      "issue_types": "Water Leakage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.5920156240463257,
+      "distance_km": 1.687078915252076,
+      "time_difference_hours": 472.5
+    },
+    {
+      "complaint_id": "C00265",
+      "complaint_text": "A citizen reports that the asphalt has come off near the junction, the crossing signal is not responding and water is escaping from an underground pipeline near Thergaon. Coordinated action is requested.",
+      "issue_types": "Road Damage|Traffic Signal|Water Leakage",
+      "relationship": "Related",
+      "semantic_similarity": 0.5656630992889404,
+      "distance_km": 0.04136679147081089,
+      "time_difference_hours": 59.5
+    },
+    {
+      "complaint_id": "C00267",
+      "complaint_text": "A coordinated complaint states that a large broken patch is making the road unsafe, the crossing signal is not responding and water is collecting because of a pipeline leak near Thergaon. Coordinated action is requested.",
+      "issue_types": "Road Damage|Traffic Signal|Water Leakage",
+      "relationship": "Duplicate",
+      "semantic_similarity": 0.558509886264801,
+      "distance_km": 0.04851111075915923,
+      "time_difference_hours": 20.75
+    },
+    {
+      "complaint_id": "C01961",
+      "complaint_text": "Please check whether there is a major water leak near the road near Wakad Main Road. The issue is visible to road users.",
+      "issue_types": "Water Leakage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.5378719568252563,
+      "distance_km": 1.8217204407527456,
+      "time_difference_hours": 481.25
+    },
+    {
+      "complaint_id": "C02438",
+      "complaint_text": "Local residents report that there is a major water leak near the road near Wakad Main Road. Residents are requesting action.",
+      "issue_types": "Water Leakage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.531578540802002,
+      "distance_km": 1.7387387584063692,
+      "time_difference_hours": 272.0
+    },
+    {
+      "complaint_id": "C00971",
+      "complaint_text": "Residents report that a drainage line appears to be blocked while a section of the roadway is cracked and uneven near Wakad Main Road. Residents are requesting coordinated action.",
+      "issue_types": "Drainage|Road Damage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.5287933945655823,
+      "distance_km": 1.779705840964858,
+      "time_difference_hours": 118.75
+    },
+    {
+      "complaint_id": "C05369",
+      "complaint_text": "People nearby report that the road edge is flooded and difficult to pass near Thergaon. Please arrange an inspection.",
+      "issue_types": "Roadside Flooding",
+      "relationship": "Related",
+      "semantic_similarity": 0.5229445099830627,
+      "distance_km": 0.0502987159406666,
+      "time_difference_hours": 284.75
+    },
+    {
+      "complaint_id": "C02440",
+      "complaint_text": "A resident reports that the water supply line is leaking at the roadside near Wakad Main Road. Please arrange an inspection.",
+      "issue_types": "Water Leakage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.522918701171875,
+      "distance_km": 1.6475089762646193,
+      "time_difference_hours": 232.5
+    },
+    {
+      "complaint_id": "C00970",
+      "complaint_text": "A coordinated complaint states that a drainage line appears to be blocked, with a section of the roadway is cracked and uneven near Wakad Main Road. Residents are requesting coordinated action.",
+      "issue_types": "Drainage|Road Damage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.48838716745376587,
+      "distance_km": 1.7792641007179828,
+      "time_difference_hours": 140.5
+    },
+    {
+      "complaint_id": "C01962",
+      "complaint_text": "People nearby report that a pipe has burst and water is continuously flowing near Wakad Main Road. Please arrange an inspection.",
+      "issue_types": "Water Leakage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.4858427047729492,
+      "distance_km": 1.7472956170019711,
+      "time_difference_hours": 474.75
+    },
+    {
+      "complaint_id": "C00969",
+      "complaint_text": "Residents report that sewer water is spreading onto the road while multiple potholes are causing problems for vehicles near Wakad Main Road. Residents are requesting coordinated action.",
+      "issue_types": "Drainage|Road Damage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.48355093598365784,
+      "distance_km": 1.7458810895873333,
+      "time_difference_hours": 124.5
+    },
+    {
+      "complaint_id": "C03062",
+      "complaint_text": "Local residents report that the road edge is flooded and difficult to pass near Wakad Main Road. Residents are requesting action.",
+      "issue_types": "Roadside Flooding",
+      "relationship": "Independent",
+      "semantic_similarity": 0.48189055919647217,
+      "distance_km": 1.683513494775462,
+      "time_difference_hours": 141.25
+    },
+    {
+      "complaint_id": "C00204",
+      "complaint_text": "Local residents report that the roadside is flooded and traffic is slowing down near Thergaon. Please arrange an inspection.",
+      "issue_types": "Roadside Flooding",
+      "relationship": "Related",
+      "semantic_similarity": 0.48125481605529785,
+      "distance_km": 0.03136129808684501,
+      "time_difference_hours": 188.75
+    },
+    {
+      "complaint_id": "C00202",
+      "complaint_text": "People nearby report that the roadside is flooded and traffic is slowing down near Thergaon. Please arrange an inspection.",
+      "issue_types": "Roadside Flooding",
+      "relationship": "Related",
+      "semantic_similarity": 0.4744221568107605,
+      "distance_km": 0.09245508524281663,
+      "time_difference_hours": 141.75
+    },
+    {
+      "complaint_id": "C02437",
+      "complaint_text": "Please check whether water is escaping from an underground pipeline near Wakad Main Road. The issue has remained unresolved.",
+      "issue_types": "Water Leakage",
+      "relationship": "Independent",
+      "semantic_similarity": 0.4668739438056946,
+      "distance_km": 1.6981286020948776,
+      "time_difference_hours": 201.0
+    },
+    {
+      "complaint_id": "C03061",
+      "complaint_text": "People nearby report that the roadside is flooded and traffic is slowing down near Wakad Main Road. The issue has remained unresolved.",
+      "issue_types": "Roadside Flooding",
+      "relationship": "Independent",
+      "semantic_similarity": 0.4625532925128937,
+      "distance_km": 1.7240221354204295,
+      "time_difference_hours": 130.5
+    },
+    {
+      "complaint_id": "C05370",
+      "complaint_text": "A resident reports that the roadside is flooded and traffic is slowing down near Thergaon. The issue has remained unresolved.",
+      "issue_types": "Roadside Flooding",
+      "relationship": "Related",
+      "semantic_similarity": 0.4594128131866455,
+      "distance_km": 0.013177819484597087,
+      "time_difference_hours": 272.25
+    }
+  ],
+  "strong_relationships": [
+    {
+      "complaint_id": "C00268",
+      "complaint_text": "Residents report that a large broken patch is making the road unsafe, the signal is causing confusion for vehicles and a damaged water connection is causing leakage near Thergaon. Coordinated action is requested.",
+      "issue_types": "Road Damage|Traffic Signal|Water Leakage",
+      "relationship": "Related",
+      "semantic_similarity": 0.6897201538085938,
+      "distance_km": 0.04686584648920182,
+      "time_difference_hours": 61.75
+    },
+    {
+      "complaint_id": "C00265",
+      "complaint_text": "A citizen reports that the asphalt has come off near the junction, the crossing signal is not responding and water is escaping from an underground pipeline near Thergaon. Coordinated action is requested.",
+      "issue_types": "Road Damage|Traffic Signal|Water Leakage",
+      "relationship": "Related",
+      "semantic_similarity": 0.5656630992889404,
+      "distance_km": 0.04136679147081089,
+      "time_difference_hours": 59.5
+    },
+    {
+      "complaint_id": "C05369",
+      "complaint_text": "People nearby report that the road edge is flooded and difficult to pass near Thergaon. Please arrange an inspection.",
+      "issue_types": "Roadside Flooding",
+      "relationship": "Related",
+      "semantic_similarity": 0.5229445099830627,
+      "distance_km": 0.0502987159406666,
+      "time_difference_hours": 284.75
+    }
+  ],
+  "civic_issue_status": "Connected Civic Issue",
+  "connected_complaints": [
+    "C00268",
+    "C00265",
+    "C05369"
+  ],
+  "knowledge_graph_context": [
+    {
+      "complaint": "C00265",
+      "source": "Road Damage",
+      "relation": "can_affect",
+      "target": "Traffic Signal"
+    },
+    {
+      "complaint": "C00265",
+      "source": "Road Damage",
+      "relation": "can_disrupt",
+      "target": "Traffic Signal"
+    },
+    {
+      "complaint": "C00265",
+      "source": "Traffic Signal",
+      "relation": "can_affect",
+      "target": "Road Damage"
+    },
+    {
+      "complaint": "C00265",
+      "source": "Water Leakage",
+      "relation": "can_cause",
+      "target": "Road Damage"
+    },
+    {
+      "complaint": "C00268",
+      "source": "Road Damage",
+      "relation": "can_affect",
+      "target": "Traffic Signal"
+    },
+    {
+      "complaint": "C00268",
+      "source": "Road Damage",
+      "relation": "can_disrupt",
+      "target": "Traffic Signal"
+    },
+    {
+      "complaint": "C00268",
+      "source": "Traffic Signal",
+      "relation": "can_affect",
+      "target": "Road Damage"
+    },
+    {
+      "complaint": "C00268",
+      "source": "Water Leakage",
+      "relation": "can_cause",
+      "target": "Road Damage"
+    },
+    {
+      "complaint": "C05369",
+      "source": "Roadside Flooding",
+      "relation": "can_cause",
+      "target": "Road Damage"
+    },
+    {
+      "complaint": "C05369",
+      "source": "Water Leakage",
+      "relation": "can_cause",
+      "target": "Roadside Flooding"
+    }
+  ],
+  "workflow_tasks": [
+    {
+      "task": "Inspect damaged road section",
+      "department": "Road Department",
+      "order": 1,
+      "dependency": null,
+      "execution": "Parallel/Start",
+      "parallel_group": "INSPECT"
+    },
+    {
+      "task": "Inspect traffic signal controller",
+      "department": "Traffic Department",
+      "order": 1,
+      "dependency": null,
+      "execution": "Parallel/Start",
+      "parallel_group": "INSPECT"
+    },
+    {
+      "task": "Inspect water pipeline",
+      "department": "Water Department",
+      "order": 1,
+      "dependency": null,
+      "execution": "Parallel/Start",
+      "parallel_group": "INSPECT"
+    },
+    {
+      "task": "Repair road surface",
+      "department": "Road Department",
+      "order": 4,
+      "dependency": "Inspect damaged road section",
+      "execution": "Sequential",
+      "parallel_group": null
+    },
+    {
+      "task": "Repair signal controller / lamp",
+      "department": "Traffic Department",
+      "order": 5,
+      "dependency": "Repair road surface",
+      "execution": "Sequential",
+      "parallel_group": null
+    },
+    {
+      "task": "Repair water pipeline / stop leakage",
+      "department": "Water Department",
+      "order": 6,
+      "dependency": "Repair signal controller / lamp",
+      "execution": "Sequential",
+      "parallel_group": null
+    },
+    {
+      "task": "Final road safety inspection",
+      "department": "Road Department",
+      "order": 7,
+      "dependency": "Repair water pipeline / stop leakage",
+      "execution": "Parallel/After-Resolution",
+      "parallel_group": "VERIFY"
+    },
+    {
+      "task": "Test junction signal",
+      "department": "Traffic Department",
+      "order": 7,
+      "dependency": "Repair water pipeline / stop leakage",
+      "execution": "Parallel/After-Resolution",
+      "parallel_group": "VERIFY"
+    },
+    {
+      "task": "Test repaired pipeline",
+      "department": "Water Department",
+      "order": 7,
+      "dependency": "Repair water pipeline / stop leakage",
+      "execution": "Parallel/After-Resolution",
+      "parallel_group": "VERIFY"
+    }
+  ]
+}

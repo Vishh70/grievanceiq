@@ -1,0 +1,36 @@
+{
+  "training_records": 4196,
+  "validation_records": 904,
+  "test_records": 900,
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "validation": {
+    "micro_precision": 0.9923398328690808,
+    "micro_recall": 0.9923398328690808,
+    "micro_f1": 0.9923398328690808,
+    "macro_f1": 0.9930432806162695,
+    "hamming_loss": 0.002704031465093412,
+    "exact_match": 0.9756637168141593
+  },
+  "test": {
+    "micro_precision": 0.9786407766990292,
+    "micro_recall": 0.9921259842519685,
+    "micro_f1": 0.9853372434017595,
+    "macro_precision": 0.9782800301740036,
+    "macro_recall": 0.9919856973035702,
+    "macro_f1": 0.984985947285528,
+    "hamming_loss": 0.005555555555555556,
+    "exact_match": 0.95
+  },
+  "thresholds": {
+    "road_damage_flag": 0.5899999999999997,
+    "roadside_flooding_flag": 0.6099999999999998,
+    "water_leakage_flag": 0.5099999999999998,
+    "electric_pole_flag": 0.5799999999999997,
+    "streetlight_flag": 0.5799999999999997,
+    "traffic_signal_flag": 0.5999999999999998,
+    "garbage_flag": 0.6499999999999997,
+    "tree_hazard_flag": 0.4299999999999998,
+    "drainage_flag": 0.6599999999999997
+  }
+}
