@@ -14,20 +14,32 @@ const axios = require('axios');
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
 const ML_SERVICE_TIMEOUT_MS = 8000;
 
-// ── Label → Department Mapping ────────────────────────────────────────────────
-// Maps the 9 binary flags from the multilabel model to the department
-// names used by the existing routing_rules.json system.
+// ── Label → Canonical Mappings ───────────────────────────────────────────────
+// Maps the 9 binary flags from the multilabel model to the canonical
+// issue types and department names used by routing_rules.json.
+
+const LABEL_TO_ISSUE_TYPE = {
+  road_damage_flag:       'Road Damage',
+  roadside_flooding_flag: 'Road Flooding',
+  water_leakage_flag:     'Water Leakage',
+  electric_pole_flag:     'Electrical Hazard',
+  streetlight_flag:       'Streetlight Failure',
+  traffic_signal_flag:    'Public Safety Hazard', // Traffic signals often route to safety/roads
+  garbage_flag:           'Garbage Accumulation',
+  tree_hazard_flag:       'Public Safety Hazard',
+  drainage_flag:          'Drainage Overflow',
+};
 
 const LABEL_TO_DEPARTMENT = {
-  road_damage_flag:       'Roads & Transport',
-  roadside_flooding_flag: 'Drainage',
-  water_leakage_flag:     'Water Supply',
-  electric_pole_flag:     'Electricity',
-  streetlight_flag:       'Electricity',
-  traffic_signal_flag:    'Roads & Transport',
-  garbage_flag:           'Waste Management',
-  tree_hazard_flag:       'Public Infrastructure',
-  drainage_flag:          'Drainage',
+  road_damage_flag:       'Road Department',
+  roadside_flooding_flag: 'Road Department',
+  water_leakage_flag:     'Water Department',
+  electric_pole_flag:     'Electrical Department',
+  streetlight_flag:       'Electrical Department',
+  traffic_signal_flag:    'Public Safety Department',
+  garbage_flag:           'Sanitation Department',
+  tree_hazard_flag:       'Public Safety Department',
+  drainage_flag:          'Drainage Department',
 };
 
 // ── Health Check ─────────────────────────────────────────────────────────────
@@ -41,7 +53,7 @@ async function isMLServiceAvailable() {
     const res = await axios.get(`${ML_SERVICE_URL}/health`, {
       timeout: 2000
     });
-    return res.status === 200;
+    return res.status === 200 && res.data.model_loaded === true;
   } catch {
     return false;
   }
@@ -53,22 +65,20 @@ async function isMLServiceAvailable() {
  * Sends a 384-dim embedding to the Python ML service and returns
  * the predicted issue labels and their per-label probabilities.
  *
- * Falls back gracefully if the Python service is not running —
- * in that case, the rest of the pipeline (Gemini routing) continues
- * without the multi-label flags.
- *
  * @param {number[]} embedding - 384-dimensional MiniLM embedding array
  * @param {string} [text] - Optional original complaint text (for logging)
  * @returns {Promise<{
- *   labels: string[],            // Active issue flags
+ *   labels: string[],            // Active ML flags
+ *   issueTypes: string[],        // Derived canonical issue types
  *   probabilities: object,       // Per-label probabilities
- *   departments: string[],       // Derived department names (de-duped)
+ *   departments: string[],       // Derived canonical department names
  *   serviceAvailable: boolean
  * }>}
  */
 async function predictIssueLabels(embedding, text = '') {
   const fallback = {
     labels: [],
+    issueTypes: [],
     probabilities: {},
     departments: [],
     serviceAvailable: false,
@@ -85,9 +95,26 @@ async function predictIssueLabels(embedding, text = '') {
       { timeout: ML_SERVICE_TIMEOUT_MS }
     );
 
-    const { labels = [], probabilities = {} } = response.data;
+    if (response.data.model_loaded !== true) {
+        throw new Error('Model not loaded on inference server');
+    }
 
-    // Derive unique department names from active labels
+    const { labels = [], probabilities = {} } = response.data;
+    
+    if (!Array.isArray(labels)) {
+        throw new Error('Expected labels array from Python service');
+    }
+
+    // Derive canonical application issue types
+    const issueTypes = [
+      ...new Set(
+        labels
+          .map(l => LABEL_TO_ISSUE_TYPE[l])
+          .filter(Boolean)
+      )
+    ];
+
+    // Derive canonical department names
     const departments = [
       ...new Set(
         labels
@@ -98,15 +125,14 @@ async function predictIssueLabels(embedding, text = '') {
 
     return {
       labels,
+      issueTypes,
       probabilities,
       departments,
       serviceAvailable: true,
     };
   } catch (err) {
-    // Python service is not running — degrade gracefully
-    // The existing Gemini + routing system will handle the request
     console.warn(
-      '[mlService] Python ML service unavailable, skipping multi-label prediction:',
+      '[ML] trained multi-label model unavailable:',
       err.code || err.message
     );
     return fallback;

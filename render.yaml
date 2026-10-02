@@ -10,6 +10,11 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: ML_SERVICE_URL
+        fromService:
+          type: web
+          name: grievanceiq-ml
+          envVarKey: RENDER_EXTERNAL_URL
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
@@ -18,3 +23,13 @@ services:
         sync: false
       - key: CLIENT_URL
         sync: false
+
+  - type: web
+    name: grievanceiq-ml
+    env: python
+    rootDir: backend/ml
+    buildCommand: pip install -r requirements.txt
+    startCommand: python inference/grievanceiq_inference.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12

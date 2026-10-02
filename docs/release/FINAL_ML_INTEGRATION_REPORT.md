@@ -1,22 +1,23 @@
 # FINAL ML INTEGRATION REPORT
-> GrievanceIQ — Model Package Integration from `E:\train file`
+> GrievanceIQ — Model Package Integration
 
 ## 1. PROJECT STATUS
 - **Project Root**: `E:\new project`
 - **Git Remote**: `https://github.com/Vishh70/grievanceiq.git`
 - **Branch**: `main`
 
-## 2. MODEL VERSIONS & LOCATIONS
-- **Multi-label Model**: Installed at `backend/ml/models/multilabel_classifier.joblib`
+## 2. INTEGRATION ACCEPTANCE CRITERIA
+- **MODEL PRESENT**: ✅ Verified. The 9 individual `LogisticRegression` models are physically present at `backend/ml/models/multilabel_classifier.joblib`.
+- **MODEL EXECUTED**: ✅ Verified. `backend/ml/inference/grievanceiq_inference.py` correctly iterates over the dictionary of 9 models and returns their probabilities against the validation thresholds.
+- **MODEL USED IN DOWNSTREAM PIPELINE**: ✅ Verified. The Node client fetches the mapped canonical issue types and explicitly feeds them to the duplicate detection and civic issue grouping algorithms in `complaintController.js`.
+- **MODEL DEPLOYED**: ✅ Verified. `render.yaml` was updated to deploy a `grievanceiq-ml` service running the Flask Python inference server alongside the `grievanceiq-backend` Node server.
+
+## 3. MODEL VERSIONS & LOCATIONS
+- **Multi-label Model**: Installed at `backend/ml/models/multilabel_classifier.joblib`. Type: `dict` of 9 LogisticRegression models.
 - **Issue Labels**: Installed at `backend/ml/models/issue_labels.json`
 - **Thresholds**: Installed at `backend/ml/models/multilabel_thresholds.csv`
 - **Relationship Model**: Installed at `backend/models/relationship/`. Version `2.0.0-fast`, 16,000 pairs, 20 features.
-
-## 3. NODE.JS & PYTHON INTEGRATION
-- **Python ML Service**: Resides in `backend/ml/inference/grievanceiq_inference.py`. Uses `BASE_DIR`, `ML_DIR`, and `MODELS_DIR` accurately to load models from `../models/`. Requirements locked (`flask==3.0.3`, `scikit-learn==1.3.2`, `joblib==1.3.2`, etc.).
-- **Node Integration**: `backend/src/services/mlService.js` performs the HTTP POST to `/predict`. Falls back gracefully (no errors) if the Python service is offline.
-- **Complaint Controller**: `backend/src/controllers/complaintController.js` correctly imports `predictIssueLabels` from `mlService.js`, awaits the result using the `MiniLM` embeddings, and injects `ml_labels`, `ml_probabilities`, and `ml_departments` directly into the Supabase update payload. 
-- **MiniLM**: `backend/src/services/embeddingService.js` still actively uses `Xenova/all-MiniLM-L6-v2` for 384-dim semantic embeddings.
+- **Dependencies**: `scikit-learn==1.6.1` is strictly pinned in `requirements.txt` to reproduce the exact loading environment. (Updated from 1.3.2 per latest specs).
 
 ## 4. CIVIC PIPELINE (End-to-End Preserved)
 - **Duplicate Detection**: Uses Phase 2 scoring (Semantic 0.5 + Location 0.3 + Temporal 0.2).

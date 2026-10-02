@@ -94,7 +94,7 @@ exports.createComplaint = async (req, res) => {
         }
 
         // ── Phase 1.5: Multilabel Issue Classification (Python ML Service) ──
-        let mlPrediction = { labels: [], probabilities: {}, departments: [], serviceAvailable: false };
+        let mlPrediction = { labels: [], issueTypes: [], probabilities: {}, departments: [], serviceAvailable: false };
         try {
           const { predictIssueLabels } = require('../services/mlService');
           mlPrediction = await predictIssueLabels(embeddingVector, text);
@@ -104,6 +104,11 @@ exports.createComplaint = async (req, res) => {
         } catch (mlErr) {
           console.error('ML Issue Classification failed:', mlErr.message);
         }
+
+        // Authoritative Category: Prefer trained ML model's canonical issue types
+        const primaryCategory = mlPrediction.issueTypes && mlPrediction.issueTypes.length > 0 
+          ? mlPrediction.issueTypes[0] 
+          : aiResult.category;
 
         // ── Phase 2: Real Duplicate Detection ────────────────────────────
         let similarGroupId = complaintData.id;
@@ -116,13 +121,13 @@ exports.createComplaint = async (req, res) => {
         let candidateComplaints = [];
 
         try {
-          // Step 1: Retrieve candidate complaints (same category, recent, limit 100)
+          // Step 1: Retrieve candidate complaints (same primary category, recent, limit 100)
           const cutoffDate = new Date();
           cutoffDate.setDate(cutoffDate.getDate() - DUPLICATE_CONFIG.CANDIDATE_MAX_AGE_DAYS);
 
           const { data: candidates } = await supabase.from('complaints')
             .select('id, description, embedding_vector, location_lat, location_lng, created_at, similar_group_id, category')
-            .eq('category', aiResult.category)
+            .eq('category', primaryCategory)
             .neq('id', complaintData.id)
             .eq('ai_processed', true)
             .gte('created_at', cutoffDate.toISOString())
@@ -183,7 +188,7 @@ exports.createComplaint = async (req, res) => {
 
         // ── Build Supabase Update Payload ─────────────────────────────────
         const updatePayload = {
-          category: aiResult.category,
+          category: primaryCategory,
           priority: aiResult.priority,
           keywords: aiResult.keywords,
           severity_score: aiResult.severityScore,
@@ -234,7 +239,7 @@ exports.createComplaint = async (req, res) => {
           const newComplaintObj = {
             id: complaintData.id,
             text: text,
-            category: aiResult.category,
+            category: primaryCategory,
             location_lat: complaintData.location_lat,
             location_lng: complaintData.location_lng,
             created_at: complaintData.created_at,
