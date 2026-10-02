@@ -44,9 +44,6 @@ jest.mock('../src/services/embeddingService', () => {
 describe('Phase 3: Relationship Classification', () => {
   jest.setTimeout(60000);
 
-  afterAll(async () => {
-    await disposeExtractor();
-  });
 
   // ── Unit Tests ────────────────────────────────────────────────────────────
 

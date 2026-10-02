@@ -18,9 +18,6 @@ const {
 describe('Phase 2: Real Duplicate Detection', () => {
   jest.setTimeout(60000);
 
-  afterAll(async () => {
-    await disposeExtractor();
-  });
 
   // ── Haversine Distance ──────────────────────────────────────────────────
 

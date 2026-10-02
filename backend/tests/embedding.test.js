@@ -7,9 +7,6 @@ describe('Phase 1: Semantic Embedding & Cosine Similarity Engine', () => {
   // Allow model download and initial loading time
   jest.setTimeout(60000);
 
-  afterAll(async () => {
-    await disposeExtractor();
-  });
 
   // ── Test 1 — Embedding generation ──────────────────────────────────────────
   describe('Test 1 — Embedding generation', () => {
