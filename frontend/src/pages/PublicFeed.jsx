@@ -28,18 +28,13 @@ function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   return Math.round(R * c * 10) / 10;
 }
 
-function MapViewController({ center, zoom, points }) {
+function MapViewController({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
-    if (points && points.length > 1) {
-      const bounds = L.latLngBounds(points);
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-    } else if (points && points.length === 1) {
-      map.flyTo(points[0], 14, { animate: true, duration: 1 });
-    } else if (center) {
+    if (center) {
       map.flyTo(center, zoom || 12, { animate: true, duration: 1.2 });
     }
-  }, [center, zoom, points, map]);
+  }, [center, zoom, map]);
   return null;
 }
 
@@ -287,7 +282,7 @@ export default function PublicFeed() {
             zoom={mapZoom} 
             style={{ height: '100%', width: '100%', zIndex: 1 }}
           >
-            <MapViewController center={mapCenter} zoom={mapZoom} points={activePoints} />
+            <MapViewController center={mapCenter} zoom={mapZoom} />
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' />
 
             
