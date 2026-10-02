@@ -14,13 +14,28 @@ const { disposeExtractor } = require('../src/services/embeddingService');
 // Mock the embedding service to ensure fast, deterministic tests without Xenova lifecycle leaks
 jest.mock('../src/services/embeddingService', () => {
   const original = jest.requireActual('../src/services/embeddingService');
+  let callCount = 0;
   return {
     ...original,
     generateEmbedding: jest.fn().mockImplementation(async (text) => {
-      // Return a deterministic mock vector. The Random Forest model relies
-      // heavily on metadata (location, time, categories) alongside semantic similarity,
-      // so returning a static vector will still cleanly hit the test assertions.
-      return new Array(384).fill(0.1);
+      callCount++;
+      // Determine desired similarity based on the text to trigger correct Random Forest branches
+      let sim = 0.0;
+      if (text && text.includes('pothole')) sim = 0.95; // Test 1 (Duplicate)
+      else if (text && (text.includes('Water pipeline') || text.includes('because of water'))) sim = 0.37; // Test 2 (Related)
+      else if (text && (text.includes('Road damaged') || text.includes('resurfacing'))) sim = 0.0; // Test 3 (Similar/Independent)
+      else if (text && (text.includes('Streetlight') || text.includes('Garbage'))) sim = 0.0; // Test 4 (Independent)
+      
+      if (callCount % 2 === 1) {
+        let v = new Array(384).fill(0);
+        v[0] = 1;
+        return v;
+      } else {
+        let v = new Array(384).fill(0);
+        v[0] = sim;
+        v[1] = Math.sqrt(Math.max(0, 1 - sim * sim));
+        return v;
+      }
     }),
     disposeExtractor: jest.fn().mockResolvedValue()
   };
@@ -94,8 +109,8 @@ describe('Phase 3: Relationship Classification', () => {
         }
       );
       // Depending on tree variance, it should confidently predict Duplicate
-      expect(['Duplicate', 'Similar', 'Related']).toContain(result.relationship);
-      expect(result.confidence).toBeGreaterThan(0.2);
+      expect(['Duplicate', 'Similar']).toContain(result.relationship);
+      expect(result.confidence).toBeGreaterThan(0.3);
       
       console.log('Test 1 (Duplicate) Result:', result.relationship, result.confidence);
     });
@@ -114,11 +129,10 @@ describe('Phase 3: Relationship Classification', () => {
           category: 'Roads',
           location_lat: 18.6201,
           location_lng: 73.8101,
-          created_at: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+          created_at: new Date(Date.now() - 72 * 3600 * 1000).toISOString(),
         }
       );
-      // The deterministic mock vector produces high semantic similarity, leading the model to predict Duplicate
-      expect(['Duplicate', 'Related', 'Similar']).toContain(result.relationship);
+      expect(['Related', 'Similar']).toContain(result.relationship);
       
       console.log('Test 2 (Related) Result:', result.relationship, result.confidence);
     });
@@ -140,7 +154,7 @@ describe('Phase 3: Relationship Classification', () => {
           created_at: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
         }
       );
-      expect(['Duplicate', 'Similar', 'Independent']).toContain(result.relationship);
+      expect(['Similar', 'Independent']).toContain(result.relationship);
       
       console.log('Test 3 (Similar) Result:', result.relationship, result.confidence);
     });
