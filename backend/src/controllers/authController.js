@@ -97,7 +97,7 @@ exports.googleLogin = async (req, res) => {
       return res.status(401).json({ error: 'Invalid or expired Google token' });
     }
 
-    const { email, name, email_verified, sub: google_id } = payload;
+    const { email, name, email_verified, sub: google_id, picture } = payload;
 
     if (!email_verified) {
       return res.status(403).json({ error: 'Google account email must be verified' });
@@ -116,12 +116,22 @@ exports.googleLogin = async (req, res) => {
       if (!existingUser.google_id) {
         const { error: updateError } = await supabase
           .from('users')
-          .update({ google_id: google_id })
+          .update({ 
+            google_id: google_id,
+            auth_provider: 'google',
+            email_verified: !!email_verified,
+            avatar_url: picture || null
+          })
           .eq('id', existingUser.id);
         
-        if (!updateError) {
-          existingUser.google_id = google_id;
+        if (updateError) {
+          throw new Error('Failed to link Google identity to existing account: ' + updateError.message);
         }
+        
+        existingUser.google_id = google_id;
+        existingUser.auth_provider = 'google';
+        existingUser.email_verified = !!email_verified;
+        existingUser.avatar_url = picture || null;
       }
       
       const token = signToken(existingUser.id);
@@ -140,7 +150,10 @@ exports.googleLogin = async (req, res) => {
       password_hash: passwordHash,
       role: 'citizen', // NEVER assign admin automatically
       phone: '',
-      google_id: google_id
+      google_id: google_id,
+      auth_provider: 'google',
+      email_verified: !!email_verified,
+      avatar_url: picture || null
     }]).select().single();
 
     if (createError) {
