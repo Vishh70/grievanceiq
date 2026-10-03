@@ -7,16 +7,16 @@
 * **Frontend build:** PASS (vite build succeeds cleanly)
 * **Backend unit tests:** PASS (86/86, mocked paths intact)
 * **Backend E2E:** PASS (simulated environment intact)
-* **Live Supabase integration:** FAIL / BLOCKED (PGRST205 - Table `public.civic_issues` missing in schema cache; `update_task_status_transactional` RPC not deployed)
+* **Live Supabase integration:** PASS (All Phase 1-10 schema tables and transactional RPCs verified on live database)
 
 ## 2. Real World Environments
 * **Real MiniLM inference (Windows Native):** BLOCKED (`ERR_DLOPEN_FAILED` - ABI mismatch with `onnxruntime_binding.node` on Node 24.19.0).
 * **Gemini Inference:** PASS (External REST boundary works cleanly on realistic queries).
 * **ML Service (Python):** PASS (9-model Multi-Label and Random Forest infer correctly on mock/test sets).
-* **Physical browser smoke test:** BLOCKED (Cannot proceed end-to-end without live database transaction resolution).
-* **Database persistence:** FAIL (Phase 4-10 schemas not migrated).
-* **Transactional RPC:** FAIL (Migration missing).
-* **Admin dashboard:** BLOCKED (Requires live schema mapping).
+* **Physical browser smoke test:** BLOCKED (Cannot proceed end-to-end without real embedding generation).
+* **Database persistence:** PASS (Phase 4-10 schemas successfully migrated in live Supabase).
+* **Transactional RPC:** PASS (Migrated and tested).
+* **Admin dashboard:** BLOCKED (Dependent on embedding runtime for end-to-end data creation).
 * **Authorization:** PASS (Unit tests and application logic correctly gate roles).
 
 ## 3. Final Numbers
@@ -24,27 +24,17 @@
 | :--- | :--- |
 | **Automated tests** | PASS |
 | **Physical smoke tests** | BLOCKED |
-| **Live integration** | FAIL |
+| **Live integration** | PASS |
 | **Real embedding** | BLOCKED |
 | **ML service** | PASS |
 | **Gemini** | PASS |
 | **Admin** | BLOCKED |
-| **Database** | FAIL |
+| **Database** | PASS |
 
 ## 4. Required Migration Steps
-To resolve the live integration failure, the following SQL files from `docs/database/` MUST be executed against the Supabase instance in this exact order:
-1. `phase1_embedding.sql`
-2. `phase2_duplicate_detection.sql`
-3. `phase4_civic_issue.sql`
-4. `phase5_routing_tasks.sql`
-5. `phase6_task_dependencies.sql`
-6. `phase7_task_execution.sql`
-7. `phase8_task_hardening.sql`
-8. `phase10_ml_multilabel.sql`
-
-*(Note: `phase3` and `phase9` do not exist in the source repository.)*
+*(Completed successfully on the live Supabase instance)*
 
 ## 5. Final Verdict
-**NOT READY — FINAL RELEASE GATE FAILED**
+**NOT READY — WINDOWS EMBEDDING RUNTIME BLOCKED**
 
-The source code itself is hardened and unit-tested perfectly, but the deployment environment (Supabase Database + Windows Node 24 ONNX Runtime) is fundamentally broken for physical E2E processing. The integration test `supabase.test.js` has been restored to target the real schema (including the `update_task_status_transactional` RPC), which explicitly highlights that the database schema is missing in the cloud environment.
+The live database schema has been successfully migrated and verified via integration tests. The source code is hardened. However, the final release is blocked due to an ABI mismatch in the Node 24 environment preventing `@xenova/transformers` from loading `onnxruntime_binding.node`. A clean Node 22 environment is required to resolve this final dependency blocker.
