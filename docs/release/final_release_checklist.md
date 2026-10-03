@@ -7,7 +7,7 @@
 - [x] Authentication works
 - [x] Complaint submission works
 - [x] Embedding service fallback logic works
-- [ ] Real MiniLM inference physically verified (Blocked by Node 24 ABI)
+- [x] Real MiniLM inference physically verified (Fixed Tensor.location on CI with @huggingface/transformers, Windows requires VC++ Redist)
 - [x] Duplicate detection works
 - [x] Relationship classification works
 - [x] Civic Issue grouping works

@@ -24,12 +24,12 @@ router.post('/relationship', classifyRelationship);
 
 // Publicly readable endpoints (with optional auth for citizen upvote states)
 router.get('/public', optionalAuth, getPublicComplaints);
-router.get('/:id', optionalAuth, getComplaintById);
-router.get('/:id/similar', optionalAuth, getSimilarComplaints);
 
 // Protected routes (require valid citizen/admin JWT)
 router.use(protect);
 
+router.get('/:id',            getComplaintById);
+router.get('/:id/similar',    getSimilarComplaints);
 router.post('/',              upload.single('image'), validate(complaintSchema), createComplaint);
 router.get('/',               getComplaints);
 router.patch('/:id/status',   restrictTo('admin'), updateStatus);

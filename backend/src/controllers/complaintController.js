@@ -355,6 +355,10 @@ exports.getComplaintById = async (req, res) => {
 
     if (error || !complaint) return res.status(404).json({ error: 'Complaint not found' });
 
+    if (req.user.role !== 'admin' && complaint.citizen_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied: You do not have permission to view this complaint.' });
+    }
+
     res.json({ complaint: mapComplaint(complaint) });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -384,8 +388,12 @@ exports.updateStatus = async (req, res) => {
 
 exports.getSimilarComplaints = async (req, res) => {
   try {
-    const { data: complaint } = await supabase.from('complaints').select('similar_group_id, category').eq('id', req.params.id).single();
+    const { data: complaint } = await supabase.from('complaints').select('similar_group_id, category, citizen_id').eq('id', req.params.id).single();
     if (!complaint || !complaint.similar_group_id) return res.json({ complaints: [] });
+
+    if (req.user.role !== 'admin' && complaint.citizen_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied: You do not have permission to view this complaint.' });
+    }
 
     const { data: similar } = await supabase.from('complaints')
       .select('*')

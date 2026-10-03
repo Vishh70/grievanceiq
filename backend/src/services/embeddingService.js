@@ -1,15 +1,12 @@
-// src/services/embeddingService.js
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
 // Ensure Windows native dependencies are accessible if running on win32
-// onnxruntime-node requires its DLL files to be in PATH before the .node binding loads.
-// We add all possible napi/arch paths to cover both 1.14.0 (napi-v3) and 1.30.0 (napi-v6).
 if (process.platform === 'win32') {
   const possibleDirs = [
+    path.resolve(__dirname, '../../node_modules/@huggingface/transformers/node_modules/onnxruntime-node/bin/napi-v6/win32/x64'),
     path.resolve(__dirname, '../../node_modules/onnxruntime-node/bin/napi-v6/win32/x64'),
-    path.resolve(__dirname, '../../node_modules/onnxruntime-node/bin/napi-v3/win32/x64'),
-    path.resolve(__dirname, '../../node_modules/@xenova/transformers/node_modules/onnxruntime-node/bin/napi-v3/win32/x64'),
+    path.resolve(__dirname, '../../node_modules/onnxruntime-node/bin/napi-v3/win32/x64')
   ];
   const existingDirs = possibleDirs.filter(d => fs.existsSync(d));
   if (existingDirs.length > 0) {
@@ -17,6 +14,7 @@ if (process.platform === 'win32') {
   }
 }
 
+// We use @huggingface/transformers (v3 of Xenova) to avoid Node 22/24 ABI mismatches.
 
 // Helper for dynamic import that works in standard Node, bundlers, and Jest VM environments
 const dynamicImport = new Function('specifier', 'return import(specifier)');
@@ -52,10 +50,10 @@ async function getExtractor() {
       }
 
       try {
-        const { pipeline } = await dynamicImport('@xenova/transformers');
-        return await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+        const transformers = await dynamicImport('@xenova/transformers');
+        return await transformers.pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
       } catch (err) {
-        extractorPromise = null; // Prevent caching a failed initialization (lifecycle safety)
+        extractorPromise = null; // Prevent caching a failed initialization
         throw err;
       }
     })();

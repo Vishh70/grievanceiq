@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
 
 export default function AdminLogin() {
-  const [form, setForm]       = useState({ email: 'system@grievanceiq.com', password: 'admin123' });
+  const [form, setForm]       = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login, logout }     = useAuth();
