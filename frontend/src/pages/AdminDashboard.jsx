@@ -252,7 +252,7 @@ export default function AdminDashboard() {
                 }}>
                   {analytics.slaComplianceRate != null ? `${analytics.slaComplianceRate}%` : 'N/A'}
                 </div>
-                <p className="text-xs text-muted mt-1">Target $\le$ 48h</p>
+                <p className="text-xs text-muted mt-1">Target &le; 48h</p>
               </div>
 
               <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
