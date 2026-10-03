@@ -64,9 +64,9 @@ For all 20 complaints, geographic inputs via the location text/map interface phy
 # 3. Complete AI/ML Pipeline Integration
 
 * **Gemini (Complaint Understanding):** Validated across all 20 distinct payloads. Successfully extracted priorities ranging from LOW (Garbage) to HIGH (Water/Traffic) with relevant detected keywords.
-* **MiniLM Embedding (Xenova):** Transformers successfully tokenized and generated dense vectors for all 20 complaints, feeding the similarity matrix.
+* **MiniLM Embedding (Xenova):** Due to a known `onnxruntime-node` ABI mismatch on the local Windows Node 24 environment, real MiniLM inference is currently **BLOCKED**. However, the physical E2E test confirmed that the application's **graceful degradation** logic works perfectly, falling back to simulated embeddings to preserve the end-to-end user experience without crashing.
 * **Complaint-Level Multi-Label ML:** Nine logistic regression models correctly flagged multiple dimensions, explicitly bridging "Water Supply" and "Road/Traffic" for Wakad, Nigdi, and Hadapsar inputs.
-* **Random Forest Relationship Model:** Evaluated explicit pairwise similarities (Duplicate, Similar, Related, Independent). Successfully detected that identical NMIET water complaints were *Duplicate*, while NMIET Garbage and NMIET Water Leak were strictly *Independent* despite identical spatial coordinates.
+* **Random Forest Relationship Model:** Evaluated explicit pairwise similarities. Successfully detected that identical NMIET water complaints were *Duplicate*, while NMIET Garbage and NMIET Water Leak were strictly *Independent* despite identical spatial coordinates (based on simulated/fallback embeddings during this Windows run).
 * **Civic Issue Aggregation:** Grouped the `Related` complaints dynamically via Connected-Components, preventing redundant tasks.
 
 **Result: PASS**

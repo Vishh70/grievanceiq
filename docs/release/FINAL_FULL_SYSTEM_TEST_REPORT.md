@@ -1,5 +1,7 @@
-# GrievanceIQ — FINAL FULL SYSTEM PRE-VIVA AUDIT & QA REPORT
+> **NOTE: THIS IS A HISTORICAL DOCUMENT**
+> This report references the architecture state as of commit `0aa7455`. For the current system state (including Google Auth and Node 24 embedding resolution), refer to `FINAL_RELEASE_GATE_2026-10-03.md`.
 
+# GrievanceIQ — FINAL FULL SYSTEM PRE-VIVA AUDIT & QA REPORT
 ## 1. Executive Summary
 This document serves as the comprehensive final audit report for the GrievanceIQ civic intelligence platform (**Application Commit:** `0aa745512803b67b7a700c0f0b0ca60912abd7f7` and current `main` HEAD). 
 A targeted, 10-point deep-dive audit was conducted to verify that:

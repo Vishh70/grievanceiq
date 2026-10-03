@@ -28,7 +28,7 @@
 | **Real embedding** | BLOCKED |
 | **ML service** | PASS |
 | **Gemini** | PASS |
-| **Admin** | BLOCKED |
+| **Admin** | PASS |
 | **Database** | PASS |
 
 ## 4. Required Migration Steps

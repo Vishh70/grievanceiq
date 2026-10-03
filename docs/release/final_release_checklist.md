@@ -6,7 +6,8 @@
 - [x] Required migrations documented
 - [x] Authentication works
 - [x] Complaint submission works
-- [x] Embedding service works
+- [x] Embedding service fallback logic works
+- [ ] Real MiniLM inference physically verified (Blocked by Node 24 ABI)
 - [x] Duplicate detection works
 - [x] Relationship classification works
 - [x] Civic Issue grouping works
@@ -24,7 +25,7 @@
 - [x] Demo data can be created safely
 - [x] Demo can be reset safely
 - [x] Error states are understandable
-- [x] Mobile UI is usable
+- [x] Responsive viewport checks passed for the tested screens
 - [x] README is current
 - [x] Architecture documentation is current
 - [x] Limitations are documented
