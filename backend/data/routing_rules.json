@@ -23,74 +23,74 @@
   },
   "taskTemplates": {
     "Water Leakage": [
-      { "title": "Inspect leakage", "description": "Assess the source and severity of the water leakage." },
-      { "title": "Isolate/repair pipeline", "description": "Shut off water supply if necessary and repair the damaged pipeline." },
-      { "title": "Verify restoration", "description": "Restore water supply and verify no further leakage." }
+      { "template_id": "water_inspect", "title": "Inspect leakage", "description": "Assess the source and severity of the water leakage." },
+      { "template_id": "water_repair", "title": "Isolate/repair pipeline", "description": "Shut off water supply if necessary and repair the damaged pipeline." },
+      { "template_id": "water_verify", "title": "Verify restoration", "description": "Restore water supply and verify no further leakage." }
     ],
     "Road Damage": [
-      { "title": "Inspect road damage", "description": "Assess the extent of the potholes or road damage." },
-      { "title": "Repair road surface", "description": "Fill potholes and resurface the affected road area." }
+      { "template_id": "road_inspect", "title": "Inspect road damage", "description": "Assess the extent of the potholes or road damage." },
+      { "template_id": "road_repair", "title": "Repair road surface", "description": "Fill potholes and resurface the affected road area." }
     ],
     "Road Flooding": [
-      { "title": "Inspect flooded road", "description": "Assess the flooded area and identify the cause of water accumulation." },
-      { "title": "Clear obstruction", "description": "Clear any drainage blockages contributing to the flooding." },
-      { "title": "Restore affected road", "description": "Ensure the road is safe and functional post-flooding." }
+      { "template_id": "flood_inspect", "title": "Inspect flooded road", "description": "Assess the flooded area and identify the cause of water accumulation." },
+      { "template_id": "flood_clear", "title": "Clear obstruction", "description": "Clear any drainage blockages contributing to the flooding." },
+      { "template_id": "flood_restore", "title": "Restore affected road", "description": "Ensure the road is safe and functional post-flooding." }
     ],
     "Drainage Overflow": [
-      { "title": "Inspect drainage system", "description": "Identify the point of overflow or blockage." },
-      { "title": "Clear drainage blockage", "description": "Remove debris or silt causing the overflow." },
-      { "title": "Sanitize area", "description": "Clean and sanitize the surrounding area affected by sewage." }
+      { "template_id": "drainage_inspect", "title": "Inspect drainage system", "description": "Identify the point of overflow or blockage." },
+      { "template_id": "drainage_clear", "title": "Clear drainage blockage", "description": "Remove debris or silt causing the overflow." },
+      { "template_id": "drainage_sanitize", "title": "Sanitize area", "description": "Clean and sanitize the surrounding area affected by sewage." }
     ],
     "Garbage Accumulation": [
-      { "title": "Assess garbage dump", "description": "Evaluate the volume and type of accumulated waste." },
-      { "title": "Clear garbage", "description": "Dispatch vehicles to collect and clear the accumulated garbage." },
-      { "title": "Clean area", "description": "Clean the area to prevent health hazards and stray animal gathering." }
+      { "template_id": "garbage_assess", "title": "Assess garbage dump", "description": "Evaluate the volume and type of accumulated waste." },
+      { "template_id": "garbage_clear", "title": "Clear garbage", "description": "Dispatch vehicles to collect and clear the accumulated garbage." },
+      { "template_id": "garbage_clean", "title": "Clean area", "description": "Clean the area to prevent health hazards and stray animal gathering." }
     ],
     "Streetlight Failure": [
-      { "title": "Inspect streetlight", "description": "Identify if the issue is a fused bulb, wiring, or timer." },
-      { "title": "Repair or replace streetlight", "description": "Fix the wiring or replace the faulty streetlight." }
+      { "template_id": "streetlight_inspect", "title": "Inspect streetlight", "description": "Identify if the issue is a fused bulb, wiring, or timer." },
+      { "template_id": "streetlight_repair", "title": "Repair or replace streetlight", "description": "Fix the wiring or replace the faulty streetlight." }
     ],
     "Electrical Hazard": [
-      { "title": "Inspect electrical hazard", "description": "Identify exposed wires, sparking, or broken infrastructure." },
-      { "title": "Secure exposed electrical equipment", "description": "Isolate the area to prevent public access and electrocution." },
-      { "title": "Repair electrical hazard", "description": "Fix the underlying electrical issue safely." },
-      { "title": "Verify safety", "description": "Test the equipment to ensure it is completely safe." }
+      { "template_id": "elec_inspect", "title": "Inspect electrical hazard", "description": "Identify exposed wires, sparking, or broken infrastructure." },
+      { "template_id": "elec_secure", "title": "Secure exposed electrical equipment", "description": "Isolate the area to prevent public access and electrocution." },
+      { "template_id": "elec_repair", "title": "Repair electrical hazard", "description": "Fix the underlying electrical issue safely." },
+      { "template_id": "elec_verify", "title": "Verify safety", "description": "Test the equipment to ensure it is completely safe." }
     ],
     "Power Outage": [
-      { "title": "Investigate power outage", "description": "Identify the transformer or grid failure causing the outage." },
-      { "title": "Restore power grid", "description": "Repair the fault and restore electricity supply." }
+      { "template_id": "power_investigate", "title": "Investigate power outage", "description": "Identify the transformer or grid failure causing the outage." },
+      { "template_id": "power_restore", "title": "Restore power grid", "description": "Repair the fault and restore electricity supply." }
     ],
     "Public Safety Hazard": [
-      { "title": "Secure area", "description": "Cordone off the hazardous area." },
-      { "title": "Resolve safety hazard", "description": "Remove or fix the object/structure causing the hazard." }
+      { "template_id": "safety_secure", "title": "Secure area", "description": "Cordone off the hazardous area." },
+      { "template_id": "safety_resolve", "title": "Resolve safety hazard", "description": "Remove or fix the object/structure causing the hazard." }
     ]
   },
   "dependencyRules": [
-    { "before": "Inspect leakage", "after": "Isolate/repair pipeline" },
-    { "before": "Isolate/repair pipeline", "after": "Verify restoration" },
+    { "before": "water_inspect", "after": "water_repair" },
+    { "before": "water_repair", "after": "water_verify" },
     
-    { "before": "Inspect road damage", "after": "Repair road surface" },
+    { "before": "road_inspect", "after": "road_repair" },
     
-    { "before": "Inspect flooded road", "after": "Clear obstruction" },
-    { "before": "Clear obstruction", "after": "Restore affected road" },
+    { "before": "flood_inspect", "after": "flood_clear" },
+    { "before": "flood_clear", "after": "flood_restore" },
     
-    { "before": "Inspect drainage system", "after": "Clear drainage blockage" },
-    { "before": "Clear drainage blockage", "after": "Sanitize area" },
+    { "before": "drainage_inspect", "after": "drainage_clear" },
+    { "before": "drainage_clear", "after": "drainage_sanitize" },
 
-    { "before": "Assess garbage dump", "after": "Clear garbage" },
-    { "before": "Clear garbage", "after": "Clean area" },
+    { "before": "garbage_assess", "after": "garbage_clear" },
+    { "before": "garbage_clear", "after": "garbage_clean" },
 
-    { "before": "Inspect streetlight", "after": "Repair or replace streetlight" },
+    { "before": "streetlight_inspect", "after": "streetlight_repair" },
 
-    { "before": "Inspect electrical hazard", "after": "Secure exposed electrical equipment" },
-    { "before": "Secure exposed electrical equipment", "after": "Repair electrical hazard" },
-    { "before": "Repair electrical hazard", "after": "Verify safety" },
+    { "before": "elec_inspect", "after": "elec_secure" },
+    { "before": "elec_secure", "after": "elec_repair" },
+    { "before": "elec_repair", "after": "elec_verify" },
 
-    { "before": "Investigate power outage", "after": "Restore power grid" },
+    { "before": "power_investigate", "after": "power_restore" },
 
-    { "before": "Secure area", "after": "Resolve safety hazard" },
+    { "before": "safety_secure", "after": "safety_resolve" },
 
-    { "before": "Isolate/repair pipeline", "after": "Restore affected road" },
-    { "before": "Verify safety", "after": "Isolate/repair pipeline" }
+    { "before": "water_repair", "after": "flood_restore" },
+    { "before": "elec_verify", "after": "water_repair" }
   ]
 }

@@ -23,10 +23,10 @@ The evaluation uses a prototype dataset (`backend/data/evaluation_cases.json`) c
 - **Limitation**: GPS distance penalty may incorrectly split duplicates if one citizen omits location data.
 
 ## 6. Relationship Classification Evaluation
-- **Approach**: Zero-shot local sequence classification comparing pairs.
+- **Approach**: Trained Random Forest model over 20 heuristic and semantic features.
 - **Metric**: Macro-F1.
 - **Result**: SKIPPED — Quantitative metrics unmeasured due to small dataset size. Behavior verified qualitatively on 10 edge cases.
-- **Limitation**: The model relies entirely on zero-shot generalization.
+- **Limitation**: The evaluation is awaiting final real-embedding validation against the 30-pair manually authored benchmark.
 
 ## 7. Multi-Label Classification Evaluation
 - **Approach**: Zero-shot semantic embedding similarity against explicit department templates.

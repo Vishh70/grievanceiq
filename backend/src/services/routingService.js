@@ -223,12 +223,13 @@ async function routeCivicIssue(civicIssueId) {
             workstream_id: workstream.id,
             department_id: dept,
             issue_type: issueType,
+            template_id: template.template_id,
             title: template.title,
             description: template.description,
             priority: civicIssue.priority, // Propagate priority
             status: 'PENDING',
             updated_at: new Date().toISOString()
-          }, { onConflict: 'civic_issue_id, issue_type, title' });
+          }, { onConflict: 'civic_issue_id, template_id' });
 
         if (taskErr) {
           console.error(`Failed to create task "${template.title}":`, taskErr.message);

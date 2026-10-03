@@ -225,7 +225,7 @@ async function getExecutionPlan(civicIssueId) {
 
 /**
  * Automatically applies dependencies based on `routing_rules.json`.
- * Matches existing tasks for this civic issue by `title`.
+ * Matches existing tasks for this civic issue by `template_id`.
  */
 async function applyDependencyRules(civicIssueId) {
   let rules = {};
@@ -242,20 +242,22 @@ async function applyDependencyRules(civicIssueId) {
 
   const { data: tasks, error } = await supabase
     .from('tasks')
-    .select('id, title, civic_issue_id')
+    .select('id, template_id, civic_issue_id')
     .eq('civic_issue_id', civicIssueId);
     
   if (error || !tasks || tasks.length === 0) return;
 
-  const titleToId = {};
+  const templateToId = {};
   for (const task of tasks) {
-    titleToId[task.title] = task.id; // Map title to UUID
+    if (task.template_id) {
+      templateToId[task.template_id] = task.id; // Map template_id to UUID
+    }
   }
 
   const inserts = [];
   for (const rule of dependencyRules) {
-    const beforeId = titleToId[rule.before];
-    const afterId = titleToId[rule.after];
+    const beforeId = templateToId[rule.before];
+    const afterId = templateToId[rule.after];
     
     // Only apply if both tasks exist in this Civic Issue (handles cross-department gracefully)
     if (beforeId && afterId) {

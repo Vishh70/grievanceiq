@@ -1,0 +1,572 @@
+[
+  {
+    "pair_id": "pair_001",
+    "complaint_A": {
+      "text": "Huge pothole outside Symbiosis college gate.",
+      "category": "Roads",
+      "location_lat": 18.5304,
+      "location_lng": 73.8567,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Deep crater near the university entrance, please fix.",
+      "category": "Roads",
+      "location_lat": 18.5305,
+      "location_lng": 73.8566,
+      "time_offset_hours": 2
+    },
+    "true_label": "Duplicate",
+    "reasoning": "Same issue, same location, reported 2 hours apart."
+  },
+  {
+    "pair_id": "pair_002",
+    "complaint_A": {
+      "text": "Water pipeline burst causing a massive puddle.",
+      "category": "Water Supply",
+      "location_lat": 18.5204,
+      "location_lng": 73.8567,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Road cave in due to water leakage.",
+      "category": "Roads",
+      "location_lat": 18.5205,
+      "location_lng": 73.8568,
+      "time_offset_hours": 5
+    },
+    "true_label": "Related",
+    "reasoning": "Causal link: Water pipeline burst (Water Dept) led to Road damage (Road Dept)."
+  },
+  {
+    "pair_id": "pair_003",
+    "complaint_A": {
+      "text": "Garbage not picked up for 3 days in Viman Nagar.",
+      "category": "Waste Management",
+      "location_lat": 18.5679,
+      "location_lng": 73.9143,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Street light not working in Viman Nagar lane 3.",
+      "category": "Electricity",
+      "location_lat": 18.5679,
+      "location_lng": 73.9143,
+      "time_offset_hours": 12
+    },
+    "true_label": "Independent",
+    "reasoning": "Same location, but completely different civic domains with no causal link."
+  },
+  {
+    "pair_id": "pair_004",
+    "complaint_A": {
+      "text": "Potholes everywhere on MG Road.",
+      "category": "Roads",
+      "location_lat": 18.5204,
+      "location_lng": 73.8567,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Bad road condition on FC Road.",
+      "category": "Roads",
+      "location_lat": 18.525,
+      "location_lng": 73.84,
+      "time_offset_hours": 24
+    },
+    "true_label": "Similar",
+    "reasoning": "Same problem type (potholes/bad road), but located in different areas (> 1km apart)."
+  },
+  {
+    "pair_id": "pair_005",
+    "complaint_A": {
+      "text": "Fallen tree blocking the main road after the storm.",
+      "category": "Public Infrastructure",
+      "location_lat": 18.54,
+      "location_lng": 73.9,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Power outage in the neighborhood.",
+      "category": "Electricity",
+      "location_lat": 18.5401,
+      "location_lng": 73.9005,
+      "time_offset_hours": 1
+    },
+    "true_label": "Related",
+    "reasoning": "Fallen tree likely brought down power lines (Causal/Temporal link)."
+  },
+  {
+    "pair_id": "pair_006",
+    "complaint_A": {
+      "text": "The entire neighborhood smells like sewage.",
+      "category": "Drainage",
+      "location_lat": 18.6,
+      "location_lng": 73.78,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Drain is overflowing near the park.",
+      "category": "Drainage",
+      "location_lat": 18.6002,
+      "location_lng": 73.7805,
+      "time_offset_hours": 4
+    },
+    "true_label": "Duplicate",
+    "reasoning": "Different wording, but referring to the same underlying drainage issue in close proximity."
+  },
+  {
+    "pair_id": "pair_007",
+    "complaint_A": {
+      "text": "Streetlights are completely dead on Baner road.",
+      "category": "Electricity",
+      "location_lat": 18.559,
+      "location_lng": 73.7868,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "No street lighting here.",
+      "category": "Electricity",
+      "location_lat": 18.559,
+      "location_lng": 73.7868,
+      "time_offset_hours": 96
+    },
+    "true_label": "Duplicate",
+    "reasoning": "Same location, same issue, reported 4 days apart (within 7-day duplicate window)."
+  },
+  {
+    "pair_id": "pair_008",
+    "complaint_A": {
+      "text": "Garbage dump burning and causing toxic smoke.",
+      "category": "Waste Management",
+      "location_lat": 18.49,
+      "location_lng": 73.82,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Visibility is extremely low due to smoke on the road.",
+      "category": "Public Infrastructure",
+      "location_lat": 18.4905,
+      "location_lng": 73.8202,
+      "time_offset_hours": 1
+    },
+    "true_label": "Related",
+    "reasoning": "Garbage fire causing road visibility hazards."
+  },
+  {
+    "pair_id": "pair_009",
+    "complaint_A": {
+      "text": "Water pipeline burst causing a massive puddle.",
+      "category": "Water Supply",
+      "location_lat": 18.5204,
+      "location_lng": 73.8567,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Water pipeline burst.",
+      "category": "Water Supply",
+      "location_lat": 18.5204,
+      "location_lng": 73.8567,
+      "time_offset_hours": 192
+    },
+    "true_label": "Similar",
+    "reasoning": "Same exact text and location, but reported 8 days apart (>7 day temporal duplicate cutoff). They are considered Similar recurrences."
+  },
+  {
+    "pair_id": "pair_010",
+    "complaint_A": {
+      "text": "Stray dogs are aggressive.",
+      "category": "Other",
+      "location_lat": 18.55,
+      "location_lng": 73.8,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Loud noise from construction.",
+      "category": "Other",
+      "location_lat": 18.5501,
+      "location_lng": 73.8001,
+      "time_offset_hours": 1
+    },
+    "true_label": "Independent",
+    "reasoning": "Close proximity but completely disjoint topics."
+  },
+  {
+    "pair_id": "pair_011",
+    "complaint_A": {
+      "text": "Road is completely washed out near the bridge.",
+      "category": "Roads",
+      "location_lat": 18.531,
+      "location_lng": 73.85,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Bridge approach road collapsed.",
+      "category": "Roads",
+      "location_lat": 18.5311,
+      "location_lng": 73.8502,
+      "time_offset_hours": 3
+    },
+    "true_label": "Duplicate",
+    "reasoning": "Same structural failure at the exact same location."
+  },
+  {
+    "pair_id": "pair_012",
+    "complaint_A": {
+      "text": "Heavy flooding on main street, water entering shops.",
+      "category": "Drainage",
+      "location_lat": 18.525,
+      "location_lng": 73.86,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Traffic at a standstill due to waterlogging.",
+      "category": "Roads",
+      "location_lat": 18.525,
+      "location_lng": 73.86,
+      "time_offset_hours": 1
+    },
+    "true_label": "Related",
+    "reasoning": "Flooding (Drainage) directly causing Traffic/Road issues. Causal link."
+  },
+  {
+    "pair_id": "pair_013",
+    "complaint_A": {
+      "text": "Streetlights not working in entire sector 4.",
+      "category": "Electricity",
+      "location_lat": 18.54,
+      "location_lng": 73.84,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "No power in sector 4 homes.",
+      "category": "Electricity",
+      "location_lat": 18.5405,
+      "location_lng": 73.8405,
+      "time_offset_hours": 0.5
+    },
+    "true_label": "Related",
+    "reasoning": "Streetlight failure and home power outage share a common electrical grid failure."
+  },
+  {
+    "pair_id": "pair_014",
+    "complaint_A": {
+      "text": "Garbage truck hasn't visited in a week.",
+      "category": "Waste Management",
+      "location_lat": 18.51,
+      "location_lng": 73.82,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Stray dogs tearing up trash bags on the sidewalk.",
+      "category": "Other",
+      "location_lat": 18.5101,
+      "location_lng": 73.8202,
+      "time_offset_hours": 24
+    },
+    "true_label": "Related",
+    "reasoning": "Uncollected garbage is attracting stray dogs."
+  },
+  {
+    "pair_id": "pair_015",
+    "complaint_A": {
+      "text": "Pothole on airport road.",
+      "category": "Roads",
+      "location_lat": 18.58,
+      "location_lng": 73.91,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Large pothole on highway.",
+      "category": "Roads",
+      "location_lat": 18.6,
+      "location_lng": 73.95,
+      "time_offset_hours": 2
+    },
+    "true_label": "Similar",
+    "reasoning": "Both are potholes, but located 5+ km apart. Not duplicates, but similar issues."
+  },
+  {
+    "pair_id": "pair_016",
+    "complaint_A": {
+      "text": "Water tasting metallic.",
+      "category": "Water Supply",
+      "location_lat": 18.55,
+      "location_lng": 73.8,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Brown water coming from taps.",
+      "category": "Water Supply",
+      "location_lat": 18.5505,
+      "location_lng": 73.801,
+      "time_offset_hours": 5
+    },
+    "true_label": "Duplicate",
+    "reasoning": "Same contaminated water supply affecting the neighborhood."
+  },
+  {
+    "pair_id": "pair_017",
+    "complaint_A": {
+      "text": "Dead animal on the road.",
+      "category": "Waste Management",
+      "location_lat": 18.52,
+      "location_lng": 73.85,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Terrible smell coming from the bushes.",
+      "category": "Other",
+      "location_lat": 18.5201,
+      "location_lng": 73.8501,
+      "time_offset_hours": 12
+    },
+    "true_label": "Related",
+    "reasoning": "Dead animal causing the smell."
+  },
+  {
+    "pair_id": "pair_018",
+    "complaint_A": {
+      "text": "Construction debris dumped on footpath.",
+      "category": "Waste Management",
+      "location_lat": 18.53,
+      "location_lng": 73.84,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Footpath broken and unwalkable.",
+      "category": "Public Infrastructure",
+      "location_lat": 18.5301,
+      "location_lng": 73.8401,
+      "time_offset_hours": 48
+    },
+    "true_label": "Related",
+    "reasoning": "Debris dumping likely damaged the footpath or is obstructing it."
+  },
+  {
+    "pair_id": "pair_019",
+    "complaint_A": {
+      "text": "No water supply since morning.",
+      "category": "Water Supply",
+      "location_lat": 18.56,
+      "location_lng": 73.81,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Low water pressure in the building.",
+      "category": "Water Supply",
+      "location_lat": 18.56,
+      "location_lng": 73.81,
+      "time_offset_hours": 2
+    },
+    "true_label": "Duplicate",
+    "reasoning": "Same root cause (water supply issue) at the same location."
+  },
+  {
+    "pair_id": "pair_020",
+    "complaint_A": {
+      "text": "Tree branches touching power lines.",
+      "category": "Electricity",
+      "location_lat": 18.57,
+      "location_lng": 73.82,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Sparks flying from electrical pole.",
+      "category": "Electricity",
+      "location_lat": 18.57,
+      "location_lng": 73.8201,
+      "time_offset_hours": 4
+    },
+    "true_label": "Related",
+    "reasoning": "Tree branches likely caused the short circuit/sparks."
+  },
+  {
+    "pair_id": "pair_021",
+    "complaint_A": {
+      "text": "Open manhole is dangerous.",
+      "category": "Drainage",
+      "location_lat": 18.54,
+      "location_lng": 73.83,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Accident due to open gutter.",
+      "category": "Public Infrastructure",
+      "location_lat": 18.54,
+      "location_lng": 73.83,
+      "time_offset_hours": 6
+    },
+    "true_label": "Related",
+    "reasoning": "Open manhole (Drainage) directly caused the accident."
+  },
+  {
+    "pair_id": "pair_022",
+    "complaint_A": {
+      "text": "Traffic signal completely off.",
+      "category": "Electricity",
+      "location_lat": 18.51,
+      "location_lng": 73.86,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Huge traffic jam at the intersection.",
+      "category": "Roads",
+      "location_lat": 18.51,
+      "location_lng": 73.86,
+      "time_offset_hours": 1
+    },
+    "true_label": "Related",
+    "reasoning": "Dead signal causing traffic jam."
+  },
+  {
+    "pair_id": "pair_023",
+    "complaint_A": {
+      "text": "Bus stop roof collapsed.",
+      "category": "Public Infrastructure",
+      "location_lat": 18.55,
+      "location_lng": 73.88,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Need more buses on route 4.",
+      "category": "Other",
+      "location_lat": 18.55,
+      "location_lng": 73.88,
+      "time_offset_hours": 24
+    },
+    "true_label": "Independent",
+    "reasoning": "Infrastructure failure vs Service request. No causal link despite same location."
+  },
+  {
+    "pair_id": "pair_024",
+    "complaint_A": {
+      "text": "Illegal hoarding fell down.",
+      "category": "Public Infrastructure",
+      "location_lat": 18.52,
+      "location_lng": 73.87,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Tree fell on the road.",
+      "category": "Public Infrastructure",
+      "location_lat": 18.525,
+      "location_lng": 73.875,
+      "time_offset_hours": 1
+    },
+    "true_label": "Similar",
+    "reasoning": "Both are falling hazards, likely due to same storm, but separate incidents."
+  },
+  {
+    "pair_id": "pair_025",
+    "complaint_A": {
+      "text": "Drain is clogged with plastic.",
+      "category": "Drainage",
+      "location_lat": 18.56,
+      "location_lng": 73.89,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Water pooling on the street.",
+      "category": "Roads",
+      "location_lat": 18.56,
+      "location_lng": 73.89,
+      "time_offset_hours": 2
+    },
+    "true_label": "Related",
+    "reasoning": "Clogged drain causing water pooling."
+  },
+  {
+    "pair_id": "pair_026",
+    "complaint_A": {
+      "text": "Public toilet is extremely dirty.",
+      "category": "Waste Management",
+      "location_lat": 18.53,
+      "location_lng": 73.85,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "No water in public toilet.",
+      "category": "Water Supply",
+      "location_lat": 18.53,
+      "location_lng": 73.85,
+      "time_offset_hours": 1
+    },
+    "true_label": "Related",
+    "reasoning": "Lack of water causes the dirty condition."
+  },
+  {
+    "pair_id": "pair_027",
+    "complaint_A": {
+      "text": "Stray cow on the highway.",
+      "category": "Other",
+      "location_lat": 18.58,
+      "location_lng": 73.82,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Car hit a cow.",
+      "category": "Roads",
+      "location_lat": 18.5802,
+      "location_lng": 73.8205,
+      "time_offset_hours": 1
+    },
+    "true_label": "Related",
+    "reasoning": "Animal hazard led to traffic accident."
+  },
+  {
+    "pair_id": "pair_028",
+    "complaint_A": {
+      "text": "Loud speaker noise past midnight.",
+      "category": "Other",
+      "location_lat": 18.54,
+      "location_lng": 73.86,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Water pipe leaking.",
+      "category": "Water Supply",
+      "location_lat": 18.54,
+      "location_lng": 73.86,
+      "time_offset_hours": 1
+    },
+    "true_label": "Independent",
+    "reasoning": "Noise complaint and water leak are unrelated despite being at the same address."
+  },
+  {
+    "pair_id": "pair_029",
+    "complaint_A": {
+      "text": "Pavement dug up by telecom company.",
+      "category": "Public Infrastructure",
+      "location_lat": 18.51,
+      "location_lng": 73.83,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Debris left by digging crew.",
+      "category": "Waste Management",
+      "location_lat": 18.51,
+      "location_lng": 73.83,
+      "time_offset_hours": 24
+    },
+    "true_label": "Related",
+    "reasoning": "Digging created the debris."
+  },
+  {
+    "pair_id": "pair_030",
+    "complaint_A": {
+      "text": "Transformer caught fire.",
+      "category": "Electricity",
+      "location_lat": 18.55,
+      "location_lng": 73.84,
+      "time_offset_hours": 0
+    },
+    "complaint_B": {
+      "text": "Transformer is burning.",
+      "category": "Electricity",
+      "location_lat": 18.55,
+      "location_lng": 73.84,
+      "time_offset_hours": 0.5
+    },
+    "true_label": "Duplicate",
+    "reasoning": "Exact same emergency reported by two people."
+  }
+]

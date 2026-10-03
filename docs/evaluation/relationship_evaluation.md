@@ -15,7 +15,7 @@ The relationship classifier determines how two complaints are related. It catego
   - Similar: 1
   - Related: 4
   - Independent: 2
-- **Train/Test Split**: This model was zero-shot / heuristically evaluated against a prototype dataset. No formal training split was created due to the prototype nature of the data.
+- **Train/Test Split**: This model was evaluated using a trained Random Forest model against a prototype dataset. No formal training split was created due to the prototype nature of the data.
 
 ## Results
 *Note: These results represent the performance of the prototype model on the synthetic evaluation dataset. They do NOT represent production-level generalization on real-world civic data.*

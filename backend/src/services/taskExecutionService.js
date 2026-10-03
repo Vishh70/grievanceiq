@@ -57,7 +57,7 @@ async function updateWorkstreamAndIssueStatus(civicIssueId) {
 }
 
 /**
- * Main service to update a task's status with dependency safety.
+ * Main service to update a task's status with dependency safety and transaction safety via RPC.
  */
 async function updateTaskStatus(taskId, newStatus, userEmail, reason) {
   const validTransitions = {
@@ -86,26 +86,19 @@ async function updateTaskStatus(taskId, newStatus, userEmail, reason) {
     }
   }
 
-  const updates = { 
-    status: newStatus,
-    updated_at: new Date().toISOString()
-  };
+  // Atomic transaction via Supabase RPC (handles task update, history log, workstream & issue status)
+  const { error: rpcErr } = await supabase.rpc('update_task_status_transactional', {
+    p_task_id: taskId,
+    p_new_status: newStatus,
+    p_user_email: userEmail,
+    p_reason: reason
+  });
 
-  if (newStatus === 'IN_PROGRESS' && currentStatus === 'PENDING') {
-    updates.started_at = new Date().toISOString();
-  } else if (newStatus === 'COMPLETED') {
-    updates.completed_at = new Date().toISOString();
-  } else if (newStatus === 'CANCELLED') {
-    updates.cancelled_at = new Date().toISOString();
+  if (rpcErr) {
+    throw new Error(`Failed to update task transactionally: ${rpcErr.message}`);
   }
 
-  const { error: updateErr } = await supabase.from('tasks').update(updates).eq('id', taskId);
-  if (updateErr) throw new Error('Failed to update task');
-
-  await logStatusTransition(taskId, currentStatus, newStatus, userEmail, reason);
-  await updateWorkstreamAndIssueStatus(task.civic_issue_id);
-
-  return updates;
+  return { status: newStatus };
 }
 
 /**
