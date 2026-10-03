@@ -51,8 +51,8 @@
 - **Embedding Generation**: Uses local Transformer models (Xenova/all-MiniLM-L6-v2) to generate semantic vectors for complaint text.
 - **Duplicate Detection**: A weighted ML-heuristic hybrid combining semantic similarity, Haversine GPS distance, and temporal proximity.
 - **Relationship Classifier**: Zero-shot local Transformer pipeline categorizing complaint pairs into Duplicate, Similar, Related, or Independent.
-- **Multi-Label Classifier**: Maps citizen language to official department issue types (e.g., "Water Leakage") using a trained Logistic Regression model.
-
+- **Complaint Multi-Label Classifier**: Generates 9 distinct issue flags from the citizen's complaint using trained Logistic Regression models.
+- **Civic Issue Routing Classifier**: Maps aggregated Civic Issue text to official department labels using zero-shot MiniLM semantic matching.
 ### 2. Graph Algorithms
 - **Relationship Graph & Connected Components**: Uses an undirected graph traversal to link independent citizen complaints into a unified `Civic Issue` if they share 'Duplicate', 'Similar', or 'Related' edges.
 - **Dependency Graph**: A Directed Acyclic Graph (DAG) constructed from operational rules (e.g., Water Department must finish before Road Department).

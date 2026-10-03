@@ -17,8 +17,8 @@ The system employs a cascading hybrid architecture:
 - **Local Transformers**: Runs `Xenova/all-MiniLM-L6-v2` locally via WebAssembly for embeddings and semantic similarity.
 - **Local Random Forest**: Evaluates complaint relationships.
 - **Duplicate Detection**: A multi-dimensional heuristic combining semantic cosine similarity, geographic distance (Haversine), and temporal proximity.
-- **Multi-Label Zero-Shot Classification**: Evaluates semantic similarity between complaint embeddings and departmental templates to assign multiple required departments to a single root cause.
-
+- **Complaint Multi-Label Classification**: Generates 9 distinct issue flags using trained Logistic Regression models.
+- **Civic Issue Routing**: Zero-shot semantic matching between aggregated issue embeddings and department templates to assign multiple workstreams.
 ## Algorithms
 - **Connected Components (Graph)**: Traverses localized complaint relationships (Duplicate, Similar, Related) to form a unified, macroscopic `Civic Issue`.
 - **Kahn's Topological Sort (DAG)**: Detects circular workflow cycles and flattens a Directed Acyclic Graph of tasks into safe, parallel execution stages.

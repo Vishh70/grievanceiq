@@ -28,9 +28,10 @@ The evaluation uses a prototype dataset (`backend/data/evaluation_cases.json`) c
 - **Result**: SKIPPED — Quantitative metrics unmeasured due to small dataset size. Behavior verified qualitatively on 10 edge cases.
 - **Limitation**: The evaluation is awaiting final real-embedding validation against the 30-pair manually authored benchmark.
 
-## 7. Multi-Label Classification Evaluation
-- **Approach**: Zero-shot semantic embedding similarity against explicit department templates.
-- **Result**: SKIPPED — Strict quantitative bounds unmeasured. The system reliably fell back to primary categories when semantic matching lacked confidence.
+## 7. Multi-Label Classification & Routing Evaluation
+- **Complaint-Level Approach**: 9 Trained Logistic Regression models producing specific departmental flags.
+- **Civic Issue Routing Approach**: Zero-shot semantic embedding similarity against explicit department templates.
+- **Result**: SKIPPED — Strict quantitative bounds unmeasured for zero-shot routing. The system reliably fell back to primary categories when semantic matching lacked confidence.
 - **Limitation**: High reliance on threshold tuning.
 
 ## 8. Graph Algorithm Validation
