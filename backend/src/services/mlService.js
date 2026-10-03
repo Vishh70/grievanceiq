@@ -156,6 +156,7 @@ const LABEL_DESCRIPTIONS = {
 module.exports = {
   predictIssueLabels,
   isMLServiceAvailable,
+  LABEL_TO_ISSUE_TYPE,
   LABEL_TO_DEPARTMENT,
   LABEL_DESCRIPTIONS,
   ML_SERVICE_URL,

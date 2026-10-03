@@ -141,7 +141,7 @@ exports.createComplaint = async (req, res) => {
             orQuery = `category.in.(${typesForIn}),ml_labels.ov.{${labelsForOv}}`;
           }
 
-          const { data: candidates } = await supabase.from('complaints')
+          let { data: candidates, error: candQueryErr } = await supabase.from('complaints')
             .select('id, description, embedding_vector, location_lat, location_lng, created_at, similar_group_id, category')
             .or(orQuery)
             .neq('id', complaintData.id)
@@ -149,6 +149,18 @@ exports.createComplaint = async (req, res) => {
             .gte('created_at', cutoffDate.toISOString())
             .order('created_at', { ascending: false })
             .limit(DUPLICATE_CONFIG.CANDIDATE_LIMIT);
+
+          if (candQueryErr && candQueryErr.message && candQueryErr.message.includes('embedding_vector')) {
+            const fallbackRes = await supabase.from('complaints')
+              .select('id, description, location_lat, location_lng, created_at, similar_group_id, category')
+              .or(orQuery)
+              .neq('id', complaintData.id)
+              .eq('ai_processed', true)
+              .gte('created_at', cutoffDate.toISOString())
+              .order('created_at', { ascending: false })
+              .limit(DUPLICATE_CONFIG.CANDIDATE_LIMIT);
+            candidates = fallbackRes.data;
+          }
 
           if (candidates && candidates.length > 0) {
             candidateComplaints = candidates;
