@@ -173,6 +173,11 @@ Tested with realistic multi-label complaint:
 - **Local Test Suite:**
   - Jest: 8 suites passed, 81 passed, 1 skipped.
 - **GitHub Actions Verified Runs (via GitHub REST API):**
+  - **Commit `bc68670452db744627c0ea898c594db8b92a6897`** (Audit report and candidate retrieval fallback):
+    - Run ID: `37090424997`
+    - Job ID: `111109388042` (`build-and-test 22.x`)
+    - Status: `completed`
+    - Conclusion: **`success`** (GREEN)
   - **Commit `0aa745512803b67b7a700c0f0b0ca60912abd7f7`** (Phase 10 candidate logic fix):
     - Run ID: `37009506642`
     - Job ID: `110845586880` (`build-and-test 22.x`)
