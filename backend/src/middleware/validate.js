@@ -26,6 +26,12 @@ const complaintSchema = z.object({
   })
 });
 
+const googleLoginSchema = z.object({
+  body: z.object({
+    credential: z.string().min(1, 'Google credential token is required')
+  })
+});
+
 const validate = (schema) => async (req, res, next) => {
   try {
     await schema.parseAsync({
@@ -41,4 +47,4 @@ const validate = (schema) => async (req, res, next) => {
   }
 };
 
-module.exports = { validate, registerSchema, loginSchema, complaintSchema };
+module.exports = { validate, registerSchema, loginSchema, complaintSchema, googleLoginSchema };

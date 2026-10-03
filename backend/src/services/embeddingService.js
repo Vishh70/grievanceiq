@@ -3,12 +3,20 @@ const path = require('path');
 const fs = require('fs');
 
 // Ensure Windows native dependencies are accessible if running on win32
+// onnxruntime-node requires its DLL files to be in PATH before the .node binding loads.
+// We add all possible napi/arch paths to cover both 1.14.0 (napi-v3) and 1.30.0 (napi-v6).
 if (process.platform === 'win32') {
-  const win64Dir = path.resolve(__dirname, '../../node_modules/onnxruntime-node/bin/napi-v3/win32/x64');
-  if (fs.existsSync(win64Dir)) {
-    process.env.PATH = win64Dir + ';' + (process.env.PATH || '');
+  const possibleDirs = [
+    path.resolve(__dirname, '../../node_modules/onnxruntime-node/bin/napi-v6/win32/x64'),
+    path.resolve(__dirname, '../../node_modules/onnxruntime-node/bin/napi-v3/win32/x64'),
+    path.resolve(__dirname, '../../node_modules/@xenova/transformers/node_modules/onnxruntime-node/bin/napi-v3/win32/x64'),
+  ];
+  const existingDirs = possibleDirs.filter(d => fs.existsSync(d));
+  if (existingDirs.length > 0) {
+    process.env.PATH = existingDirs.join(';') + ';' + (process.env.PATH || '');
   }
 }
+
 
 // Helper for dynamic import that works in standard Node, bundlers, and Jest VM environments
 const dynamicImport = new Function('specifier', 'return import(specifier)');
