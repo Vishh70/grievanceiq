@@ -7,7 +7,10 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useAuth();
 
   if (loading) return <Loader text="Authenticating..." />;
-  if (!user)   return <Navigate to="/login" replace />;
+  if (!user) {
+    if (adminOnly) return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/login" replace />;
+  }
   if (adminOnly && user.role !== 'admin') return <Navigate to="/complaints" replace />;
 
   return children;
