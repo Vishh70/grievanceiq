@@ -14,7 +14,7 @@ if (process.platform === 'win32') {
   }
 }
 
-// We use @huggingface/transformers (v3 of Xenova) to avoid Node 22/24 ABI mismatches.
+// We use @xenova/transformers to load the MiniLM embedding model.
 
 // Helper for dynamic import that works in standard Node, bundlers, and Jest VM environments
 const dynamicImport = new Function('specifier', 'return import(specifier)');

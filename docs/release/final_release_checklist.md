@@ -7,7 +7,7 @@
 - [x] Authentication works
 - [x] Complaint submission works
 - [x] Embedding service fallback logic works
-- [x] Real MiniLM inference physically verified (Fixed Tensor.location on CI with @huggingface/transformers, Windows requires VC++ Redist)
+- [x] Real MiniLM inference physically verified (Fixed Tensor.location on CI by pinning onnxruntime-node@1.14.0 with @xenova/transformers, Windows requires VC++ Redist)
 - [x] Duplicate detection works
 - [x] Relationship classification works
 - [x] Civic Issue grouping works
