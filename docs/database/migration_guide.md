@@ -13,7 +13,7 @@ Execute the following files found in `docs/database/` in the exact order listed 
    - **Purpose**: Creates the `complaints` table and adds the `embedding vector(384)` column for AI semantic search.
 
 2. **`phase2_duplicate_detection.sql`**
-   - **Purpose**: Extends the `complaints` table to include `duplicate_of` (self-referencing foreign key) and `is_duplicate` boolean flag.
+   - **Purpose**: Extends the `complaints` table to include `duplicate_score`, `duplicate_candidate_id`, `duplicate_semantic_score`, `duplicate_location_score`, and `duplicate_temporal_score`.
 
 3. **`phase4_civic_issue.sql`**
    - **Purpose**: Creates the `civic_issues` table (id, title, description, priority, status) to group related complaints.
@@ -32,13 +32,10 @@ Execute the following files found in `docs/database/` in the exact order listed 
    - **Changes**: Adds timestamp columns (`started_at`, `completed_at`, `cancelled_at`) to the `tasks` table.
    - **Tables**: Creates `task_status_history` for immutable audit logging.
 
-7. **`phase8_resource_scheduling.sql`**
-   - **Purpose**: Adds resource scheduling and reservations constraints.
+7. **`phase8_task_hardening.sql`**
+   - **Purpose**: Adds `template_id` to tasks and the `update_task_status_transactional` RPC for atomic transaction safety.
 
-8. **`phase9_cross_issue_dependencies.sql`**
-   - **Purpose**: Adds cross-issue execution blocking and global plan DAG.
-
-9. **`phase10_ml_multilabel.sql`**
+8. **`phase10_ml_multilabel.sql`**
    - **Purpose**: Adds columns `ml_labels`, `ml_probabilities`, and `ml_departments` to the `complaints` table to persist Python model outputs.
 
 ## Verification
