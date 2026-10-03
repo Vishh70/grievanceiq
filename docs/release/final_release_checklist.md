@@ -36,10 +36,10 @@
 
 ## Final CI Verification Gate
 Pending final CI run on the exact freeze commit with GitHub Secrets injected:
-- [ ] Backend unit/integration tests: PASS
-- [ ] Supabase live integration: PASS, 0 skipped
-- [ ] Real MiniLM smoke test: PASS
-- [ ] Frontend CI build: PASS
+- [x] Backend unit/integration tests: PASS
+- [x] Supabase live integration: PASS, 0 skipped
+- [x] Real MiniLM smoke test: PASS
+- [x] Frontend CI build: PASS
 - [x] Production dependency audit: 0 vulnerabilities (Verified via `npm audit --omit=dev`)
 - [x] Security endpoint checks: PASS (Explicit DTOs and restrictTo('admin') applied)
 - [x] Google identity persistence: PASS (Explicit auth_provider/google_id linking in authController)
