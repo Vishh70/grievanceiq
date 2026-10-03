@@ -6,18 +6,33 @@ const executionService = require('../services/taskExecutionService');
 
 exports.getCivicIssues = async (req, res) => {
   try {
+    const isAdmin = req.user && req.user.role === 'admin';
+    const fields = isAdmin ? '*' : 'id, title, description, status, created_at, updated_at, complaint_ids';
+    
     const { data: issues, error } = await supabase
       .from('civic_issues')
-      .select('*, complaints(id)')
+      .select(fields)
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
 
-    // Attach complaint counts
-    const mappedIssues = (issues || []).map(issue => ({
-      ...issue,
-      complaint_count: issue.complaint_ids ? issue.complaint_ids.length : 0
-    }));
+    // Attach complaint counts and ensure DTO shape
+    const mappedIssues = (issues || []).map(issue => {
+      const dto = {
+        id: issue.id,
+        title: issue.title,
+        description: issue.description,
+        status: issue.status,
+        created_at: issue.created_at,
+        updated_at: issue.updated_at,
+        complaint_count: issue.complaint_ids ? issue.complaint_ids.length : 0
+      };
+      // Only admins get the full array of complaint_ids inside the list response
+      if (isAdmin) {
+        dto.complaint_ids = issue.complaint_ids;
+      }
+      return dto;
+    });
 
     res.json(mappedIssues);
   } catch (err) {
@@ -28,10 +43,12 @@ exports.getCivicIssues = async (req, res) => {
 exports.getCivicIssueById = async (req, res) => {
   try {
     const { id } = req.params;
+    const isAdmin = req.user && req.user.role === 'admin';
+    const fields = isAdmin ? '*' : 'id, title, description, status, created_at, updated_at, complaint_ids';
 
     const { data: issue, error: issueErr } = await supabase
       .from('civic_issues')
-      .select('*')
+      .select(fields)
       .eq('id', id)
       .single();
 
@@ -41,9 +58,12 @@ exports.getCivicIssueById = async (req, res) => {
     // Fetch related complaints
     let complaints = [];
     if (issue.complaint_ids && issue.complaint_ids.length > 0) {
+      // Security: Only admins get full complaint details. Citizens get safe, aggregated fields.
+      const compFields = isAdmin ? '*' : 'id, category, status, created_at';
+
       const { data: relatedComplaints, error: compErr } = await supabase
         .from('complaints')
-        .select('*')
+        .select(compFields)
         .in('id', issue.complaint_ids)
         .order('created_at', { ascending: false });
       
@@ -52,11 +72,22 @@ exports.getCivicIssueById = async (req, res) => {
       }
     }
 
-    res.json({
-      ...issue,
-      complaints,
-      complaint_count: issue.complaint_ids ? issue.complaint_ids.length : 0
-    });
+    const dto = {
+      id: issue.id,
+      title: issue.title,
+      description: issue.description,
+      status: issue.status,
+      created_at: issue.created_at,
+      updated_at: issue.updated_at,
+      complaint_count: issue.complaint_ids ? issue.complaint_ids.length : 0,
+      complaints
+    };
+
+    if (isAdmin) {
+      dto.complaint_ids = issue.complaint_ids;
+    }
+
+    res.json(dto);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

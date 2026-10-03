@@ -112,7 +112,18 @@ exports.googleLogin = async (req, res) => {
 
     if (existingUser) {
       // User exists (either via previous Google login or Email/Password login)
-      // We safely link by simply logging them in. No duplicate account is created.
+      // Explicitly link the Google identity if it's not already linked
+      if (!existingUser.google_id) {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ google_id: google_id })
+          .eq('id', existingUser.id);
+        
+        if (!updateError) {
+          existingUser.google_id = google_id;
+        }
+      }
+      
       const token = signToken(existingUser.id);
       delete existingUser.password_hash;
       return res.json({ token, user: existingUser });
@@ -128,7 +139,8 @@ exports.googleLogin = async (req, res) => {
       email: email.toLowerCase(),
       password_hash: passwordHash,
       role: 'citizen', // NEVER assign admin automatically
-      phone: ''
+      phone: '',
+      google_id: google_id
     }]).select().single();
 
     if (createError) {

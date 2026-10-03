@@ -14,8 +14,15 @@ const hasValidCredentials = supabaseUrl && supabaseKey && !supabaseUrl.includes(
 describe('Phase 8: Real Supabase Integration Test', () => {
 
   if (!hasValidCredentials) {
-    it.skip('SKIPPED — integration environment not configured (missing valid Supabase credentials)', () => {});
-    return; // Exit the describe block
+    if (process.env.CI) {
+      it('FAILS - missing valid Supabase credentials in CI environment', () => {
+        throw new Error('Supabase integration credentials are required in CI environment but are missing.');
+      });
+      return; // Exit describe
+    } else {
+      it.skip('SKIPPED — integration environment not configured (missing valid Supabase credentials)', () => {});
+      return; // Exit the describe block
+    }
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
