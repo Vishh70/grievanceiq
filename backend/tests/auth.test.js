@@ -108,7 +108,8 @@ describe('Auth Controller', () => {
             eq: jest.fn().mockReturnThis(),
             single: jest.fn().mockResolvedValue({
               data: { id: 'exist-1', email: 'existing@test.com', role: 'admin', password_hash: 'hashed' }
-            })
+            }),
+            update: jest.fn().mockReturnThis()
           };
         }
       });
