@@ -93,4 +93,38 @@ describe('Phase 2B: Corrected Relationship Inference Integration', () => {
     const result = await predictRelationship(dummyComplaintA, dummyComplaintB);
     expect(result).toHaveProperty('relationship');
   });
+
+  it('L. calculates same_category using multi-hot overlap (Phase 4A fix)', () => {
+    const compA = {
+      category: "Roads",
+      ml_labels: ["Road Damage", "Water Leakage"],
+      embedding_vector: new Array(384).fill(0.1),
+      location_lat: 40.71,
+      location_lng: -74.00,
+      created_at: new Date().toISOString()
+    };
+    
+    const compB = {
+      category: "Water Supply",
+      ml_labels: ["Water Leakage"],
+      embedding_vector: new Array(384).fill(0.12),
+      location_lat: 40.71,
+      location_lng: -74.00,
+      created_at: new Date().toISOString()
+    };
+
+    const features = extractCorrectedRelationshipFeatures(compA, compB);
+    
+    expect(features.length).toBe(20);
+    
+    // Feature 5 is same_category
+    expect(features[5]).toBe(1);
+    
+    // category_a offset is 6. Roads is index 0 -> 6. Water Supply is 1 -> 7.
+    expect(features[6]).toBe(1); // Roads A
+    expect(features[7]).toBe(1); // Water Supply A
+    
+    // category_b offset is 13. Water Supply is index 1 -> 14.
+    expect(features[14]).toBe(1); // Water Supply B
+  });
 });

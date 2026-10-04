@@ -256,17 +256,18 @@ function extractCorrectedRelationshipFeatures(complaintA, complaintB) {
     duplicateFlag = phase2Result.isDuplicate ? 1 : 0;
   } catch (_) {}
 
-  // 5. Same category (normalized)
+  // 6. Multi-hot encoded categories
   const catA = complaintA.category || 'Other';
   const catB = complaintB.category || 'Other';
-  const sameCategory = catA === catB ? 1 : 0;
-
-  // 6. Multi-hot encoded categories
+  
   const typesA = complaintA.ml_labels && complaintA.ml_labels.length > 0 ? complaintA.ml_labels : [catA];
   const typesB = complaintB.ml_labels && complaintB.ml_labels.length > 0 ? complaintB.ml_labels : [catB];
 
   const catAVec = multiHotCategory(typesA);
   const catBVec = multiHotCategory(typesB);
+
+  // 5. Same category (normalized) computed from multi-hot overlap
+  const sameCategory = catAVec.some((v, i) => v === 1 && catBVec[i] === 1) ? 1 : 0;
 
   return [
     semanticSimilarity,
