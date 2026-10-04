@@ -1,0 +1,14 @@
+{
+  "total_relationship_pairs": 16000,
+  "train_pairs": 8818,
+  "validation_pairs": 901,
+  "test_pairs": 836,
+  "excluded_cross_split_pairs": 5445,
+  "total_issue_ids": 1500,
+  "train_issue_ids": 1049,
+  "validation_issue_ids": 226,
+  "test_issue_ids": 225,
+  "grouping_method": "underlying_issue_id",
+  "random_state": 42,
+  "leakage_check": "zero_issue_id_overlap"
+}

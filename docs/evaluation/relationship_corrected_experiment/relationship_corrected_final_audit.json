@@ -1,0 +1,110 @@
+{
+  "project": "GrievanceIQ",
+  "experiment": {
+    "name": "Corrected Relationship Classification Experiment",
+    "model": "sklearn RandomForestClassifier",
+    "estimators": 10,
+    "max_features": 0.5,
+    "random_state": 42,
+    "feature_count": 20,
+    "category_encoding": "true_multi_hot",
+    "split_method": "issue_id_level_disjoint_split"
+  },
+  "dataset": {
+    "original_pairs": 16000,
+    "usable_pairs": 10555,
+    "excluded_cross_split_pairs": 5445,
+    "train_pairs": 8818,
+    "validation_pairs": 901,
+    "test_pairs": 836
+  },
+  "evaluation": {
+    "test_accuracy": 0.933,
+    "macro_precision": 0.8686,
+    "macro_recall": 0.9476,
+    "macro_f1": 0.8999
+  },
+  "leakage_controls": {
+    "issue_id_overlap": 0,
+    "same_issue_excluded": true,
+    "relationship_label_excluded": true,
+    "kg_relation_exists_excluded": true,
+    "category_overlap_excluded": true,
+    "true_multi_category_encoding": true
+  },
+  "backend_status": {
+    "native_node_ml_random_forest": "not_created",
+    "old_backend_model_overwritten": false,
+    "training_interrupted": true
+  },
+  "artifact_manifest": {
+    "corrected_rf_model": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_rf_10tree.joblib",
+      "exists": true,
+      "size_bytes": 881561,
+      "sha256": "e9892a0a53c855f760e354f60c0a83daf15edbb3296b28bb426d4371c12a59e0"
+    },
+    "corrected_rf_results": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_rf_10tree_results.json",
+      "exists": true,
+      "size_bytes": 1777,
+      "sha256": "875ee2467340846fc2b46b2af4a7226cb7c7e5bb47c1632786e20e46ade16ed5"
+    },
+    "corrected_reproducibility": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_reproducibility_record.json",
+      "exists": true,
+      "size_bytes": 4148,
+      "sha256": "01e1777fe41f8d8831d6ff38eefa4a9c2b6f311d939c3b088f0cb172b158a6c6"
+    },
+    "corrected_experiment_summary": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_experiment_summary.md",
+      "exists": true,
+      "size_bytes": 1351,
+      "sha256": "6b21c178a6359f4876f4b00303706848400338fceaa58e640a5e108669abb56e"
+    },
+    "corrected_backend_payload": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/trained_models/relationship_corrected_backend_training_payload.json",
+      "exists": true,
+      "size_bytes": 1556380,
+      "sha256": "1332c7f898ed1b0a0a2b1c839c759e42077591626832d60b9dc4bda0bf3bdea0"
+    },
+    "corrected_backend_config": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/trained_models/relationship_corrected_backend_config.json",
+      "exists": true,
+      "size_bytes": 1514,
+      "sha256": "ab750417d6cdb840baa28cfffa953d6603e1c7b3fd72e26ee3351d57354214fa"
+    },
+    "corrected_backend_status": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/trained_models/relationship_backend_training_status.json",
+      "exists": true,
+      "size_bytes": 908,
+      "sha256": "6b071a2f4799b915b12c7838954f66faa7016861fe4bc998c19f230529000ffb"
+    },
+    "corrected_split_info": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_split_info.json",
+      "exists": true,
+      "size_bytes": 368,
+      "sha256": "6ec67914669e983ad5f6674e9c973bc78378895673ec4859184feeed8b05fa0c"
+    },
+    "corrected_feature_metadata": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_feature_metadata.json",
+      "exists": true,
+      "size_bytes": 961,
+      "sha256": "60fb2ba462df5b3175338737322c107e93d0fc4db16d74af5fc7ff364c537fc1"
+    },
+    "corrected_arrays": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_arrays.npz",
+      "exists": true,
+      "size_bytes": 141438,
+      "sha256": "582c7469cd29591fe504f57b3c4aa6b3db3cc7ad7f1814f5307929b27ae18aa2"
+    },
+    "corrected_label_metadata": {
+      "path": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_label_metadata.json",
+      "exists": true,
+      "size_bytes": 494,
+      "sha256": "7ab1331fd6f5d93f0063ec84b6906e935e640752c4e5d7adc86f8b4ef5e890c8"
+    }
+  },
+  "research_reporting_note": "The reported 0.9330 test accuracy and 0.8999 macro F1 belong to the corrected sklearn Random Forest experiment using the issue-ID-disjoint synthetic test split. They must not be reported as results from a successfully trained Node.js ml-random-forest backend model.",
+  "audited_at": "2026-10-04T03:57:49.057338"
+}

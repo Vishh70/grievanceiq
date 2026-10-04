@@ -1,0 +1,29 @@
+{
+  "cell": "Cell 8",
+  "status": "backend_native_training_not_completed",
+  "reason": "ml-random-forest Node.js training did not complete in the Colab runtime and was interrupted during subprocess execution.",
+  "attempts": {
+    "first_attempt": {
+      "estimators": 10,
+      "result": "interrupted"
+    },
+    "retry": {
+      "estimators": 5,
+      "result": "interrupted"
+    }
+  },
+  "corrected_experiment": {
+    "training_rows": 8818,
+    "validation_rows": 901,
+    "test_rows": 836,
+    "feature_count": 20,
+    "test_accuracy": 0.933,
+    "macro_precision": 0.8686,
+    "macro_recall": 0.9476,
+    "macro_f1": 0.8999
+  },
+  "backend_model_created": false,
+  "evaluation_model": "sklearn RandomForestClassifier",
+  "note": "Do not report backend-native Node RF as successfully trained. The corrected Python experiment is the evaluated experiment.",
+  "recorded_at": "2026-10-04T03:53:51.602546"
+}

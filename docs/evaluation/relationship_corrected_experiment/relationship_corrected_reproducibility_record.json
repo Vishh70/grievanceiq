@@ -1,0 +1,141 @@
+{
+  "project": "GrievanceIQ",
+  "experiment_name": "Corrected Relationship Classification Experiment",
+  "experiment_version": "corrected-2026-10",
+  "timestamp": "2026-10-04T03:43:55.926036",
+  "dataset": {
+    "original_relationship_pairs": 16000,
+    "usable_relationship_pairs": 10555,
+    "excluded_cross_split_pairs": 5445,
+    "train_pairs": 8818,
+    "validation_pairs": 901,
+    "test_pairs": 836,
+    "total_issue_ids": 1500,
+    "train_issue_ids": 1049,
+    "validation_issue_ids": 226,
+    "test_issue_ids": 225
+  },
+  "split_method": "underlying_issue_id_disjoint",
+  "split_random_state": 42,
+  "feature_engineering": {
+    "feature_count": 20,
+    "category_encoding": "true_multi_hot",
+    "category_a_encoding": "multi_hot",
+    "category_b_encoding": "multi_hot",
+    "same_category_definition": "any_shared_coarse_category",
+    "feature_columns": [
+      "semantic_similarity",
+      "location_score",
+      "temporal_score",
+      "duplicate_score",
+      "duplicate_flag",
+      "same_category",
+      "category_a_roads",
+      "category_a_water_supply",
+      "category_a_electricity",
+      "category_a_drainage",
+      "category_a_waste_management",
+      "category_a_public_infrastructure",
+      "category_a_other",
+      "category_b_roads",
+      "category_b_water_supply",
+      "category_b_electricity",
+      "category_b_drainage",
+      "category_b_waste_management",
+      "category_b_public_infrastructure",
+      "category_b_other"
+    ]
+  },
+  "model": {
+    "type": "sklearn.ensemble.RandomForestClassifier",
+    "n_estimators": 10,
+    "max_features": 0.5,
+    "bootstrap": true,
+    "random_state": 42
+  },
+  "labels": [
+    "Duplicate",
+    "Similar",
+    "Related",
+    "Independent"
+  ],
+  "validation": {
+    "accuracy": 0.9400665926748057
+  },
+  "test": {
+    "accuracy": 0.9330143540669856,
+    "macro_precision": 0.8685864402556512,
+    "macro_recall": 0.947636255825911,
+    "macro_f1": 0.8998751676120266,
+    "per_class": {
+      "Duplicate": {
+        "precision": 0.989492119089317,
+        "recall": 0.9277504105090312,
+        "f1": 0.9576271186440678,
+        "support": 609
+      },
+      "Similar": {
+        "precision": 0.875,
+        "recall": 1.0,
+        "f1": 0.9333333333333333,
+        "support": 42
+      },
+      "Related": {
+        "precision": 0.6194690265486725,
+        "recall": 0.9090909090909091,
+        "f1": 0.7368421052631579,
+        "support": 77
+      },
+      "Independent": {
+        "precision": 0.9903846153846154,
+        "recall": 0.9537037037037037,
+        "f1": 0.9716981132075472,
+        "support": 108
+      }
+    },
+    "confusion_matrix": [
+      [
+        565,
+        6,
+        38,
+        0
+      ],
+      [
+        0,
+        42,
+        0,
+        0
+      ],
+      [
+        6,
+        0,
+        70,
+        1
+      ],
+      [
+        0,
+        0,
+        5,
+        103
+      ]
+    ]
+  },
+  "leakage_controls": {
+    "issue_id_overlap": false,
+    "same_issue_used_as_feature": false,
+    "relationship_label_used_as_feature": false,
+    "kg_relation_exists_used_as_feature": false,
+    "category_overlap_binary_used_as_feature": false,
+    "first_category_truncation": false
+  },
+  "artifacts": {
+    "model": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_rf_10tree.joblib",
+    "results": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_rf_10tree_results.json",
+    "corrected_features": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_training_features_corrected.csv",
+    "arrays": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_arrays.npz",
+    "feature_metadata": "/content/drive/MyDrive/GrievanceIQ Dataset/relationship_corrected_feature_metadata.json"
+  },
+  "evaluation_scope": "Synthetic held-out test set",
+  "generalization_statement": "The reported performance is based on the synthetic held-out test set and does not establish real-world generalization.",
+  "important_methodology_note": "Cross-split relationship pairs were excluded rather than assigned to another split so that underlying issue IDs remain fully disjoint across train, validation, and test."
+}

@@ -1,0 +1,33 @@
+{
+  "feature_count": 20,
+  "feature_columns": [
+    "semantic_similarity",
+    "location_score",
+    "temporal_score",
+    "duplicate_score",
+    "duplicate_flag",
+    "same_category",
+    "category_a_roads",
+    "category_a_water_supply",
+    "category_a_electricity",
+    "category_a_drainage",
+    "category_a_waste_management",
+    "category_a_public_infrastructure",
+    "category_a_other",
+    "category_b_roads",
+    "category_b_water_supply",
+    "category_b_electricity",
+    "category_b_drainage",
+    "category_b_waste_management",
+    "category_b_public_infrastructure",
+    "category_b_other"
+  ],
+  "category_encoding": "true_multi_hot",
+  "category_a_multi_hot": true,
+  "category_b_multi_hot": true,
+  "same_category_definition": "any_shared_coarse_category",
+  "same_issue_used_as_feature": false,
+  "relationship_label_used_as_feature": false,
+  "kg_relation_exists_used_as_feature": false,
+  "category_overlap_binary_used_as_feature": false
+}

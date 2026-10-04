@@ -1,0 +1,52 @@
+{
+  "experiment": "corrected_relationship_classification",
+  "split_method": "underlying_issue_id_disjoint",
+  "category_encoding": "true_multi_hot",
+  "feature_count": 20,
+  "features": [
+    "semantic_similarity",
+    "location_score",
+    "temporal_score",
+    "duplicate_score",
+    "duplicate_flag",
+    "same_category",
+    "category_a_roads",
+    "category_a_water_supply",
+    "category_a_electricity",
+    "category_a_drainage",
+    "category_a_waste_management",
+    "category_a_public_infrastructure",
+    "category_a_other",
+    "category_b_roads",
+    "category_b_water_supply",
+    "category_b_electricity",
+    "category_b_drainage",
+    "category_b_waste_management",
+    "category_b_public_infrastructure",
+    "category_b_other"
+  ],
+  "labels": [
+    "Duplicate",
+    "Similar",
+    "Related",
+    "Independent"
+  ],
+  "model_type": "RandomForest",
+  "planned_backend_training": {
+    "n_estimators": 10,
+    "max_features": 0.5,
+    "replacement": true,
+    "use_sample_bagging": true,
+    "seed": 42
+  },
+  "leakage_controls": {
+    "issue_id_overlap": false,
+    "same_issue_used_as_feature": false,
+    "relationship_label_used_as_feature": false,
+    "kg_relation_exists_used_as_feature": false,
+    "category_overlap_binary_used_as_feature": false,
+    "first_category_truncation": false
+  },
+  "evaluation_scope": "Synthetic held-out test set",
+  "note": "This payload prepares the corrected data for backend-compatible Random Forest training. No Node.js model is trained by this cell."
+}

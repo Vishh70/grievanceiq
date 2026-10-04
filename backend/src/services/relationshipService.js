@@ -9,6 +9,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const axios = require('axios');
 const { generateEmbedding, cosineSimilarity } = require('./embeddingService');
 const {
   haversineDistance,
@@ -22,6 +23,9 @@ const {
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const RELATIONSHIP_LABELS = ['Duplicate', 'Similar', 'Related', 'Independent'];
+
+// Configuration for model provider
+const RELATIONSHIP_MODEL_PROVIDER = process.env.RELATIONSHIP_MODEL_PROVIDER || 'corrected-python';
 
 const CATEGORIES = [
   'Roads',
@@ -51,6 +55,44 @@ function oneHotCategory(category) {
   let idx = CATEGORIES.indexOf(category);
   if (idx === -1) idx = CATEGORIES.indexOf('Other');
   vec[idx] = 1;
+  return vec;
+}
+
+/**
+ * Multi-hot encodes an array of fine-grained issue types into the 7 canonical categories.
+ * 
+ * @param {string[]} issueTypes 
+ * @returns {number[]} Array of 0s and 1s (length = CATEGORIES.length)
+ */
+function multiHotCategory(issueTypes) {
+  if (!Array.isArray(issueTypes) || issueTypes.length === 0) {
+    issueTypes = ['Other'];
+  }
+  
+  const vec = new Array(CATEGORIES.length).fill(0);
+  
+  issueTypes.forEach(cat => {
+    const c = cat || 'Other';
+    let canonical = 'Other';
+    const lower = c.toLowerCase();
+    
+    if (lower.includes('road') || lower.includes('pothole')) canonical = 'Roads';
+    else if (lower.includes('water') || lower.includes('pipeline') || lower.includes('leak')) canonical = 'Water Supply';
+    else if (lower.includes('electric') || lower.includes('power') || lower.includes('light')) canonical = 'Electricity';
+    else if (lower.includes('drain') || lower.includes('sewage')) canonical = 'Drainage';
+    else if (lower.includes('garbage') || lower.includes('waste') || lower.includes('trash')) canonical = 'Waste Management';
+    else if (lower.includes('public') || lower.includes('safety') || lower.includes('hazard') || lower.includes('tree')) canonical = 'Public Infrastructure';
+    else if (CATEGORIES.includes(c)) canonical = c;
+    
+    const idx = CATEGORIES.indexOf(canonical);
+    if (idx !== -1) vec[idx] = 1;
+  });
+  
+  // Fallback to Other if all zeros
+  if (!vec.some(v => v === 1)) {
+    vec[CATEGORIES.indexOf('Other')] = 1;
+  }
+  
   return vec;
 }
 
@@ -149,6 +191,83 @@ function extractRelationshipFeatures(complaintA, complaintB) {
   const catBVec = oneHotCategory(catB);
 
   // Build feature vector (total: 20 features)
+  return [
+    semanticSimilarity,
+    locationScore,
+    temporalScore,
+    duplicateScore,
+    duplicateFlag,
+    sameCategory,
+    ...catAVec,
+    ...catBVec,
+  ];
+}
+
+/**
+ * Extracts corrected feature vector (multi-hot encoded categories).
+ */
+function extractCorrectedRelationshipFeatures(complaintA, complaintB) {
+  // 1. Semantic similarity
+  let semanticSimilarity = 0;
+  const embA = complaintA.embedding_vector;
+  const embB = complaintB.embedding_vector;
+  if (Array.isArray(embA) && embA.length > 0 && Array.isArray(embB) && embB.length > 0) {
+    semanticSimilarity = cosineSimilarity(embA, embB);
+  }
+
+  // 2. Location score
+  let locationScore = 0;
+  const latA = complaintA.location_lat;
+  const lngA = complaintA.location_lng;
+  const latB = complaintB.location_lat;
+  const lngB = complaintB.location_lng;
+  if (latA != null && lngA != null && latB != null && lngB != null) {
+    const dist = haversineDistance(Number(latA), Number(lngA), Number(latB), Number(lngB));
+    locationScore = normalizeLocationScore(dist);
+  }
+
+  // 3. Temporal score
+  let temporalScore = 0;
+  if (complaintA.created_at && complaintB.created_at) {
+    const diffHours = timeDifferenceHours(complaintA.created_at, complaintB.created_at);
+    temporalScore = normalizeTemporalScore(diffHours);
+  }
+
+  // 4. Phase 2 duplicate score and flag
+  let duplicateScore = 0;
+  let duplicateFlag = 0;
+  try {
+    const pseudoNew = {
+      embedding_vector: embA || [],
+      location_lat: latA,
+      location_lng: lngA,
+      created_at: complaintA.created_at || new Date().toISOString(),
+    };
+    const pseudoCand = {
+      id: 'phase2-pseudo',
+      embedding_vector: embB || [],
+      location_lat: latB,
+      location_lng: lngB,
+      created_at: complaintB.created_at || new Date().toISOString(),
+      similar_group_id: null,
+    };
+    const phase2Result = scoreCandidate(pseudoNew, pseudoCand);
+    duplicateScore = phase2Result.duplicateScore;
+    duplicateFlag = phase2Result.isDuplicate ? 1 : 0;
+  } catch (_) {}
+
+  // 5. Same category (normalized)
+  const catA = complaintA.category || 'Other';
+  const catB = complaintB.category || 'Other';
+  const sameCategory = catA === catB ? 1 : 0;
+
+  // 6. Multi-hot encoded categories
+  const typesA = complaintA.ml_labels && complaintA.ml_labels.length > 0 ? complaintA.ml_labels : [catA];
+  const typesB = complaintB.ml_labels && complaintB.ml_labels.length > 0 ? complaintB.ml_labels : [catB];
+
+  const catAVec = multiHotCategory(typesA);
+  const catBVec = multiHotCategory(typesB);
+
   return [
     semanticSimilarity,
     locationScore,
@@ -280,7 +399,7 @@ function predictWithConfidence(classifier, features) {
  * @param {object} complaintB - Same shape
  * @returns {Promise<{ relationship: string, confidence: number, probabilities: object, features: object }>}
  */
-async function predictRelationship(complaintA, complaintB) {
+async function predictRelationshipLegacy(complaintA, complaintB) {
   const classifier = loadModel();
   if (!classifier) {
     return {
@@ -329,6 +448,69 @@ async function predictRelationship(complaintA, complaintB) {
   };
 }
 
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+
+/**
+ * Predicts the relationship between two complaints using the corrected Python model.
+ * Falls back to the old Node model if Python is offline.
+ */
+async function predictRelationshipCorrected(complaintA, complaintB) {
+  const a = { ...complaintA };
+  const b = { ...complaintB };
+
+  if ((!a.embedding_vector || a.embedding_vector.length === 0) && a.text) {
+    try {
+      a.embedding_vector = await generateEmbedding(a.text);
+    } catch (_) {
+      a.embedding_vector = [];
+    }
+  }
+
+  if ((!b.embedding_vector || b.embedding_vector.length === 0) && b.text) {
+    try {
+      b.embedding_vector = await generateEmbedding(b.text);
+    } catch (_) {
+      b.embedding_vector = [];
+    }
+  }
+
+  const features = extractCorrectedRelationshipFeatures(a, b);
+  
+  try {
+    const response = await axios.post(`${ML_SERVICE_URL}/predict-relationship`, { features }, { timeout: 3000 });
+    console.log('[RELATIONSHIP MODEL] corrected-python');
+    
+    const featureNames = getFeatureNames();
+    const featureSummary = {};
+    featureNames.forEach((name, i) => {
+      featureSummary[name] = Number(features[i].toFixed(4));
+    });
+
+    return {
+      relationship: response.data.relationship,
+      confidence: response.data.probabilities ? response.data.probabilities[response.data.relationship] || 1.0 : 1.0,
+      probabilities: response.data.probabilities || {},
+      features: featureSummary,
+    };
+  } catch (err) {
+    console.warn(`[RELATIONSHIP MODEL] Python service unavailable (${err.message}).`);
+    console.log('[RELATIONSHIP MODEL] fallback-old-node');
+    return predictRelationshipLegacy(a, b);
+  }
+}
+
+/**
+ * Main entry point for relationship prediction.
+ * Routes to either the corrected Python ML service or legacy Node model
+ * based on the RELATIONSHIP_MODEL_PROVIDER configuration.
+ */
+async function predictRelationship(complaintA, complaintB) {
+  if (RELATIONSHIP_MODEL_PROVIDER === 'corrected-python') {
+    return predictRelationshipCorrected(complaintA, complaintB);
+  }
+  return predictRelationshipLegacy(complaintA, complaintB);
+}
+
 module.exports = {
   // Constants
   RELATIONSHIP_LABELS,
@@ -339,10 +521,13 @@ module.exports = {
 
   // Functions
   oneHotCategory,
+  multiHotCategory,
   extractRelationshipFeatures,
+  extractCorrectedRelationshipFeatures,
   getFeatureNames,
   loadModel,
   clearModelCache,
   predictWithConfidence,
   predictRelationship,
+  predictRelationshipCorrected,
 };

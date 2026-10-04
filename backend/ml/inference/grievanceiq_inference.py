@@ -31,6 +31,7 @@ MODELS_DIR = os.path.join(ML_DIR, 'models')
 MODEL_PATH      = os.path.join(MODELS_DIR, 'multilabel_classifier.joblib')
 LABELS_PATH     = os.path.join(MODELS_DIR, 'issue_labels.json')
 THRESHOLD_PATH  = os.path.join(MODELS_DIR, 'multilabel_thresholds.csv')
+RELATIONSHIP_MODEL_PATH = os.path.join(MODELS_DIR, 'relationship_corrected_rf_10tree.joblib')
 
 PORT = int(os.environ.get('ML_SERVICE_PORT', 5001))
 
@@ -57,6 +58,14 @@ if not isinstance(classifier, dict):
     raise TypeError(f"Expected classifier to be a dict, got {type(classifier)}")
 if len(classifier) != 9:
     raise ValueError(f"Expected 9 models in classifier dict, got {len(classifier)}")
+
+print("[GrievanceIQ ML] Loading relationship classifier...")
+try:
+    relationship_classifier = joblib.load(RELATIONSHIP_MODEL_PATH)
+    print("[GrievanceIQ ML] Loaded relationship classifier successfully.")
+except Exception as e:
+    print(f"[GrievanceIQ ML] Failed to load relationship classifier: {e}")
+    relationship_classifier = None
 
 # ── Flask App ─────────────────────────────────────────────────────────────────
 
@@ -155,6 +164,56 @@ def predict_batch():
             'model_loaded': True
         })
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+RELATIONSHIP_LABELS = {
+    0: "Duplicate",
+    1: "Similar",
+    2: "Related",
+    3: "Independent"
+}
+
+@app.route('/predict-relationship', methods=['POST'])
+def predict_relationship():
+    if not relationship_classifier:
+        return jsonify({'error': 'Relationship classifier not loaded'}), 503
+    try:
+        body = request.get_json(force=True)
+        if 'features' not in body:
+            return jsonify({'error': 'Missing required field: features'}), 400
+        
+        features = body['features']
+        if len(features) != 20:
+            return jsonify({'error': f'Expected exactly 20 features, got {len(features)}'}), 400
+            
+        # Validate all are numeric and finite
+        for val in features:
+            if not isinstance(val, (int, float)) or not np.isfinite(val):
+                return jsonify({'error': 'All features must be finite numbers'}), 400
+                
+        X = np.array(features, dtype=np.float32).reshape(1, -1)
+        
+        # Predict
+        pred_class_id = int(relationship_classifier.predict(X)[0])
+        relationship_label = RELATIONSHIP_LABELS.get(pred_class_id, "Independent")
+        
+        response = {
+            "relationship": relationship_label,
+            "class_id": pred_class_id,
+            "features_used": 20,
+            "model": "relationship_corrected_rf_10tree"
+        }
+        
+        if hasattr(relationship_classifier, 'predict_proba'):
+            probs = relationship_classifier.predict_proba(X)[0]
+            classes = relationship_classifier.classes_
+            prob_dict = {}
+            for cls_val, prob in zip(classes, probs):
+                prob_dict[RELATIONSHIP_LABELS.get(int(cls_val), "Independent")] = round(float(prob), 4)
+            response["probabilities"] = prob_dict
+            
+        return jsonify(response)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

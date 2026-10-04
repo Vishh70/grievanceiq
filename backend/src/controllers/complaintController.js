@@ -46,6 +46,27 @@ const mapComplaint = (row, includeEmbedding = false) => {
   return mapped;
 };
 
+// Helper for sanitized public data
+const mapPublicComplaint = (row) => {
+  // Truncate location to approx 1km precision (~0.01 degrees)
+  const truncateGeo = (val) => (val != null ? parseFloat(val.toFixed(2)) : null);
+  
+  return {
+    _id: row.id,
+    title: row.title,
+    text: row.description, // Basic text is okay, but not internal status/evidence
+    category: row.category,
+    priority: row.priority,
+    status: row.status,
+    location: {
+      lat: truncateGeo(row.location_lat),
+      lng: truncateGeo(row.location_lng),
+    },
+    upvotes: row.upvotes || 0,
+    createdAt: row.created_at
+  };
+};
+
 exports.createComplaint = async (req, res) => {
   try {
     const { text, address, lat, lng } = req.body;
@@ -142,7 +163,7 @@ exports.createComplaint = async (req, res) => {
           }
 
           let { data: candidates, error: candQueryErr } = await supabase.from('complaints')
-            .select('id, description, embedding_vector, location_lat, location_lng, created_at, similar_group_id, category')
+            .select('id, description, embedding_vector, location_lat, location_lng, created_at, similar_group_id, category, ml_labels')
             .or(orQuery)
             .neq('id', complaintData.id)
             .eq('ai_processed', true)
@@ -152,7 +173,7 @@ exports.createComplaint = async (req, res) => {
 
           if (candQueryErr && candQueryErr.message && candQueryErr.message.includes('embedding_vector')) {
             const fallbackRes = await supabase.from('complaints')
-              .select('id, description, location_lat, location_lng, created_at, similar_group_id, category')
+              .select('id, description, location_lat, location_lng, created_at, similar_group_id, category, ml_labels')
               .or(orQuery)
               .neq('id', complaintData.id)
               .eq('ai_processed', true)
@@ -286,6 +307,7 @@ exports.createComplaint = async (req, res) => {
             id: complaintData.id,
             text: text,
             category: primaryCategory,
+            ml_labels: candidateMlLabels,
             location_lat: complaintData.location_lat,
             location_lng: complaintData.location_lng,
             created_at: complaintData.created_at,
@@ -396,14 +418,14 @@ exports.getSimilarComplaints = async (req, res) => {
     }
 
     const { data: similar } = await supabase.from('complaints')
-      .select('*')
+      .select('id, title, description, category, priority, status, location_lat, location_lng, upvotes, created_at')
       .eq('similar_group_id', complaint.similar_group_id)
       .eq('category', complaint.category)
       .neq('id', req.params.id)
       .order('created_at', { ascending: false })
       .limit(5);
 
-    res.json({ complaints: (similar || []).map(mapComplaint) });
+    res.json({ complaints: (similar || []).map(mapPublicComplaint) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -411,16 +433,17 @@ exports.getSimilarComplaints = async (req, res) => {
 
 exports.getPublicComplaints = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
+    let limit = parseInt(req.query.limit) || 50;
+    if (limit > 100) limit = 100; // Secure bound limit
     const { data: complaints, error } = await supabase.from('complaints')
-      .select(`*, users(id, name)`)
+      .select('id, title, description, category, priority, status, location_lat, location_lng, upvotes, created_at')
       .eq('ai_processed', true)
       .not('location_lat', 'is', null)
       .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) throw error;
-    res.json({ complaints: (complaints || []).map(mapComplaint) });
+    res.json({ complaints: (complaints || []).map(mapPublicComplaint) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -436,16 +459,25 @@ exports.upvoteComplaint = async (req, res) => {
     const hasUpvoted = upvotedBy.includes(req.user.id);
     let priority = complaint.priority;
     
+    // Fetch user for civic points update
+    const { data: user } = await supabase.from('users').select('civic_points').eq('id', req.user.id).single();
+    const currentPoints = user ? (user.civic_points || 0) : 0;
+    
     if (hasUpvoted) {
       upvotedBy = upvotedBy.filter(id => id !== req.user.id);
       upvotes = Math.max(0, upvotes - 1);
+      if (user) {
+        await supabase.from('users').update({ civic_points: Math.max(0, currentPoints - 10) }).eq('id', req.user.id);
+      }
     } else {
       upvotedBy.push(req.user.id);
       upvotes += 1;
       
       if (upvotes >= 5 && priority !== 'Critical') {
         priority = 'Critical';
-        // Add to history
+      }
+      if (user) {
+        await supabase.from('users').update({ civic_points: currentPoints + 10 }).eq('id', req.user.id);
       }
     }
 
