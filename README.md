@@ -16,7 +16,7 @@ GrievanceIQ is an end-to-end civic intelligence and operational routing platform
 - **AI/ML**: Hybrid AI Architecture
   - **Google Gemini**: Initial complaint understanding, category, priority, hazards, suggested action.
   - **Local Transformers**: `Xenova/all-MiniLM-L6-v2` running via WebAssembly in Node.js for embeddings and semantic similarity.
-  - **Local Random Forest**: For relationship classification.
+  - **Corrected Random Forest**: The active relationship model (sklearn .joblib) served via a Python Flask ML service, with legacy Node.js fallback.
 
 ## Algorithms Used
 - **Cosine Similarity**: For detecting semantic closeness between texts.
@@ -64,6 +64,8 @@ Execute the following files found in `docs/database/` in the exact order below v
 4. `phase5_routing_tasks.sql`
 5. `phase6_task_dependencies.sql`
 6. `phase7_task_execution.sql`
+7. `phase8_task_hardening.sql`
+8. `phase10_ml_multilabel.sql`
 
 ### 6. Backend startup
 ```bash
@@ -104,6 +106,6 @@ npm run demo:reset
 ## Known Limitations
 Please review `docs/evaluation/limitations.md` for a comprehensive list of architectural and prototype boundaries. Most notably:
 - The AI models run locally and are evaluated on synthetic/prototype datasets.
-- The system is "CI-certified" (81 tests passed, 1 skipped; CI workflow succeeded) but is not validated on real-world municipal production scale workloads, nor is it production-security-certified.
+- The system is "CI-certified" (94 tests passed, 0 skipped; CI workflow succeeded) but is not validated on real-world municipal production scale workloads, nor is it production-security-certified. The 0.9330 accuracy and 0.8999 macro F1 are synthetic held-out evaluation results, not real-world generalization proofs.
 - Progress metrics treat all tasks equally (no effort-based weighting).
 - There is no live physical workforce dispatching or external municipal legacy system integration.

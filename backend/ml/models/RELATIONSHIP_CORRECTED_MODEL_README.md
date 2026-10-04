@@ -51,4 +51,4 @@ Relationship result
 - **Macro recall:** 0.9476362558
 - **Macro F1:** 0.8998751676
 
-The reported metrics are from the corrected sklearn Python experiment on synthetic held-out data. This .joblib model is NOT yet the active Node.js backend relationship model.
+The reported metrics are from the corrected sklearn Python experiment on synthetic held-out data. The corrected .joblib model is the active relationship model through the Python Flask ML service. It is not a native Node.js ml-random-forest model.
