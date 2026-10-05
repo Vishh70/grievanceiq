@@ -14,6 +14,11 @@
 
 <br/>
 
+
+<a href="https://github.com/Vishh70/grievanceiq">
+  <img src="https://visitor-badge.laobi.icu/badge?page_id=Vishh70.grievanceiq&left_color=black&right_color=667EEA&left_text=Visitors" alt="Visitors" />
+</a>
+<br/><br/>
 <!-- ANIMATED SHIELDS -->
 <a href="https://github.com/Vishh70/grievanceiq/actions/workflows/backend-ci.yml">
   <img src="https://img.shields.io/github/actions/workflow/status/Vishh70/grievanceiq/backend-ci.yml?branch=main&label=Backend%20CI&style=for-the-badge&color=2ea043&logo=githubactions" alt="Backend CI" />
@@ -1176,6 +1181,14 @@ grievanceiq/
 
 ### 1️⃣ Clone & Install
 
+
+<div style="background-color: #212121; border-radius: 8px 8px 0 0; padding: 12px; display: flex; align-items: center; border: 1px solid #333; border-bottom: none; max-width: 100%;">
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ff5f56; margin-right: 8px;"></div>
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ffbd2e; margin-right: 8px;"></div>
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #27c93f;"></div>
+  <div style="color: #888; font-family: monospace; font-size: 12px; margin-left: auto; margin-right: auto; letter-spacing: 1px;">terminal ~ bash</div>
+</div>
+
 ```bash
 git clone https://github.com/Vishh70/grievanceiq.git
 cd grievanceiq
@@ -1220,6 +1233,14 @@ phase1_embedding.sql → phase2_duplicate_detection.sql → phase4_civic_issue.s
 
 ### 4️⃣ Start Services
 
+
+<div style="background-color: #212121; border-radius: 8px 8px 0 0; padding: 12px; display: flex; align-items: center; border: 1px solid #333; border-bottom: none; max-width: 100%;">
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ff5f56; margin-right: 8px;"></div>
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ffbd2e; margin-right: 8px;"></div>
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #27c93f;"></div>
+  <div style="color: #888; font-family: monospace; font-size: 12px; margin-left: auto; margin-right: auto; letter-spacing: 1px;">terminal ~ bash</div>
+</div>
+
 ```bash
 # Terminal 1 — ML Service
 cd backend/ml
@@ -1239,6 +1260,14 @@ npm run dev
 
 ### 5️⃣ Demo Data (Optional)
 
+
+<div style="background-color: #212121; border-radius: 8px 8px 0 0; padding: 12px; display: flex; align-items: center; border: 1px solid #333; border-bottom: none; max-width: 100%;">
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ff5f56; margin-right: 8px;"></div>
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ffbd2e; margin-right: 8px;"></div>
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #27c93f;"></div>
+  <div style="color: #888; font-family: monospace; font-size: 12px; margin-left: auto; margin-right: auto; letter-spacing: 1px;">terminal ~ bash</div>
+</div>
+
 ```bash
 cd backend
 npm run demo          # Seed reproducible demo data (tagged [DEMO])
@@ -1253,6 +1282,14 @@ npm run demo:reset    # Safely remove all demo data
 ## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Test%20Tube.png" alt="Testing" width="30" height="30" style="vertical-align: middle;"/> Testing & CI
 
 ### Backend Tests
+
+
+<div style="background-color: #212121; border-radius: 8px 8px 0 0; padding: 12px; display: flex; align-items: center; border: 1px solid #333; border-bottom: none; max-width: 100%;">
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ff5f56; margin-right: 8px;"></div>
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ffbd2e; margin-right: 8px;"></div>
+  <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #27c93f;"></div>
+  <div style="color: #888; font-family: monospace; font-size: 12px; margin-left: auto; margin-right: auto; letter-spacing: 1px;">terminal ~ bash</div>
+</div>
 
 ```bash
 cd backend
