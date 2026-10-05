@@ -50,4 +50,4 @@ Execute the following files found in `docs/database/` in the exact order listed 
     - **Changes**: Adds `merged_into_id` column to `civic_issues`.
 
 ## Verification
-You can verify the schema by running a simple test insert or checking the Table Editor in the Supabase dashboard to confirm all 9 tables (`complaints`, `civic_issues`, `complaint_relationships`, `routing_results`, `workstreams`, `tasks`, `task_dependencies`, `task_status_history`) exist and contain the correct foreign key relationships. Verify `civic_issues.merged_into_id` exists for merge traceability.
+You can verify the schema by running a simple test insert or checking the Table Editor in the Supabase dashboard to confirm all 8 tables (`complaints`, `civic_issues`, `complaint_relationships`, `routing_results`, `workstreams`, `tasks`, `task_dependencies`, `task_status_history`) exist and contain the correct foreign key relationships. Verify `civic_issues.merged_into_id` exists for merge traceability.
