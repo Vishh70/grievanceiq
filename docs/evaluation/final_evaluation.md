@@ -66,7 +66,7 @@ The evaluation uses a prototype dataset (`backend/data/evaluation_cases.json`) c
 
 ## 16. Test Results
 - **Unit Tests**: PASS
-- **Integration Tests**: SKIPPED — Optional live Supabase credentials required.
+- **Integration Tests**: PASS — Real Supabase network stack verified via GitHub Actions.
 - **End-to-End**: PASS (Isolated logic check).
 
 ## 17. Known Limitations

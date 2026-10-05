@@ -17,7 +17,7 @@
   <a href="https://github.com/Vishh70/grievanceiq/actions/workflows/frontend-ci.yml"><img src="https://github.com/Vishh70/grievanceiq/actions/workflows/frontend-ci.yml/badge.svg" alt="Frontend CI"/></a>
   <img src="https://img.shields.io/badge/node-%3E%3D22.x-339933?style=flat-square&logo=node.js" alt="Node.js"/>
   <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?style=flat-square&logo=python" alt="Python"/>
-  <img src="https://img.shields.io/badge/react-18-61DAFB?style=flat-square&logo=react" alt="React"/>
+  <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&logo=react" alt="React"/>
   <img src="https://img.shields.io/badge/postgresql-supabase-3ECF8E?style=flat-square&logo=supabase" alt="Supabase"/>
   <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"/>
 </p>

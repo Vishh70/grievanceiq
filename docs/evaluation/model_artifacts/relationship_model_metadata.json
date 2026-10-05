@@ -36,7 +36,7 @@
     "Independent"
   ],
   "hyperparameters": {
-    "nEstimators": 30,
+    "nEstimators": 10,
     "maxFeatures": 0.5,
     "replacement": true,
     "useSampleBagging": true,
