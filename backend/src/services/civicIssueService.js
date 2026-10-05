@@ -4,6 +4,7 @@ const complaintGraphService = require('./complaintGraphService');
 const { predictRelationship } = require('./relationshipService');
 const knowledgeGraphService = require('./knowledgeGraphService');
 const routingService = require('./routingService');
+const relationshipPersistenceService = require('./relationshipPersistenceService');
 
 /**
  * Generates a deterministic title for a Civic Issue based on component complaints.
@@ -94,10 +95,51 @@ async function createOrUpdateCivicIssue(componentComplaints) {
   const existingIssueIds = [...new Set(componentComplaints.map(c => c.civic_issue_id).filter(Boolean))];
   
   let issueIdToUse = null;
+  let mergedIssues = [];
 
   if (existingIssueIds.length > 0) {
-    // If they belong to multiple, we just pick the first one and merge them (for simplicity in Phase 4)
-    issueIdToUse = existingIssueIds[0];
+    if (existingIssueIds.length === 1) {
+      issueIdToUse = existingIssueIds[0];
+    } else {
+      // Deterministic Merge Policy
+      // Rank by size, priority, created_at, id
+      try {
+        const { data: issues } = await supabase
+          .from('civic_issues')
+          .select('*')
+          .in('id', existingIssueIds);
+          
+        if (issues && issues.length > 0) {
+          const priorityVal = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
+          
+          issues.sort((a, b) => {
+            const aLen = (a.complaint_ids || []).length;
+            const bLen = (b.complaint_ids || []).length;
+            if (aLen !== bLen) return bLen - aLen; 
+            
+            const aPrio = priorityVal[a.priority] || 0;
+            const bPrio = priorityVal[b.priority] || 0;
+            if (aPrio !== bPrio) return bPrio - aPrio; 
+            
+            const aTime = new Date(a.created_at || 0).getTime();
+            const bTime = new Date(b.created_at || 0).getTime();
+            if (aTime !== bTime) return aTime - bTime; 
+            
+            return a.id.localeCompare(b.id); 
+          });
+          
+          const survivor = issues[0];
+          issueIdToUse = survivor.id;
+          
+          mergedIssues = issues.slice(1).map(i => i.id);
+        } else {
+          issueIdToUse = existingIssueIds[0];
+        }
+      } catch (err) {
+        console.warn('Failed to fetch existing civic issues for merge, using [0]', err.message);
+        issueIdToUse = existingIssueIds[0];
+      }
+    }
   }
 
   const payload = {
@@ -140,6 +182,17 @@ async function createOrUpdateCivicIssue(componentComplaints) {
         .from('complaints')
         .update({ civic_issue_id: savedIssue.id })
         .in('id', complaintIds);
+        
+      // Update merged issues to show they were merged
+      if (mergedIssues.length > 0) {
+        await supabase
+          .from('civic_issues')
+          .update({ 
+            status: 'Merged',
+            merged_into_id: savedIssue.id
+          })
+          .in('id', mergedIssues);
+      }
     }
 
     return savedIssue;
@@ -187,6 +240,15 @@ async function processCivicIssueGrouping(newComplaint, candidates) {
           relationship: relationshipType,
           reason: reason
         });
+        if (relationshipType === 'Related' || relationshipType === 'Duplicate') {
+          await relationshipPersistenceService.upsertRelationship(
+            newComplaint.id,
+            cand.id,
+            relationshipType,
+            result.confidence || 0,
+            reason
+          );
+        }
       }
     } catch (err) {
       console.warn(`Relationship prediction failed for candidate ${cand.id}:`, err.message);

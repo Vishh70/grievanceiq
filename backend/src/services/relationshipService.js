@@ -66,15 +66,15 @@ async function predictRelationshipCorrected(complaintA, complaintB) {
 
   const features = extractCorrectedRelationshipFeatures(a, b);
   
+  const featureNames = getFeatureNames();
+  const featureSummary = {};
+  featureNames.forEach((name, i) => {
+    featureSummary[name] = Number(features[i].toFixed(4));
+  });
+
   try {
     const response = await axios.post(`${ML_SERVICE_URL}/predict-relationship`, { features }, { timeout: 3000 });
     console.log('[RELATIONSHIP MODEL] corrected-python');
-    
-    const featureNames = getFeatureNames();
-    const featureSummary = {};
-    featureNames.forEach((name, i) => {
-      featureSummary[name] = Number(features[i].toFixed(4));
-    });
 
     return {
       relationship: response.data.relationship,

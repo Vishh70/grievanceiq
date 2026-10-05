@@ -25,15 +25,15 @@ describe('Phase 8: End-to-End Pipeline Evaluation', () => {
     // 2. Issue Classification (Simulating classifier output for the multi-label prompt)
     const mockClassifiedIssueTypes = [
       { label: 'Water Leakage', confidence: 0.9 },
-      { label: 'Road Flooding', confidence: 0.85 },
-      { label: 'Electrical Hazard', confidence: 0.88 }
+      { label: 'Road Damage', confidence: 0.85 },
+      { label: 'Electric Pole', confidence: 0.88 }
     ];
 
     // 3. Department Routing
     const { departments, mappingReasons } = mapIssueTypesToDepartments(mockClassifiedIssueTypes);
     expect(departments).toContain('Water Department');
     expect(departments).toContain('Road Department');
-    expect(departments).toContain('Electrical Department');
+    expect(departments).toContain('Electricity Department');
     
     // 4. Task Generation (Simulate deterministic rule application)
     const rules = loadRules();
@@ -52,7 +52,7 @@ describe('Phase 8: End-to-End Pipeline Evaluation', () => {
     
     const waterTasks = tasks.filter(t => t.department_id === 'Water Department');
     const roadTasks = tasks.filter(t => t.department_id === 'Road Department');
-    const elecTasks = tasks.filter(t => t.department_id === 'Electrical Department');
+    const elecTasks = tasks.filter(t => t.department_id === 'Electricity Department');
     
     expect(waterTasks.length).toBeGreaterThan(0);
     expect(roadTasks.length).toBeGreaterThan(0);

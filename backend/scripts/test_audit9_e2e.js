@@ -6,7 +6,7 @@ const { isMLServiceAvailable, predictIssueLabels } = require('../src/services/ml
 const { generateEmbedding } = require('../src/services/embeddingService');
 const { findBestDuplicate, DUPLICATE_CONFIG } = require('../src/services/duplicateDetectionService');
 const { predictRelationship } = require('../src/services/relationshipService');
-const complaintGraphService = require('../src/services/complaintGraphService');
+const { ComplaintGraphService } = require('../src/services/complaintGraphService');
 const { 
   generateCivicIssueTitle, 
   calculateRepresentativeLocation, 
@@ -148,6 +148,7 @@ async function runAudit9() {
   const compNew = { id: 'NEW_E2E_01', category: candidateIssueTypes[0], location_lat: complaintLocation.lat, location_lng: complaintLocation.lng, priority: 'High' };
   const compCand = { id: testCandidate.id, category: testCandidate.category || 'Water Leakage', location_lat: testCandidate.location_lat, location_lng: testCandidate.location_lng, priority: 'Critical' };
 
+  const complaintGraphService = new ComplaintGraphService();
   complaintGraphService.buildGraph([compNew, compCand], [
     { sourceId: compNew.id, targetId: compCand.id, relationship: 'Related' }
   ]);

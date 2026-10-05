@@ -62,21 +62,21 @@ describe('Phase 5: Multi-Department Routing', () => {
     it('Test 2 — Multiple departments', () => {
       const { departments } = mapIssueTypesToDepartments([
         { label: 'Water Leakage', confidence: 0.9 },
-        { label: 'Road Flooding', confidence: 0.8 },
-        { label: 'Electrical Hazard', confidence: 0.8 }
+        { label: 'Road Damage', confidence: 0.8 },
+        { label: 'Electric Pole', confidence: 0.8 }
       ]);
       expect(departments).toContain('Water Department');
       expect(departments).toContain('Road Department');
-      expect(departments).toContain('Electrical Department');
+      expect(departments).toContain('Electricity Department');
       expect(departments.length).toBe(3);
     });
 
     it('Test 3 — Multiple issue types, same department', () => {
       const { departments } = mapIssueTypesToDepartments([
-        { label: 'Road Damage', confidence: 0.9 },
-        { label: 'Road Flooding', confidence: 0.9 }
+        { label: 'Roadside Flooding', confidence: 0.9 },
+        { label: 'Drainage', confidence: 0.9 }
       ]);
-      expect(departments).toEqual(['Road Department']);
+      expect(departments).toEqual(['Drainage Department']);
       // But 2 mapping reasons
     });
 
@@ -95,7 +95,7 @@ describe('Phase 5: Multi-Department Routing', () => {
   describe('Task Templates Structure', () => {
     it('Test 6 — Task generation logic uses deterministic templates', () => {
       const rules = loadRules();
-      const templates = rules.taskTemplates['Road Flooding'];
+      const templates = rules.taskTemplates['Roadside Flooding'];
       expect(templates[0].title).toBe('Inspect flooded road');
       expect(templates[1].title).toBe('Clear obstruction');
     });

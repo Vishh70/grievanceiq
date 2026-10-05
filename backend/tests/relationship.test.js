@@ -6,7 +6,7 @@
 const {
   predictRelationship,
   oneHotCategory,
-  extractRelationshipFeatures,
+  extractCorrectedRelationshipFeatures,
   CATEGORIES,
 } = require('../src/services/relationshipService');
 const { disposeExtractor } = require('../src/services/embeddingService');
@@ -78,7 +78,7 @@ describe('Phase 3: Relationship Classification', () => {
         created_at: new Date().toISOString(),
         category: 'Roads',
       };
-      const features = extractRelationshipFeatures(cA, cB);
+      const features = extractCorrectedRelationshipFeatures(cA, cB);
       expect(Array.isArray(features)).toBe(true);
       expect(features.length).toBe(20);
       features.forEach(f => expect(typeof f).toBe('number'));

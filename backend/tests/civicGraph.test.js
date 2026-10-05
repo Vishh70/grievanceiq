@@ -1,7 +1,7 @@
 // tests/civicGraph.test.js
 // Phase 4: Civic Knowledge Graph & Connected Components tests
 
-const complaintGraphService = require('../src/services/complaintGraphService');
+const { ComplaintGraphService } = require('../src/services/complaintGraphService');
 const { loadKnowledgeGraph, findRelationship, getRelatedIssueTypes } = require('../src/services/knowledgeGraphService');
 const { generateCivicIssueTitle, calculateRepresentativeLocation, aggregatePriority } = require('../src/services/civicIssueService');
 
@@ -31,6 +31,10 @@ describe('Phase 4: Civic Issue Grouping & Graphs', () => {
   });
 
   describe('Complaint Graph Service (Connected Components)', () => {
+    let complaintGraphService;
+    beforeEach(() => {
+      complaintGraphService = new ComplaintGraphService();
+    });
 
     it('Test 1 — Duplicate grouping', () => {
       complaintGraphService.buildGraph(
