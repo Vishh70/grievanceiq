@@ -139,7 +139,7 @@ async function createOrUpdateCivicIssue(componentComplaints) {
           // Remove duplicates
           complaintIds = [...new Set(complaintIds)];
         } else {
-          issueIdToUse = existingIssueIds[0];
+          throw new Error('Deterministic merge query returned no valid issues for the provided IDs.');
         }
       } catch (err) {
         console.error('Failed to fetch existing civic issues for merge:', err.message);
@@ -184,20 +184,28 @@ async function createOrUpdateCivicIssue(componentComplaints) {
 
     // Now update all complaints in this component to link to the civic issue
     if (savedIssue) {
-      await supabase
+      const { error: repointErr } = await supabase
         .from('complaints')
         .update({ civic_issue_id: savedIssue.id })
         .in('id', complaintIds);
         
+      if (repointErr) {
+        throw new Error(`Failed to repoint complaints to merged issue: ${repointErr.message}`);
+      }
+        
       // Update merged issues to show they were merged
       if (mergedIssues.length > 0) {
-        await supabase
+        const { error: mergeStatusErr } = await supabase
           .from('civic_issues')
           .update({ 
             status: 'Merged',
             merged_into_id: savedIssue.id
           })
           .in('id', mergedIssues);
+          
+        if (mergeStatusErr) {
+          throw new Error(`Failed to mark losing issues as merged: ${mergeStatusErr.message}`);
+        }
       }
     }
 

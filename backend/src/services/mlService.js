@@ -131,11 +131,11 @@ async function predictIssueLabels(embedding, text = '') {
       serviceAvailable: true,
     };
   } catch (err) {
-    console.warn(
+    console.error(
       '[ML] trained multi-label model unavailable:',
       err.code || err.message
     );
-    return fallback;
+    throw new Error(`ML Service unavailable: ${err.message}`);
   }
 }
 

@@ -32,7 +32,7 @@ Open the GrievanceIQ application at `http://localhost:5173`.
 
 ### 6. Show Multiple Departments & Tasks
 - **Action**: Click "View Routing" on the Civic Issue.
-- **Talking Point**: Explain the Multi-Label Zero-Shot classification. The system correctly identifies the need for the **Water Department**, **Road Department**, and **Electrical Department**. Show the deterministically generated tasks for each workstream.
+- **Talking Point**: Explain the Multi-Label classification. The system correctly identifies the need for the **Water Department**, **Road Department**, and **Electrical Department**. Show the deterministically generated tasks for each workstream.
 
 ### 7. Show Execution Stages (DAG)
 - **Action**: Scroll to the "Execution Plan" view.

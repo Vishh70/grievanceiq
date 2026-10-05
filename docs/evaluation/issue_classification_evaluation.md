@@ -6,7 +6,7 @@ The issue classifier takes grouped Civic Issues and predicts the required operat
 ## Evaluation Dataset
 - **Source**: Synthetic evaluation data (`backend/data/evaluation_cases.json`).
 - **Dataset Size**: 3 multi-complaint Civic Issues.
-- **Approach**: Zero-shot semantic matching using local embeddings against a predefined set of department routing labels.
+- **Approach**: Trained multi-label Logistic Regression models using local embeddings against a predefined set of department routing labels.
 
 ## Results
 *Note: These metrics evaluate multi-label performance, which is fundamentally different from single-label accuracy. The results are from a mocked prototype dataset.*
@@ -20,6 +20,6 @@ The issue classifier takes grouped Civic Issues and predicts the required operat
 | **Single-label fallback accuracy** | NOT MEASURED |
 
 ## Limitations
-1. **Zero-Shot Vulnerability**: The model heavily relies on zero-shot similarity matching between complaint text and the label names (e.g., "Water Leakage"). It struggles if the citizen uses unconventional vocabulary that doesn't embed closely to the official label.
+1. **Colloquial Text Vulnerability**: The model relies on trained semantic thresholds. It may struggle if the citizen uses unconventional vocabulary that doesn't embed closely to the training distribution.
 2. **Category Fallback**: When the semantic similarity threshold isn't met, the system falls back to the user-provided primary category, which may bypass the multi-label capability entirely if the user only selected one category.
 3. **Threshold Sensitivity**: The confidence threshold for multi-label inclusion is currently hardcoded and has not been scientifically optimized through cross-validation.

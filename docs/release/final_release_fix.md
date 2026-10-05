@@ -37,4 +37,4 @@ Documentation:
 `README.md`, `docs/evaluation/project_summary.md`, `docs/evaluation/limitations.md`, and `docs/evaluation/viva_notes.md` have been updated to explicitly highlight the Hybrid AI architecture (Google Gemini + Xenova/Local Transformers) rather than claiming a "100% local AI only" implementation.
 
 Remaining limitations:
-Zero-shot issue classification relies on predefined thresholds. The system also does not implement true physical workforce constraints (truck dispatch, shift planning) or integration with external systems as detailed in `limitations.md`.
+Multi-label issue classification relies on predefined thresholds. The system also does not implement true physical workforce constraints (truck dispatch, shift planning) or integration with external systems as detailed in `limitations.md`.

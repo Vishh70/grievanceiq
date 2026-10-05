@@ -5,7 +5,7 @@ The GrievanceIQ prototype demonstrates an end-to-end pipeline that converts unst
 
 ## 2. Evaluation Environment
 - **Platform**: Local Node.js development environment.
-- **Database**: Supabase (PostgreSQL with `pgvector`).
+- **Database**: Supabase (PostgreSQL with `float8[]` arrays).
 - **AI Hardware**: CPU-bound local execution (Xenova/Transformers.js).
 
 ## 3. Dataset

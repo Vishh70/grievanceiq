@@ -34,7 +34,7 @@ describe('Phase 5: Multi-Department Routing', () => {
     });
   });
 
-  describe('Multi-Label Classification (Zero-Shot using Categories as fallback)', () => {
+  describe('Multi-Label Classification (Using Categories as fallback)', () => {
     it('Fallback: Uses primary_category if text semantic matching fails or is below threshold', async () => {
       const civicIssue = { title: 'Random issue', primary_category: 'Water' };
       const { issueTypes } = await classifyCivicIssue(civicIssue, []);

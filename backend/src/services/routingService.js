@@ -179,7 +179,7 @@ async function routeCivicIssue(civicIssueId) {
 
     if (wsErr) {
       console.error(`Failed to create workstream for ${dept}:`, wsErr.message);
-      continue;
+      throw new Error(`Failed to create workstream for ${dept}: ${wsErr.message}`);
     }
 
     workstreams.push(workstream);
@@ -216,6 +216,7 @@ async function routeCivicIssue(civicIssueId) {
 
         if (taskErr) {
           console.error(`Failed to create task "${template.title}":`, taskErr.message);
+          throw new Error(`Failed to create task "${template.title}": ${taskErr.message}`);
         } else {
           tasksCreated++;
         }

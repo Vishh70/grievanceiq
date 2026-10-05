@@ -18,13 +18,13 @@ The system employs a cascading hybrid architecture:
 - **Local Random Forest**: Evaluates complaint relationships.
 - **Duplicate Detection**: A multi-dimensional heuristic combining semantic cosine similarity, geographic distance (Haversine), and temporal proximity.
 - **Complaint Multi-Label Classification**: Generates 9 distinct issue flags using trained Logistic Regression models.
-- **Civic Issue Routing**: Zero-shot semantic matching between aggregated issue embeddings and department templates to assign multiple workstreams.
+- **Civic Issue Routing**: Deterministic matching using trained multi-label models to assign multiple workstreams.
 ## Algorithms
 - **Connected Components (Graph)**: Traverses localized complaint relationships (Duplicate, Similar, Related) to form a unified, macroscopic `Civic Issue`.
 - **Kahn's Topological Sort (DAG)**: Detects circular workflow cycles and flattens a Directed Acyclic Graph of tasks into safe, parallel execution stages.
 
 ## Database
-- **Supabase / PostgreSQL**: Provides robust relational structure for execution lifecycles while leveraging the `pgvector` extension for high-performance native vector similarity search.
+- **Supabase / PostgreSQL**: Provides robust relational structure for execution lifecycles while leveraging `float8[]` arrays for high-performance native vector similarity search.
 
 ## Frontend
 - **React + Vite**: A responsive Single Page Application (SPA) offering a Citizen Submission Portal and an Admin Dashboard that visually models real-time topological execution plans.
@@ -36,7 +36,7 @@ The system employs a cascading hybrid architecture:
 The intelligent components were validated against synthetic prototype datasets specifically constructed to represent challenging civic ambiguities (e.g., related cascading failures). Deterministic algorithms (Topological Sorting, Graph Traversal, and state transitions) were heavily validated via an isolated end-to-end regression test suite. 
 
 ## Limitations
-The project relies on a small prototype dataset for its relationship classification model and hard-coded zero-shot thresholds. While the system is "CI-certified"—meaning the codebase successfully executes its automated end-to-end regression suite (81 tests passed, 1 skipped) inside GitHub Actions—it has not been validated on real-world municipal production workloads, nor is it production-security-certified. It successfully calculates logical task dependencies but lacks physical resource-aware scheduling (truck routing, workforce availability) and does not integrate into legacy government dispatch systems.
+The project relies on a small prototype dataset for its relationship classification model and logistic regression thresholds. While the system is "CI-certified"—meaning the codebase successfully executes its automated end-to-end regression suite (all automated tests passing) inside GitHub Actions—it has not been validated on real-world municipal production workloads, nor is it production-security-certified. It successfully calculates logical task dependencies but lacks physical resource-aware scheduling (truck routing, workforce availability) and does not integrate into legacy government dispatch systems.
 
 ## Future Work
 Subsequent iterations would focus on training the sequence classifier on a massive corpus of verified municipal data, extending the topological sort to support resource-constrained critical path analysis, and providing geospatial dashboards for live worker dispatching.

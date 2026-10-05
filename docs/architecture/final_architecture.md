@@ -50,9 +50,9 @@
 ### 1. AI / ML Components
 - **Embedding Generation**: Uses local Transformer models (Xenova/all-MiniLM-L6-v2) to generate semantic vectors for complaint text.
 - **Duplicate Detection**: A weighted ML-heuristic hybrid combining semantic similarity, Haversine GPS distance, and temporal proximity.
-- **Relationship Classifier**: Zero-shot local Transformer pipeline categorizing complaint pairs into Duplicate, Similar, Related, or Independent.
+- **Relationship Classifier**: Trained Random Forest pipeline categorizing complaint pairs into Duplicate, Similar, Related, or Independent.
 - **Complaint Multi-Label Classifier**: Generates 9 distinct issue flags from the citizen's complaint using trained Logistic Regression models.
-- **Civic Issue Routing Classifier**: Maps aggregated Civic Issue text to official department labels using zero-shot MiniLM semantic matching.
+- **Civic Issue Routing Classifier**: Maps aggregated Civic Issue text to official department labels using trained multi-label models.
 ### 2. Graph Algorithms
 - **Relationship Graph & Connected Components**: Uses an undirected graph traversal to link independent citizen complaints into a unified `Civic Issue` if they share 'Duplicate', 'Similar', or 'Related' edges.
 - **Dependency Graph**: A Directed Acyclic Graph (DAG) constructed from operational rules (e.g., Water Department must finish before Road Department).
@@ -65,7 +65,7 @@
 - **Task Readiness**: Real-time evaluation of a task's prerequisites; tasks are strictly `BLOCKED` until all parent tasks in the topological DAG are `COMPLETED`.
 
 ### 4. Database (Supabase)
-- **Vector Storage**: `pgvector` utilized for storing and querying complaint embeddings.
+- **Vector Storage**: `float8[]` utilized for storing and querying complaint embeddings.
 - **Relational Schema**: Manages the hierarchy of Complaints → Civic Issues → Workstreams → Tasks.
 - **Audit Logging**: Maintains an immutable timeline (`task_status_history`) of execution state transitions.
 

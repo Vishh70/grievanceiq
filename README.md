@@ -411,7 +411,7 @@ grievanceiq/
 | Node.js | ≥ 22.x |
 | Python | ≥ 3.10 |
 | Redis | Latest |
-| Supabase | Project with `pgvector` enabled |
+| Supabase | Project with PostgreSQL database |
 
 ### 1️⃣ Clone & Install
 
@@ -636,7 +636,7 @@ erDiagram
 
 | # | Migration | Purpose |
 |:-:|:----------|:--------|
-| 1 | `phase1_embedding.sql` | Vector embeddings with pgvector |
+| 1 | `phase1_embedding.sql` | Vector embeddings with float8[] |
 | 2 | `phase2_duplicate_detection.sql` | Duplicate detection infrastructure |
 | 3 | `phase4_civic_issue.sql` | Civic Issue tables |
 | 4 | `phase5_routing_tasks.sql` | Routing + task tables |

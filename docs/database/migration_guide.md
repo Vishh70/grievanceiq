@@ -4,13 +4,13 @@ This guide details the exact order and purpose of the Supabase (PostgreSQL) migr
 
 ## Prerequisites
 - A Supabase project.
-- The `pgvector` extension enabled in Supabase (`CREATE EXTENSION IF NOT EXISTS vector;`).
+- PostgreSQL standard setup (no vector extension required).
 
 ## Execution Order
 Execute the following files found in `docs/database/` in the exact order listed below using the Supabase SQL Editor:
 
 1. **`phase1_embedding.sql`**
-   - **Purpose**: Creates the `complaints` table and adds the `embedding vector(384)` column for AI semantic search.
+   - **Purpose**: Creates the `complaints` table and adds the `embedding float8[]` column for AI semantic search.
 
 2. **`phase2_duplicate_detection.sql`**
    - **Purpose**: Extends the `complaints` table to include `duplicate_score`, `duplicate_candidate_id`, `duplicate_semantic_score`, `duplicate_location_score`, and `duplicate_temporal_score`.

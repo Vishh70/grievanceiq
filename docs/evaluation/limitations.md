@@ -4,12 +4,12 @@ This document objectively outlines the architectural, dataset, and implementatio
 
 ## 1. AI and Machine Learning Limitations
 - **Synthetic Relationship Dataset**: The active relationship classifier (corrected Python Flask model) was evaluated against a synthetic held-out dataset of 836 pairs rather than a large corpus of real municipal data. Its performance in understanding highly colloquial or ungrammatical citizen reports in a live environment is unproven.
-- **Issue Classification Fallback**: The mapping of complaints to official department categories relies on 9 supervised Logistic Regression models. However, if the ML service is unavailable, it falls back to Gemini categorization or fails the pipeline.
+- **Issue Classification Fallback**: The mapping of complaints to official department categories relies on 9 supervised Logistic Regression models. If the ML service is unavailable, the pipeline strictly fails to ensure routing safety.
 - **Prototype Duplicate Thresholds**: The combination of weights for text similarity, Haversine location distance, and the 30-day temporal cutoff are experimental. They have not been scientifically tuned using historical duplicate data.
 
 ## 2. Testing and Evaluation
 - **Synthetic Evaluation Data**: All E2E validations rely on synthetic, idealized scenarios (e.g., "Water pipe burst"). Real civic data is noisier and more ambiguous.
-- **CI-Certified vs. Production-Validated**: While the system is "CI-certified" (the automated backend test suite passes with 94 tests passing and 0 skipped within GitHub Actions infrastructure), it has not been stress-tested on live municipal production workloads. The CI certification proves algorithmic correctness in the prototype environment, not real-world deployment readiness, nor does it guarantee production-level security certification due to unresolved transitive dependencies.
+- **CI-Certified vs. Production-Validated**: While the system is "CI-certified" (the automated backend test suite passes all 101 tests within GitHub Actions infrastructure), it has not been stress-tested on live municipal production workloads. The CI certification proves algorithmic correctness in the prototype environment, not real-world deployment readiness, nor does it guarantee production-level security certification due to unresolved transitive dependencies.
 
 ## 3. Workflow and Architecture
 - **Equal Task Weighting in Progress**: The Civic Issue progress calculation treats all tasks equally (e.g., "Inspect leakage" is mathematically equal to "Rebuild entire road segment"). True progress tracking would require effort/time estimations per task.

@@ -27,10 +27,10 @@ Tasks cannot be executed in arbitrary order. A road cannot be resurfaced before 
 Kahn's Algorithm inherently detects circular dependencies (cycles) while flattening the DAG. If a cycle exists, Kahn's algorithm detects it; our implementation then reports the unresolved nodes. Crucially, tasks that are processed in the same iteration of Kahn's loop have zero inter-dependencies, meaning they can be executed safely in parallel. This allows the system to generate parallel "Execution Stages".
 
 ## 9. Why use Supabase?
-Supabase is built on PostgreSQL, allowing us to leverage `pgvector` for native, high-performance vector similarity search (cosine distance) directly alongside our relational data schema, avoiding the complexity of maintaining a separate standalone vector database.
+Supabase is built on PostgreSQL, allowing us to leverage `float8[]` for native, high-performance vector similarity search (cosine distance) directly alongside our relational data schema, avoiding the complexity of maintaining a separate standalone vector database.
 
 ## 10. What are the limitations of the project?
 - **Dataset Size**: The ML components (Relationship Classification) were validated against synthetic prototype datasets (8,818 train / 836 test pairs), not historically verified municipal data.
 - **Worker Optimization**: The execution DAG identifies logically parallel tasks but assumes infinite workforce availability. It does not perform resource-aware scheduling (e.g., optimizing truck routing or worker shifts).
 - **Physical Dispatching**: The system is a closed loop and does not feature live API integration to physically dispatch municipal fleets.
-- **CI-Certified vs. Production-Validated**: While the system is "CI-certified" (the automated backend test suite passes with 81 tests passing and 1 skipped within GitHub Actions infrastructure), it has not been stress-tested on live municipal production workloads. The certification proves functional and algorithmic correctness in the prototype environment, not real-world deployment scale, nor does it imply production-level security certification.
+- **CI-Certified vs. Production-Validated**: While the system is "CI-certified" (the automated backend test suite passes all 101 tests within GitHub Actions infrastructure), it has not been stress-tested on live municipal production workloads. The certification proves functional and algorithmic correctness in the prototype environment, not real-world deployment scale, nor does it imply production-level security certification.

@@ -24,7 +24,7 @@ All 20 planned complaint permutations, including the full 5-complaint NMIET spat
 ---
 
 # 1. 20-Complaint Full Geographic Execution
-All 20 physically tested complaints were successfully submitted via the browser UI and mapped against the PostgreSQL + pgvector database.
+All 20 physically tested complaints were successfully submitted via the browser UI and mapped against the PostgreSQL + float8[] arrays database.
 
 **NMIET Core Location Cluster Tested:**
 1. Water Leak (Multi-Domain)
