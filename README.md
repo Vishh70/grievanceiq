@@ -58,6 +58,42 @@
 <br/>
 
 ---
+
+## 📑 Table of Contents
+
+<details open>
+<summary><b>Show / Hide Menu</b></summary>
+<br/>
+
+1. [🎯 The Problem](#-the-problem)
+2. [💡 Why GrievanceIQ?](#-why-grievanceiq)
+3. [🔭 System Overview](#-system-overview)
+4. [🏗️ Architecture](#️-architecture)
+   - [High-Level Architecture](#high-level-architecture)
+   - [Complaint Processing Flow](#complaint-processing-flow)
+   - [Relationship & Task Graphs](#complaint-relationship-graph)
+5. [✨ Core Features](#-core-features)
+6. [🧠 AI / ML Pipeline](#-ai--ml-pipeline)
+7. [🏘️ Civic Issue Formation](#-civic-issue-formation)
+8. [🏢 Deterministic Routing](#-deterministic-routing)
+9. [📋 Workflow Execution](#-workflow--task-execution)
+10. [📊 Evaluation Results](#-evaluation-results)
+11. [🗄️ Data Model](#️-data-model)
+12. [📦 Repository Structure](#-repository-structure)
+13. [🛠️ Tech Stack](#️-tech-stack)
+14. [📡 API Reference](#-api-reference)
+15. [🚀 Quick Start](#-quick-start)
+16. [🧪 Testing & CI](#-testing--ci)
+17. [🔐 Security](#-security)
+18. [⚠️ Limitations](#️-limitations)
+19. [🎓 Viva-Ready Reference](#-viva-ready-reference)
+
+</details>
+
+<br/>
+
+---
+
 ## 🎯 The Problem
 
 Citizen complaints to municipalities are:
@@ -77,6 +113,9 @@ GrievanceIQ solves this with an end-to-end intelligent pipeline:
               → ✅ Transactional Execution (PostgreSQL RPC)
 ```
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ## 💡 Why GrievanceIQ?
@@ -92,6 +131,9 @@ GrievanceIQ solves this with an end-to-end intelligent pipeline:
 | 🧩 Relationship explainability | Knowledge Graph enrichment layer |
 | 📎 Data loss during issue merging | Deterministic Civic Issue merge policy |
 | 🔄 Process transparency | `PROCESSING → PROCESSED / FAILED` lifecycle |
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -116,6 +158,9 @@ GrievanceIQ solves this with an end-to-end intelligent pipeline:
 
 > [!NOTE]
 > The system operates via **near-real-time 5-second polling** and **controlled human operator execution** — not real-time WebSockets or autonomous physical municipal dispatch.
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -287,6 +332,9 @@ flowchart TB
     DB --> Poll
 ```
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ### Complaint Processing Flow
@@ -352,6 +400,9 @@ sequenceDiagram
     API-->>FE: Task status
 ```
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ### Complaint Relationship Graph
@@ -381,6 +432,9 @@ flowchart LR
 
 > [!IMPORTANT]
 > The relationship classifier predicts `Duplicate`, `Similar`, `Related`, or `Independent`. For Civic Issue formation, **only `Duplicate` and `Related`** create graph edges. `Similar` is intentionally excluded to reduce false merges.
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -412,6 +466,9 @@ flowchart LR
 ```
 Dependency Rules → Directed Acyclic Graph → Cycle Detection → Kahn's Topological Sort → Execution Stages → Readiness Checks
 ```
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -447,6 +504,9 @@ flowchart TB
 
 > [!CAUTION]
 > The ML service is a separately deployed Flask service containing trained inference artifacts. The current prototype deployment does not constitute production-grade service isolation or endpoint authentication.
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -524,6 +584,9 @@ Hybrid scoring combining three signals:
 Domain enrichment and evidence layer for relationship explainability. The Knowledge Graph supplements — it does **not** replace — the ML relationship classifier.
 
 </details>
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -624,6 +687,9 @@ Duplicate Score = (0.50 × Semantic) + (0.30 × Location) + (0.20 × Temporal)
 > [!NOTE]
 > The Knowledge Graph is a **domain enrichment and explainability layer**. It is NOT the primary relationship classifier.
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ## 🏘️ Civic Issue Formation
@@ -635,6 +701,9 @@ Civic Issues are formed using **undirected graph traversal (Connected Components
 | **Edge creation** | Strictly `Duplicate` and `Related` ML predictions |
 | **Ignored** | `Similar` — intentionally excluded to prevent false-positive over-merging |
 | **Merge policy** | Deterministic: `Highest complaint count` → `Priority` → `Age` → `UUID` |
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -673,6 +742,9 @@ Workstreams → Tasks → Dependencies
 </tr>
 </table>
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ## 📋 Workflow & Task Execution
@@ -684,6 +756,9 @@ Workstreams → Tasks → Dependencies
 | **Blocking** | Task remains `BLOCKED` until all prerequisites are `COMPLETED` |
 | **State Machine** | `PENDING` → `IN_PROGRESS` → `COMPLETED` / `CANCELLED` |
 | **Consistency** | Transactional PostgreSQL RPC for atomic status transitions |
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -752,6 +827,9 @@ backend/ml/models/
 ├── relationship_model_manifest.json        # Training metadata + metrics
 └── issue_labels.json                       # Label definitions
 ```
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -861,6 +939,9 @@ erDiagram
 
 📖 See [`docs/database/migration_guide.md`](docs/database/migration_guide.md) for details.
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ## 📦 Repository Structure
@@ -947,6 +1028,9 @@ grievanceiq/
 └── README.md
 ```
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ## 🛠️ Tech Stack
@@ -985,6 +1069,9 @@ grievanceiq/
 <td>Render (backend + ML + Redis) · Vercel (frontend)</td>
 </tr>
 </table>
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -1053,6 +1140,9 @@ grievanceiq/
          └───────────►│   FAILED   │  ❌ Error
                       └────────────┘
 ```
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -1138,6 +1228,9 @@ npm run demo          # Seed reproducible demo data (tagged [DEMO])
 npm run demo:reset    # Safely remove all demo data
 ```
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ## 🧪 Testing & CI
@@ -1198,6 +1291,9 @@ npm run test:e2e         # End-to-end pipeline test
 </tr>
 </table>
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ## 🔐 Security
@@ -1214,6 +1310,9 @@ npm run test:e2e         # End-to-end pipeline test
 
 > [!WARNING]
 > The deployed Flask ML service is a prototype service and requires further endpoint authentication/hardening for production deployment. This prototype does not imply production security certification.
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -1243,6 +1342,9 @@ npm run test:e2e         # End-to-end pipeline test
 
 📖 See [`docs/evaluation/limitations.md`](docs/evaluation/limitations.md) for the full disclosure.
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ## 🗺️ Future Roadmap
@@ -1255,6 +1357,9 @@ npm run test:e2e         # End-to-end pipeline test
 - [ ] Real municipal historical dataset evaluation
 - [ ] ML service authentication hardening
 - [ ] Production deployment hardening
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -1273,6 +1378,9 @@ npm run test:e2e         # End-to-end pipeline test
 | Kahn's Topological Sort | Execution order computation | `taskDependencyService.js` |
 | Cycle Detection | Dependency validation | `taskDependencyService.js` |
 | Deterministic Ranking | Civic Issue merge policy | `civicIssueService.js` |
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
@@ -1306,12 +1414,18 @@ npm run test:e2e         # End-to-end pipeline test
 
 </details>
 
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
+
 ---
 
 ## 📜 Research Disclosure
 
 > [!IMPORTANT]
 > GrievanceIQ is a **prototype/academic civic intelligence system**. Model results are based on synthetic datasets and controlled evaluation scenarios. They demonstrate the implemented pipeline and experimental performance — not guaranteed real-world municipal deployment performance.
+
+
+<div align="right"><a href="#-table-of-contents">⬆ Back to Top</a></div>
 
 ---
 
