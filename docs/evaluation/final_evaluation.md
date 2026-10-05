@@ -4,9 +4,10 @@
 The GrievanceIQ prototype demonstrates an end-to-end pipeline that converts unstructured citizen complaints into logically grouped Civic Issues. It routes these issues to department-specific workstreams, builds dependency-aware tasks, and provides a controlled execution tracking environment.
 
 ## 2. Evaluation Environment
-- **Platform**: Local Node.js development environment.
-- **Database**: Supabase (PostgreSQL with `float8[]` arrays).
-- **AI Hardware**: CPU-bound local execution (Xenova/Transformers.js).
+- **Local Platform**: Local Node.js development environment.
+- **CI Verification Platform**: GitHub Actions (Node 22, Python 3.10, Redis, Flask).
+- **Database**: Supabase (PostgreSQL with `float8[]` arrays, authenticated via `service_role` in CI).
+- **AI Hardware**: CPU-bound execution (Xenova/Transformers.js for Node, scikit-learn for Python).
 
 ## 3. Dataset
 The evaluation uses a prototype dataset (`backend/data/evaluation_cases.json`) consisting of synthetic civic scenarios. These include multi-label incidents (e.g., Pipe burst + Road Flood) and various permutations of duplicates.
@@ -66,8 +67,10 @@ The evaluation uses a prototype dataset (`backend/data/evaluation_cases.json`) c
 
 ## 16. Test Results
 - **Unit Tests**: PASS
-- **Integration Tests**: PASS — Real Supabase network stack verified via GitHub Actions.
+- **Integration Tests**: PASS — Real Supabase network stack, Flask inference, and MiniLM smoke tests verified via GitHub Actions.
 - **End-to-End**: PASS (Isolated logic check).
+
+*Note: CI verification ensures pipeline integrity and API correctness. It is distinct from real-world municipal deployment validation, which has not yet been established.*
 
 ## 17. Known Limitations
 See `limitations.md`. Primarily the absence of a large-scale real-world training dataset and physical workforce integration.

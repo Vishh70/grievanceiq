@@ -9,7 +9,7 @@ The issue classifier takes grouped Civic Issues and predicts the required operat
 - **Approach**: Trained multi-label Logistic Regression models using local embeddings against a predefined set of department routing labels.
 
 ## Results
-*Note: These metrics evaluate multi-label performance, which is fundamentally different from single-label accuracy. The results are from a mocked prototype dataset.*
+*Note: These metrics evaluate multi-label performance, which is fundamentally different from single-label accuracy. The results below are strictly derived from a synthetic held-out evaluation dataset and do not represent real-world municipal performance.*
 
 | Metric | Score |
 |:---|:---|

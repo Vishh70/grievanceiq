@@ -52,7 +52,7 @@
 - **Duplicate Detection**: A weighted ML-heuristic hybrid combining semantic similarity, Haversine GPS distance, and temporal proximity.
 - **Relationship Classifier**: Trained Random Forest pipeline categorizing complaint pairs into Duplicate, Similar, Related, or Independent.
 - **Complaint Multi-Label Classifier**: Generates 9 distinct issue flags from the citizen's complaint using trained Logistic Regression models.
-- **Civic Issue Routing Classifier**: Maps aggregated Civic Issue text to official department labels using trained multi-label models.
+- **Deterministic Department Routing**: Uses aggregated supervised ML issue labels -> deterministic routing_rules.json -> department mapping -> workstreams/tasks.
 ### 2. Graph Algorithms
 - **Relationship Graph & Connected Components**: Uses an undirected graph traversal to link independent citizen complaints into a unified `Civic Issue` if they share 'Duplicate', 'Similar', or 'Related' edges.
 - **Dependency Graph**: A Directed Acyclic Graph (DAG) constructed from operational rules (e.g., Water Department must finish before Road Department).

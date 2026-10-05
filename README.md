@@ -127,9 +127,10 @@ flowchart TB
 <summary><b>🧠 Intelligent Complaint Intake</b></summary>
 
 - Complaint persistence with full metadata
+- Asynchronous BullMQ processing for AI/ML tasks
 - `PROCESSING → PROCESSED / FAILED` lifecycle management
 - Gemini-powered initial complaint understanding
-- Real-time status polling from frontend
+- Near-real-time 5-second status polling from frontend
 
 </details>
 
@@ -177,11 +178,11 @@ Hybrid scoring combining three signals:
 </details>
 
 <details>
-<summary><b>🏢 Department Routing & Task Execution</b></summary>
+<summary><b>🏢 Deterministic Department Routing & Task Execution</b></summary>
 
-- Canonical `issue-type → department` deterministic mapping
+- Deterministic department routing based on aggregated supervised ML issue labels
 - Automatic workstream generation
-- Task template instantiation
+- Task template instantiation (Generates actionable tasks for operators, but does *not* dispatch physical municipal workers)
 - Dependency DAG with cycle detection
 - Kahn's topological sort for execution ordering
 - Transactional PostgreSQL status updates
@@ -368,7 +369,7 @@ grievanceiq/
 <table>
 <tr>
 <td align="center" width="100"><b>Frontend</b></td>
-<td>React 18 · Vite · React Router · Framer Motion · Recharts · Leaflet · Lucide Icons · PWA</td>
+<td>React 19 · Vite · React Router · Framer Motion · Recharts · Leaflet · Lucide Icons · PWA</td>
 </tr>
 <tr>
 <td align="center" width="100"><b>Backend</b></td>
