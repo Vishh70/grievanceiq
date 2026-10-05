@@ -230,6 +230,9 @@ Domain enrichment and evidence layer for relationship explainability. The Knowle
 | Architecture | 9× Logistic Regression |
 | Embedding Dim | 384 |
 | Prediction | Multi-label |
+| Test Records | 900 |
+| Exact Match | **95.00%** |
+| Micro F1 | **98.53%** |
 | Thresholds | Per-label learned |
 | Serving | Flask `/predict` |
 
@@ -700,7 +703,7 @@ erDiagram
 | Relationship macro F1? | 89.99% |
 | What prevents duplicate Civic Issues? | Deterministic merge policy: count → priority → age → UUID |
 | How does the merge policy work? | Highest complaint count wins, then priority (Critical > High > Medium > Low), then oldest, then lexical UUID |
-| Frontend framework? | React 18 + Vite + TypeScript |
+| Frontend framework? | React 19 + Vite + TypeScript |
 | What queue system? | BullMQ backed by Redis |
 | How does the frontend know when processing is done? | Status polling on `GET /complaints/:id/status` |
 
