@@ -1,53 +1,63 @@
 <div align="center">
 
-<!-- ANIMATED HEADER -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=🏛️%20GrievanceIQ&fontSize=42&fontColor=fff&animation=fadeIn&fontAlignY=32&desc=AI-Driven%20Civic%20Grievance%20Intelligence%20%26%20Operational%20Workflow%20Platform&descAlignY=52&descSize=16" width="100%" alt="GrievanceIQ Banner"/>
+<img src="docs/assets/hero_banner.jpg" width="100%" alt="GrievanceIQ Hero Banner" style="border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);"/>
 
 <br/>
 
-**Transforming unstructured citizen complaints into structured Civic Issues,<br/>deterministic departmental workstreams, and dependency-aware municipal tasks.**
+<h1 align="center" style="font-size: 3em; margin-top: 10px; font-weight: 800;">🏛️ GrievanceIQ</h1>
+
+<p align="center" style="font-size: 1.2em; color: #667eea; font-weight: 500;">
+  Transforming unstructured citizen complaints into structured Civic Issues,<br/>
+  deterministic departmental workstreams, and dependency-aware municipal tasks.
+</p>
 
 <br/>
 
-<!-- BADGES ROW 1: CI Status -->
-[![Backend CI](https://github.com/Vishh70/grievanceiq/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/Vishh70/grievanceiq/actions/workflows/backend-ci.yml)
-[![Frontend CI](https://github.com/Vishh70/grievanceiq/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/Vishh70/grievanceiq/actions/workflows/frontend-ci.yml)
+<!-- ANIMATED SHIELDS -->
+<a href="https://github.com/Vishh70/grievanceiq/actions/workflows/backend-ci.yml">
+  <img src="https://img.shields.io/github/actions/workflow/status/Vishh70/grievanceiq/backend-ci.yml?branch=main&label=Backend%20CI&style=for-the-badge&color=2ea043&logo=githubactions" alt="Backend CI" />
+</a>
+<a href="https://github.com/Vishh70/grievanceiq/actions/workflows/frontend-ci.yml">
+  <img src="https://img.shields.io/github/actions/workflow/status/Vishh70/grievanceiq/frontend-ci.yml?branch=main&label=Frontend%20CI&style=for-the-badge&color=2ea043&logo=githubactions" alt="Frontend CI" />
+</a>
 
-<!-- BADGES ROW 2: Tech Stack -->
-![Node.js](https://img.shields.io/badge/Node.js-22.x-339933?style=for-the-badge&logo=node.js&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-BullMQ-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+<br/><br/>
 
-<!-- BADGES ROW 3: ML & Tools -->
-![scikit-learn](https://img.shields.io/badge/scikit--learn-Random_Forest-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-ML_Service-000000?style=for-the-badge&logo=flask&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-Frontend-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
-
-<!-- BADGES ROW 4: Meta -->
-![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
-![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-101_total-success?style=for-the-badge&logo=jest&logoColor=white)
+<!-- TECH STACK SHIELDS -->
+<img src="https://img.shields.io/badge/Node.js-22.x-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node" />
+<img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+<img src="https://img.shields.io/badge/Supabase-DB-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
+<img src="https://img.shields.io/badge/Redis-Queue-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
 
 <br/>
 
-<!-- QUICK NAVIGATION -->
-[🎯 Problem](#-the-problem) •
-[🏗️ Architecture](#️-architecture) •
-[🧠 ML Pipeline](#-ai--ml-pipeline) •
-[📊 Evaluation](#-evaluation-results) •
-[📡 API](#-api-reference) •
-[🚀 Quick Start](#-quick-start) •
-[🧪 Testing](#-testing--ci)
+<!-- ML SHIELDS -->
+<img src="https://img.shields.io/badge/Scikit--Learn-Random%20Forest-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white" alt="Sklearn" />
+<img src="https://img.shields.io/badge/ONNX-MiniLM-005CED?style=for-the-badge&logo=onnx&logoColor=white" alt="ONNX" />
+<img src="https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini" />
+<img src="https://img.shields.io/badge/Flask-Inference-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask" />
+
+<br/>
+<br/>
+
+<!-- HIGHLIGHTS / JUMP LINKS -->
+<table>
+  <tr>
+    <td align="center"><a href="#-the-problem"><b>🎯 Problem</b></a></td>
+    <td align="center"><a href="#-architecture"><b>🏗️ Architecture</b></a></td>
+    <td align="center"><a href="#-ai--ml-pipeline"><b>🧠 AI Pipeline</b></a></td>
+    <td align="center"><a href="#-evaluation-results"><b>📊 Metrics</b></a></td>
+    <td align="center"><a href="#-api-reference"><b>📡 API Reference</b></a></td>
+    <td align="center"><a href="#-quick-start"><b>🚀 Quick Start</b></a></td>
+  </tr>
+</table>
 
 </div>
 
 <br/>
 
 ---
-
 ## 🎯 The Problem
 
 Citizen complaints to municipalities are:
