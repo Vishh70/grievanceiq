@@ -6,10 +6,11 @@
 
 <h1 align="center" style="font-size: 3em; margin-top: 10px; font-weight: 800;">🏛️ GrievanceIQ</h1>
 
-<p align="center" style="font-size: 1.2em; color: #667eea; font-weight: 500;">
-  Transforming unstructured citizen complaints into structured Civic Issues,<br/>
-  deterministic departmental workstreams, and dependency-aware municipal tasks.
-</p>
+<div align="center">
+  <a href="https://github.com/Vishh70/grievanceiq">
+    <img src="https://readme-typing-svg.herokuapp.com?font=Inter&weight=600&size=22&pause=2000&color=667EEA&center=true&vCenter=true&width=800&lines=Transforming+Unstructured+Complaints;AI-Driven+Civic+Intelligence;Deterministic+Workstream+Routing;Dependency-Aware+Task+Execution" alt="Typing SVG" />
+  </a>
+</div>
 
 <br/>
 
@@ -110,7 +111,7 @@
 
 ---
 
-## 🎯 The Problem
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Direct%20Hit.png" alt="Direct Hit" width="30" height="30" style="vertical-align: middle;"/> The Problem
 
 Citizen complaints to municipalities are:
 
@@ -134,7 +135,7 @@ GrievanceIQ solves this with an end-to-end intelligent pipeline:
 
 ---
 
-## 💡 Why GrievanceIQ?
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Light%20Bulb.png" alt="Light Bulb" width="30" height="30" style="vertical-align: middle;"/> Why GrievanceIQ?
 
 | Problem | GrievanceIQ Approach |
 |:--------|:---------------------|
@@ -153,7 +154,7 @@ GrievanceIQ solves this with an end-to-end intelligent pipeline:
 
 ---
 
-## 🔭 System Overview
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Telescope.png" alt="Telescope" width="30" height="30" style="vertical-align: middle;"/> System Overview
 
 <table>
 <tr>
@@ -180,7 +181,7 @@ GrievanceIQ solves this with an end-to-end intelligent pipeline:
 
 ---
 
-## 🏗️ Architecture
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Building%20Construction.png" alt="Architecture" width="30" height="30" style="vertical-align: middle;"/> Architecture
 
 ### High-Level Architecture
 
@@ -526,7 +527,7 @@ flowchart TB
 
 ---
 
-## ✨ Core Features
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Sparkles.png" alt="Sparkles" width="30" height="30" style="vertical-align: middle;"/> Core Features
 
 <details>
 <summary><b>🧠 Intelligent Complaint Intake</b></summary>
@@ -606,7 +607,7 @@ Domain enrichment and evidence layer for relationship explainability. The Knowle
 
 ---
 
-## 🧠 AI / ML Pipeline
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Brain.png" alt="Brain" width="30" height="30" style="vertical-align: middle;"/> AI / ML Pipeline
 
 GrievanceIQ utilizes **three distinct intelligence mechanisms** operating in concert:
 
@@ -708,7 +709,7 @@ Duplicate Score = (0.50 × Semantic) + (0.30 × Location) + (0.20 × Temporal)
 
 ---
 
-## 🏘️ Civic Issue Formation
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Houses.png" alt="Houses" width="30" height="30" style="vertical-align: middle;"/> Civic Issue Formation
 
 Civic Issues are formed using **undirected graph traversal (Connected Components)**.
 
@@ -723,7 +724,7 @@ Civic Issues are formed using **undirected graph traversal (Connected Components
 
 ---
 
-## 🏢 Deterministic Routing
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Office%20Building.png" alt="Office" width="30" height="30" style="vertical-align: middle;"/> Deterministic Routing
 
 Department routing is entirely deterministic — no separate "routing model" exists.
 
@@ -778,7 +779,7 @@ Workstreams → Tasks → Dependencies
 
 ---
 
-## 📊 Evaluation Results
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Bar%20Chart.png" alt="Bar Chart" width="30" height="30" style="vertical-align: middle;"/> Evaluation Results
 
 > [!CAUTION]
 > All ML metrics are based on **synthetic held-out evaluation data** and must not be interpreted as real-world municipal accuracy.
@@ -849,7 +850,7 @@ backend/ml/models/
 
 ---
 
-## 🗄️ Data Model
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Card%20Index%20Dividers.png" alt="Data" width="30" height="30" style="vertical-align: middle;"/> Data Model
 
 ```mermaid
 erDiagram
@@ -960,7 +961,7 @@ erDiagram
 
 ---
 
-## 📦 Repository Structure
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Package.png" alt="Package" width="30" height="30" style="vertical-align: middle;"/> Repository Structure
 
 ```
 grievanceiq/
@@ -1049,7 +1050,7 @@ grievanceiq/
 
 ---
 
-## 🛠️ Tech Stack
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Hammer%20and%20Wrench.png" alt="Tech Stack" width="30" height="30" style="vertical-align: middle;"/> Tech Stack
 
 <table>
 <tr>
@@ -1091,7 +1092,7 @@ grievanceiq/
 
 ---
 
-## 📡 API Reference
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Satellite%20Antenna.png" alt="Satellite" width="30" height="30" style="vertical-align: middle;"/> API Reference
 
 <details>
 <summary><b>📋 Backend API — Node.js + Express</b></summary>
@@ -1162,7 +1163,7 @@ grievanceiq/
 
 ---
 
-## 🚀 Quick Start
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Rocket.png" alt="Rocket" width="30" height="30" style="vertical-align: middle;"/> Quick Start
 
 ### Prerequisites
 
@@ -1249,7 +1250,7 @@ npm run demo:reset    # Safely remove all demo data
 
 ---
 
-## 🧪 Testing & CI
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Test%20Tube.png" alt="Testing" width="30" height="30" style="vertical-align: middle;"/> Testing & CI
 
 ### Backend Tests
 
@@ -1312,7 +1313,7 @@ npm run test:e2e         # End-to-end pipeline test
 
 ---
 
-## 🔐 Security
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Locked%20with%20Key.png" alt="Security" width="30" height="30" style="vertical-align: middle;"/> Security
 
 | Measure | Implementation |
 |:--------|:---------------|
@@ -1332,7 +1333,7 @@ npm run test:e2e         # End-to-end pipeline test
 
 ---
 
-## ⚠️ Limitations
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Warning.png" alt="Warning" width="30" height="30" style="vertical-align: middle;"/> Limitations
 
 <details>
 <summary><b>📊 Dataset & Evaluation</b></summary>
@@ -1400,7 +1401,7 @@ npm run test:e2e         # End-to-end pipeline test
 
 ---
 
-## 🎓 Viva-Ready Reference
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Graduation%20Cap.png" alt="Viva" width="30" height="30" style="vertical-align: middle;"/> Viva-Ready Reference
 
 <details>
 <summary><b>📚 Click to expand full technical Q&A</b></summary>
