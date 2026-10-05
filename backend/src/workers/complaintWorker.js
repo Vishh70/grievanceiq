@@ -34,6 +34,7 @@ const worker = new Worker('ComplaintProcessing', async job => {
       mlPrediction = await predictIssueLabels(embeddingVector, text);
     } catch (mlErr) {
       console.error('[Worker] ML Issue Classification failed:', mlErr.message);
+      throw new Error(`ML Issue Classification failed: ${mlErr.message}`);
     }
 
     const primaryCategory = mlPrediction.issueTypes && mlPrediction.issueTypes.length > 0 
@@ -138,7 +139,7 @@ const worker = new Worker('ComplaintProcessing', async job => {
       ml_labels: mlPrediction.labels,
       ml_probabilities: mlPrediction.probabilities,
       ml_departments: mlPrediction.departments,
-      processing_status: 'PROCESSED'
+      processing_status: 'PROCESSING'
     };
 
     if (Array.isArray(embeddingVector) && embeddingVector.length > 0) {
@@ -192,8 +193,13 @@ const worker = new Worker('ComplaintProcessing', async job => {
       
       await processCivicIssueGrouping(newComplaintObj, candidateComplaints);
       console.log(`[Worker] Complaint ${complaintData.id} Civic Issue grouping complete.`);
+      
+      // Finally mark as PROCESSED after all orchestration completes successfully
+      await supabase.from('complaints').update({ processing_status: 'PROCESSED' }).eq('id', complaintData.id);
+      
     } catch (grpErr) {
       console.error('[Worker] Phase 4 Civic Issue Grouping failed:', grpErr.message);
+      throw new Error(`Civic Issue Grouping failed: ${grpErr.message}`);
     }
     
   } catch (err) {

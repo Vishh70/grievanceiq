@@ -3,6 +3,7 @@ const path = require('path');
 const supabase = require('../config/supabase');
 const { generateEmbedding } = require('./embeddingService');
 const { applyDependencyRules } = require('./taskDependencyService');
+const { LABEL_TO_ISSUE_TYPE } = require('./mlService');
 
 const RULES_PATH = path.join(__dirname, '../../data/routing_rules.json');
 let routingRules = null;
@@ -41,8 +42,9 @@ async function classifyCivicIssue(civicIssue, complaints) {
   // Frequency count to determine confidence
   const labelCounts = {};
   let totalLabels = 0;
-  for (const label of allLabels) {
-    labelCounts[label] = (labelCounts[label] || 0) + 1;
+  for (const rawLabel of allLabels) {
+    const canonicalLabel = LABEL_TO_ISSUE_TYPE[rawLabel] || rawLabel;
+    labelCounts[canonicalLabel] = (labelCounts[canonicalLabel] || 0) + 1;
     totalLabels++;
   }
   

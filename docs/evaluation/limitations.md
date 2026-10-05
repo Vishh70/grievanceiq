@@ -3,8 +3,8 @@
 This document objectively outlines the architectural, dataset, and implementation limitations of the GrievanceIQ prototype.
 
 ## 1. AI and Machine Learning Limitations
-- **Small Prototype Relationship Dataset**: The active relationship classifier (corrected Python Flask model, with legacy Node fallback) was evaluated against a tiny, synthetic held-out dataset rather than a large corpus of real municipal data. Its performance in understanding highly colloquial or ungrammatical citizen reports in a live environment is unproven.
-- **Zero-Shot Issue Classification**: The mapping of complaints to official department categories relies on a zero-shot semantic similarity threshold. It is vulnerable to misclassifying issues if the citizen uses vocabulary that does not semantically align with the predefined label names.
+- **Synthetic Relationship Dataset**: The active relationship classifier (corrected Python Flask model) was evaluated against a synthetic held-out dataset of 836 pairs rather than a large corpus of real municipal data. Its performance in understanding highly colloquial or ungrammatical citizen reports in a live environment is unproven.
+- **Issue Classification Fallback**: The mapping of complaints to official department categories relies on 9 supervised Logistic Regression models. However, if the ML service is unavailable, it falls back to Gemini categorization or fails the pipeline.
 - **Prototype Duplicate Thresholds**: The combination of weights for text similarity, Haversine location distance, and the 30-day temporal cutoff are experimental. They have not been scientifically tuned using historical duplicate data.
 
 ## 2. Testing and Evaluation

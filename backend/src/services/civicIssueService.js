@@ -85,7 +85,7 @@ function aggregatePriority(complaints) {
 async function createOrUpdateCivicIssue(componentComplaints) {
   if (!componentComplaints || componentComplaints.length === 0) return null;
 
-  const complaintIds = componentComplaints.map(c => c.id);
+  let complaintIds = componentComplaints.map(c => c.id);
   const title = generateCivicIssueTitle(componentComplaints);
   const location = calculateRepresentativeLocation(componentComplaints);
   const priority = aggregatePriority(componentComplaints);
@@ -132,12 +132,18 @@ async function createOrUpdateCivicIssue(componentComplaints) {
           issueIdToUse = survivor.id;
           
           mergedIssues = issues.slice(1).map(i => i.id);
+          
+          // Preserve all existing complaint IDs from the merged issues and the survivor
+          const allExistingComplaintIds = issues.flatMap(i => i.complaint_ids || []);
+          complaintIds.push(...allExistingComplaintIds);
+          // Remove duplicates
+          complaintIds = [...new Set(complaintIds)];
         } else {
           issueIdToUse = existingIssueIds[0];
         }
       } catch (err) {
-        console.warn('Failed to fetch existing civic issues for merge, using [0]', err.message);
-        issueIdToUse = existingIssueIds[0];
+        console.error('Failed to fetch existing civic issues for merge:', err.message);
+        throw new Error(`Failed to fetch existing civic issues for merge: ${err.message}`);
       }
     }
   }
@@ -197,9 +203,8 @@ async function createOrUpdateCivicIssue(componentComplaints) {
 
     return savedIssue;
   } catch (error) {
-    // Graceful degradation: if schema doesn't exist, just log and return
-    console.error('Failed to save Civic Issue (check if Phase 4 migration ran):', error.message);
-    return null;
+    console.error('Failed to save Civic Issue:', error.message);
+    throw new Error(`Failed to save Civic Issue: ${error.message}`);
   }
 }
 
@@ -273,6 +278,7 @@ async function processCivicIssueGrouping(newComplaint, candidates) {
           await routingService.routeCivicIssue(savedIssue.id);
         } catch (routeErr) {
           console.error(`[CivicRouting] Failed to automatically route Civic Issue ${savedIssue.id}:`, routeErr.message);
+          throw new Error(`Civic Issue Routing failed: ${routeErr.message}`);
         }
       }
     }

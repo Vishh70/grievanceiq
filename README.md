@@ -271,10 +271,10 @@ sequenceDiagram
     participant DB as Supabase/PostgreSQL
 
     Citizen->>FE: Submit complaint
-    FE->>API: POST /complaints/new
+    FE->>API: POST /api/complaints
     API->>DB: Persist complaint
     API->>Q: Enqueue job
-    API-->>FE: 202 Accepted
+    API-->>FE: 201 Created
     
     Q->>W: Process complaint
     W->>AI: Understand/triage
@@ -384,7 +384,7 @@ grievanceiq/
 </tr>
 <tr>
 <td align="center" width="100"><b>Database</b></td>
-<td>Supabase · PostgreSQL · pgvector</td>
+<td>Supabase · PostgreSQL (float8[] arrays for embeddings)</td>
 </tr>
 <tr>
 <td align="center" width="100"><b>Queue</b></td>
@@ -468,7 +468,7 @@ python inference/grievanceiq_inference.py
 # Terminal 2 — Backend (ensure Redis is running)
 cd backend
 npm run dev
-# → Express running on http://localhost:3000
+# → Express running on http://localhost:5000
 
 # Terminal 3 — Frontend
 cd frontend
@@ -492,7 +492,7 @@ npm run demo:reset    # Safely remove all demo data
 
 | Method | Endpoint | Description |
 |:------:|:---------|:------------|
-| `POST` | `/complaints/new` | Submit a new complaint |
+| `POST` | `/api/complaints` | Submit a new complaint |
 | `GET` | `/complaints/:id/status` | Poll processing status |
 | `GET` | `/complaints/:id/similar` | Get similar complaint candidates |
 

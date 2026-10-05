@@ -29,14 +29,7 @@ Based on a deep code inspection of the `Vishh70/grievanceiq` repository, here is
 
 As established, the project is in **Code Freeze**. There are *zero new features* that need to be coded for the final year project submission. 
 
-However, there are two **Integration / Execution steps** remaining on your local machine:
-
-1. **Apply the Final DB Migration**: 
-   * **Action**: You must execute `docs/database/phase8_task_hardening.sql` in your live Supabase SQL Editor. 
-   * **Why**: The code expects the `update_task_status_transactional` RPC to exist.
-2. **Run the Real-World Ablation Study**: 
-   * **Action**: You must run `npm ci` and `node scripts/run_research_evaluation.js` inside your **WSL/Linux** terminal.
-   * **Why**: This will execute the Random Forest evaluation against the 30 manually authored complaint pairs using the native C++ ONNX bindings, generating the final metrics (Precision/Recall/F1) for your black book.
+All database migrations (including Phase 12 for relationships) have been executed, and all ML evaluations (including the 16k pair Random Forest test) have been computed.
 
 ## Conclusion
-The repository is fundamentally **feature-complete**. You do not need to implement any new React pages, backend controllers, or AI models. Your next focus is entirely on documentation, diagrams, and running the final evaluation script locally.
+The repository is fundamentally **feature-complete**. You do not need to implement any new React pages, backend controllers, or AI models. The focus is now on final presentation and documentation.

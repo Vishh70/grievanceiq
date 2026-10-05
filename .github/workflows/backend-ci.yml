@@ -53,26 +53,17 @@ jobs:
     - name: Run ML service and tests
       working-directory: ./backend
       run: |
-        {
-          cd ml
-          python inference/grievanceiq_inference.py &
-          timeout 30 bash -c 'until curl -s http://localhost:5001/health | grep "\"status\": \"ok\""; do sleep 2; done'
-          curl -X POST http://localhost:5001/predict \
-            -H "Content-Type: application/json" \
-            -d '{"embedding": [0.0]'$(for i in {1..383}; do echo -n ",0.0"; done)'}' | grep "labels"
-          curl -X POST http://localhost:5001/predict-relationship \
-            -H "Content-Type: application/json" \
-            -d '{"features": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}' | grep "relationship"
-          cd ..
-          npm test
-        } > test_output.log 2>&1 || {
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add test_output.log
-          git commit -m "chore: upload test output [skip ci]"
-          git push origin main
-          exit 1
-        }
+        cd ml
+        python inference/grievanceiq_inference.py &
+        timeout 30 bash -c 'until curl -s http://localhost:5001/health | grep "\"status\": \"ok\""; do sleep 2; done'
+        curl -X POST http://localhost:5001/predict \
+          -H "Content-Type: application/json" \
+          -d '{"embedding": [0.0]'$(for i in {1..383}; do echo -n ",0.0"; done)'}' | grep "labels"
+        curl -X POST http://localhost:5001/predict-relationship \
+          -H "Content-Type: application/json" \
+          -d '{"features": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}' | grep "relationship"
+        cd ..
+        npm test
       env:
         NODE_OPTIONS: --experimental-vm-modules
         NODE_ENV: test

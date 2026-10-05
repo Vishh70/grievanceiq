@@ -59,6 +59,20 @@ describe('Phase 5: Multi-Department Routing', () => {
       expect(mappingReasons[0].reason).toContain('Water Leakage maps to Water Department');
     });
 
+    it('Test 1.5 — Vocabulary Translation (ml_labels to canonical)', async () => {
+      // Mock the complaint with raw ml_labels
+      const civicIssue = { title: 'Raw flags issue' };
+      const complaints = [{ ml_labels: ['road_damage_flag', 'water_leakage_flag'] }];
+      
+      const { issueTypes } = await classifyCivicIssue(civicIssue, complaints);
+      expect(issueTypes.map(t => t.label)).toContain('Road Damage');
+      expect(issueTypes.map(t => t.label)).toContain('Water Leakage');
+      
+      const { departments } = mapIssueTypesToDepartments(issueTypes);
+      expect(departments).toContain('Road Department');
+      expect(departments).toContain('Water Department');
+    });
+
     it('Test 2 — Multiple departments', () => {
       const { departments } = mapIssueTypesToDepartments([
         { label: 'Water Leakage', confidence: 0.9 },

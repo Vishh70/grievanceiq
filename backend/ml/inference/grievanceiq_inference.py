@@ -69,6 +69,10 @@ except Exception as e:
 
 # ── Flask App ─────────────────────────────────────────────────────────────────
 
+# SECURITY NOTE (PROTOTYPE LIMITATION):
+# This ML service is exposed externally (e.g., on Render) without authentication.
+# In a true production environment, this service should be placed within a private network (VPC)
+# or require a secure API key / mutual TLS to prevent unauthorized external access.
 app = Flask(__name__)
 CORS(app)   # Allow Node.js backend on a different port to call this
 

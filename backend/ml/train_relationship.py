@@ -80,7 +80,7 @@ def main():
     X_test, y_test = get_X_y(test_data)
     
     print("Step 3: Training corrected Random Forest...")
-    clf = RandomForestClassifier(n_estimators=10, max_features=0.8, random_state=42)
+    clf = RandomForestClassifier(n_estimators=10, max_features=0.5, bootstrap=True, random_state=42)
     clf.fit(X_train, y_train)
     
     def report_metrics(y_true, y_pred, name):
@@ -143,7 +143,7 @@ def main():
         'category_b_Roads', 'category_b_Water_Supply', 'category_b_Electricity', 'category_b_Drainage', 'category_b_Waste_Management', 'category_b_Public_Infrastructure', 'category_b_Other'
     ]
     with open(os.path.join(models_dir, 'relationship_features_list.txt'), 'w') as f:
-        f.write("\\n".join(feature_names))
+        f.write("\n".join(feature_names))
 
 if __name__ == '__main__':
     main()
