@@ -4,6 +4,7 @@ const { generateEmbedding, cosineSimilarity } = require('../services/embeddingSe
 const { findBestDuplicate, DUPLICATE_CONFIG } = require('../services/duplicateDetectionService');
 const { predictRelationship } = require('../services/relationshipService');
 const { processCivicIssueGrouping } = require('../services/civicIssueService');
+const { complaintQueue } = require('../config/queue');
 const fs = require('fs');
 
 // Helper to map Supabase row back to frontend-expected Mongoose format
@@ -34,6 +35,7 @@ const mapComplaint = (row, includeEmbedding = false) => {
     isDuplicate: row.ai_duplicate_flag || false,
     duplicateScore: row.duplicate_score || 0,
     aiProcessed: row.ai_processed || false,
+    processingStatus: row.processing_status || 'PROCESSED',
     statusHistory: row.status_history || [],
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -90,6 +92,7 @@ exports.createComplaint = async (req, res) => {
       location_lng: lng ? parseFloat(lng) : null,
       image_base64: imageBase64 ? `data:${mimeType};base64,${imageBase64}` : '',
       status: 'Pending',
+      processing_status: 'PENDING',
       status_history: [{ status: 'Pending', date: new Date().toISOString(), note: '' }]
     }]).select().single();
 
@@ -101,228 +104,19 @@ exports.createComplaint = async (req, res) => {
       await supabase.from('users').update({ civic_points: (user.civic_points || 0) + 50 }).eq('id', req.user.id);
     }
 
-    // 2. Process with Gemini AI + Phase 1 Embeddings + Phase 2 Duplicate Detection (asynchronously)
-    (async () => {
-      try {
-        const aiResult = await analyzeComplaint(text, imageBase64, mimeType);
-        
-        // Phase 1: Generate semantic embedding from citizen's original complaint text
-        let embeddingVector = [];
-        try {
-          embeddingVector = await generateEmbedding(text);
-        } catch (embedErr) {
-          console.error('Embedding generation failed (graceful degradation):', embedErr.message);
-        }
-
-        // ── Phase 1.5: Multilabel Issue Classification (Python ML Service) ──
-        let mlPrediction = { labels: [], issueTypes: [], probabilities: {}, departments: [], serviceAvailable: false };
-        try {
-          const { predictIssueLabels } = require('../services/mlService');
-          mlPrediction = await predictIssueLabels(embeddingVector, text);
-          if (mlPrediction.serviceAvailable) {
-            console.log(`  ML Multilabel prediction: ${mlPrediction.labels.join(', ')}`);
-          }
-        } catch (mlErr) {
-          console.error('ML Issue Classification failed:', mlErr.message);
-        }
-
-        // Authoritative Category: Prefer trained ML model's canonical issue types
-        const primaryCategory = mlPrediction.issueTypes && mlPrediction.issueTypes.length > 0 
-          ? mlPrediction.issueTypes[0] 
-          : aiResult.category;
-
-        const candidateIssueTypes = mlPrediction.issueTypes && mlPrediction.issueTypes.length > 0
-          ? mlPrediction.issueTypes
-          : [aiResult.category];
-
-        const candidateMlLabels = mlPrediction.labels && mlPrediction.labels.length > 0
-          ? mlPrediction.labels
-          : [];
-
-        // ── Phase 2: Real Duplicate Detection ────────────────────────────
-        let similarGroupId = complaintData.id;
-        let isDuplicate = false;
-        let duplicateScore = 0;
-        let duplicateCandidateId = null;
-        let dupSemanticScore = 0;
-        let dupLocationScore = 0;
-        let dupTemporalScore = 0;
-        let candidateComplaints = [];
-
-        try {
-          // Step 1: Retrieve candidate complaints (matching any active issue type, recent, limit 100)
-          const cutoffDate = new Date();
-          cutoffDate.setDate(cutoffDate.getDate() - DUPLICATE_CONFIG.CANDIDATE_MAX_AGE_DAYS);
-
-          // Use .or() to search BOTH the primary category AND the ml_labels text array.
-          const typesForIn = candidateIssueTypes.map(t => `"${t}"`).join(',');
-          let orQuery = `category.in.(${typesForIn})`;
-          if (candidateMlLabels.length > 0) {
-            const labelsForOv = candidateMlLabels.map(l => `"${l}"`).join(',');
-            orQuery = `category.in.(${typesForIn}),ml_labels.ov.{${labelsForOv}}`;
-          }
-
-          let { data: candidates, error: candQueryErr } = await supabase.from('complaints')
-            .select('id, description, embedding_vector, location_lat, location_lng, created_at, similar_group_id, category, ml_labels')
-            .or(orQuery)
-            .neq('id', complaintData.id)
-            .eq('ai_processed', true)
-            .gte('created_at', cutoffDate.toISOString())
-            .order('created_at', { ascending: false })
-            .limit(DUPLICATE_CONFIG.CANDIDATE_LIMIT);
-
-          if (candQueryErr && candQueryErr.message && candQueryErr.message.includes('embedding_vector')) {
-            const fallbackRes = await supabase.from('complaints')
-              .select('id, description, location_lat, location_lng, created_at, similar_group_id, category, ml_labels')
-              .or(orQuery)
-              .neq('id', complaintData.id)
-              .eq('ai_processed', true)
-              .gte('created_at', cutoffDate.toISOString())
-              .order('created_at', { ascending: false })
-              .limit(DUPLICATE_CONFIG.CANDIDATE_LIMIT);
-            candidates = fallbackRes.data;
-          }
-
-          if (candidates && candidates.length > 0) {
-            candidateComplaints = candidates;
-            // Build a virtual new-complaint object with the fields the scorer needs
-            const newComplaintForScoring = {
-              embedding_vector: embeddingVector,
-              location_lat: complaintData.location_lat,
-              location_lng: complaintData.location_lng,
-              created_at: complaintData.created_at,
-            };
-
-            const { bestMatch, allScores } = findBestDuplicate(newComplaintForScoring, candidates);
-
-            // Log top 3 candidates for diagnostics
-            const topN = allScores.slice(0, 3);
-            topN.forEach((s, i) => {
-              console.log(
-                `  Duplicate Check [${i + 1}] Candidate: ${s.candidateId} | ` +
-                `Semantic: ${s.semanticScore} | Dist: ${s.distanceMeters !== null ? s.distanceMeters + 'm' : 'N/A'} | ` +
-                `LocScore: ${s.locationScore} | TimeDiff: ${s.timeDiffHours !== null ? s.timeDiffHours + 'h' : 'N/A'} | ` +
-                `TempScore: ${s.temporalScore} | DupScore: ${s.duplicateScore} | ` +
-                `Result: ${s.isDuplicate ? 'DUPLICATE' : 'NOT DUPLICATE'}`
-              );
-            });
-
-            if (bestMatch) {
-              isDuplicate = true;
-              duplicateScore = bestMatch.duplicateScore;
-              duplicateCandidateId = bestMatch.candidateId;
-              dupSemanticScore = bestMatch.semanticScore;
-              dupLocationScore = bestMatch.locationScore;
-              dupTemporalScore = bestMatch.temporalScore;
-
-              // Inherit the matched complaint's similar_group_id
-              const matchedCandidate = candidates.find(c => c.id === bestMatch.candidateId);
-              if (matchedCandidate && matchedCandidate.similar_group_id) {
-                similarGroupId = matchedCandidate.similar_group_id;
-              } else {
-                similarGroupId = bestMatch.candidateId;
-              }
-
-              console.log(
-                `  ✅ DUPLICATE DETECTED: Complaint ${complaintData.id} matches ${bestMatch.candidateId} ` +
-                `(score: ${bestMatch.duplicateScore})`
-              );
-            } else {
-              console.log(`  ✗ No duplicate found for complaint ${complaintData.id} (${allScores.length} candidates checked)`);
-            }
-          }
-        } catch (dupErr) {
-          console.error('Phase 2 duplicate detection failed (graceful degradation):', dupErr.message);
-        }
-
-        // ── Build Supabase Update Payload ─────────────────────────────────
-        const updatePayload = {
-          category: primaryCategory,
-          priority: aiResult.priority,
-          keywords: aiResult.keywords,
-          severity_score: aiResult.severityScore,
-          safety_hazards: aiResult.safetyHazards,
-          suggested_action: aiResult.suggestedAction,
-          similar_group_id: similarGroupId,
-          ai_duplicate_flag: isDuplicate,
-          ai_processed: true,
-          // Phase 2 diagnostic fields
-          duplicate_score: duplicateScore,
-          duplicate_candidate_id: duplicateCandidateId,
-          duplicate_semantic_score: dupSemanticScore,
-          duplicate_location_score: dupLocationScore,
-          duplicate_temporal_score: dupTemporalScore,
-          // ML Service Multilabel Results
-          ml_labels: mlPrediction.labels,
-          ml_probabilities: mlPrediction.probabilities,
-          ml_departments: mlPrediction.departments
-        };
-
-        if (Array.isArray(embeddingVector) && embeddingVector.length > 0) {
-          updatePayload.embedding_vector = embeddingVector;
-        }
-
-        let currentPayload = { ...updatePayload };
-        let updateSuccess = false;
-        let attempts = 0;
-        
-        while (!updateSuccess && attempts < 10) {
-          attempts++;
-          const { error: updateErr } = await supabase.from('complaints').update(currentPayload).eq('id', complaintData.id);
-          
-          if (!updateErr) {
-            updateSuccess = true;
-            break;
-          }
-          
-          // Check if error is about a missing column
-          let badCol = null;
-          if (updateErr.message) {
-            if (updateErr.message.includes('does not exist')) {
-              const match = updateErr.message.match(/column "(.*?)" of relation/);
-              if (match) badCol = match[1];
-            } else if (updateErr.message.includes('Could not find the')) {
-              const match = updateErr.message.match(/find the '(.*?)' column/);
-              if (match) badCol = match[1];
-            }
-          }
-          
-          if (badCol) {
-            console.warn(`⚠️ Supabase schema missing column '${badCol}'. Stripping and retrying...`);
-            delete currentPayload[badCol];
-            continue;
-          }
-          
-          // If it's some other error, or we couldn't parse the column, stop retrying
-          console.error('Failed to update complaint with AI analysis:', updateErr.message);
-          break;
-        }
-        
-        console.log(`Complaint ${complaintData.id} AI processed (Gemini + Embedding + Duplicate Detection).`);
-        
-        // ── Phase 4: Civic Issue Grouping ─────────────────────────────────
-        try {
-          // Re-create the full new complaint object for Phase 3/4 processing
-          const newComplaintObj = {
-            id: complaintData.id,
-            text: text,
-            category: primaryCategory,
-            ml_labels: candidateMlLabels,
-            location_lat: complaintData.location_lat,
-            location_lng: complaintData.location_lng,
-            created_at: complaintData.created_at,
-            embedding_vector: embeddingVector
-          };
-          
-          await processCivicIssueGrouping(newComplaintObj, candidateComplaints);
-          console.log(`Complaint ${complaintData.id} Civic Issue grouping complete.`);
-        } catch (grpErr) {
-          console.error('Phase 4 Civic Issue Grouping failed:', grpErr.message);
-        }
-      } catch (aiErr) {
-        console.error('AI processing failed:', aiErr.message);
+    // 2. Enqueue for durable background processing
+    await complaintQueue.add('process-complaint', {
+      complaintId: complaintData.id,
+      text,
+      imageBase64,
+      mimeType
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 5000
       }
-    })();
+    });
 
     res.status(201).json({ message: 'Complaint submitted', complaint: mapComplaint(complaintData) });
   } catch (error) {
@@ -384,6 +178,28 @@ exports.getComplaintById = async (req, res) => {
     res.json({ complaint: mapComplaint(complaint) });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getComplaintStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: complaint, error } = await supabase
+      .from('complaints')
+      .select('id, processing_status, processing_error')
+      .eq('id', id)
+      .single();
+
+    if (error || !complaint) return res.status(404).json({ message: 'Complaint not found' });
+
+    res.json({
+      complaintId: complaint.id,
+      status: complaint.processing_status,
+      error: complaint.processing_error || null
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 

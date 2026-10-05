@@ -7,51 +7,41 @@
   {
     "source": "Water Leakage",
     "relation": "can_cause",
-    "target": "Road Flooding"
+    "target": "Roadside Flooding"
   },
   {
-    "source": "Drainage Overflow",
+    "source": "Drainage",
     "relation": "can_cause",
-    "target": "Road Flooding"
+    "target": "Roadside Flooding"
   },
   {
-    "source": "Drainage Overflow",
+    "source": "Drainage",
     "relation": "can_cause",
-    "target": "Health Hazard"
+    "target": "Garbage"
   },
   {
-    "source": "Electrical Pole Damage",
+    "source": "Electric Pole",
     "relation": "can_cause",
-    "target": "Power Outage"
+    "target": "Streetlight"
   },
   {
-    "source": "Transformer Failure",
+    "source": "Tree Hazard",
     "relation": "can_cause",
-    "target": "Power Outage"
+    "target": "Road Damage"
   },
   {
-    "source": "Heavy Rain",
+    "source": "Tree Hazard",
     "relation": "can_cause",
-    "target": "Drainage Overflow"
+    "target": "Electric Pole"
   },
   {
-    "source": "Heavy Rain",
+    "source": "Tree Hazard",
     "relation": "can_cause",
-    "target": "Tree Fall"
+    "target": "Streetlight"
   },
   {
-    "source": "Tree Fall",
+    "source": "Road Damage",
     "relation": "can_cause",
-    "target": "Road Blockage"
-  },
-  {
-    "source": "Tree Fall",
-    "relation": "can_cause",
-    "target": "Power Outage"
-  },
-  {
-    "source": "Construction Debris",
-    "relation": "can_cause",
-    "target": "Drainage Blockage"
+    "target": "Traffic Signal"
   }
 ]

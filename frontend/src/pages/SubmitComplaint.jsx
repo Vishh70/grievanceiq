@@ -78,7 +78,8 @@ export default function SubmitComplaint() {
   const [loading, setLoading]   = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const videoRef = useRef(null);
-  const streamRef = useRef(null);
+  const [polling, setPolling]   = useState(false);
+  const [pollStatus, setPollStatus] = useState('');
   const navigate                = useNavigate();
 
   const handleLocationSearch = async (e) => {
@@ -231,11 +232,43 @@ export default function SubmitComplaint() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      toast.success('Complaint submitted successfully!', { id: loadingToast });
-      navigate('/complaints');
+      const newComplaintId = data.complaint.id;
+      setPolling(true);
+      setPollStatus('Processing complaint with AI (generating embeddings, duplicate detection)...');
+      toast.success('Complaint submitted! AI is processing it now...', { id: loadingToast });
+
+      let attempts = 0;
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const statusRes = await api.get(`/complaints/${newComplaintId}/status`);
+          const currentStatus = statusRes.data.status;
+          
+          if (currentStatus === 'COMPLETED' || currentStatus === 'PROCESSED') {
+            clearInterval(pollInterval);
+            setPolling(false);
+            toast.success('AI processing complete!');
+            navigate('/complaints');
+          } else if (currentStatus === 'FAILED') {
+            clearInterval(pollInterval);
+            setPolling(false);
+            toast.error('AI processing failed. It will be reviewed manually.');
+            navigate('/complaints');
+          }
+        } catch (pollErr) {
+          console.error('Polling error', pollErr);
+        }
+        
+        if (attempts >= 12) { // 1 minute max polling
+          clearInterval(pollInterval);
+          setPolling(false);
+          toast.success('Processing is taking longer than usual. You can check back later.');
+          navigate('/complaints');
+        }
+      }, 5000); // poll every 5 seconds
+
     } catch (err) {
       toast.error(err.response?.data?.error || 'Submission failed. Please try again.', { id: loadingToast });
-    } finally {
       setLoading(false);
     }
   };
@@ -248,7 +281,16 @@ export default function SubmitComplaint() {
           <p>Describe your civic issue. Our AI will automatically classify it and route it to the correct department.</p>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card">
+        {polling && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card mb-4 text-center">
+            <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 1rem', color: 'var(--accent)' }} />
+            <h3 style={{ marginBottom: '0.5rem' }}>AI is analyzing your complaint...</h3>
+            <p className="text-muted">{pollStatus}</p>
+            <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>Please do not close this page. This usually takes 5-10 seconds.</p>
+          </motion.div>
+        )}
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card" style={{ display: polling ? 'none' : 'block' }}>
           <form onSubmit={handleSubmit}>
             <div className="form-group" style={{ position: 'relative' }}>
               <label className="form-label">Describe the Issue *</label>

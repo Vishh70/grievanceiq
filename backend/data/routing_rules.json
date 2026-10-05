@@ -1,25 +1,25 @@
 {
   "issueTypes": [
-    "Water Leakage",
     "Road Damage",
-    "Road Flooding",
-    "Drainage Overflow",
-    "Garbage Accumulation",
-    "Streetlight Failure",
-    "Electrical Hazard",
-    "Power Outage",
-    "Public Safety Hazard"
+    "Roadside Flooding",
+    "Drainage",
+    "Water Leakage",
+    "Electric Pole",
+    "Streetlight",
+    "Traffic Signal",
+    "Garbage",
+    "Tree Hazard"
   ],
   "departmentMapping": {
-    "Water Leakage": "Water Department",
     "Road Damage": "Road Department",
-    "Road Flooding": "Road Department",
-    "Drainage Overflow": "Drainage Department",
-    "Garbage Accumulation": "Sanitation Department",
-    "Streetlight Failure": "Electrical Department",
-    "Electrical Hazard": "Electrical Department",
-    "Power Outage": "Electrical Department",
-    "Public Safety Hazard": "Public Safety Department"
+    "Roadside Flooding": "Drainage Department",
+    "Drainage": "Drainage Department",
+    "Water Leakage": "Water Department",
+    "Electric Pole": "Electricity Department",
+    "Streetlight": "Electricity Department",
+    "Traffic Signal": "Traffic Department",
+    "Garbage": "Sanitation Department",
+    "Tree Hazard": "Garden Department"
   },
   "taskTemplates": {
     "Water Leakage": [
@@ -31,36 +31,36 @@
       { "template_id": "road_inspect", "title": "Inspect road damage", "description": "Assess the extent of the potholes or road damage." },
       { "template_id": "road_repair", "title": "Repair road surface", "description": "Fill potholes and resurface the affected road area." }
     ],
-    "Road Flooding": [
+    "Roadside Flooding": [
       { "template_id": "flood_inspect", "title": "Inspect flooded road", "description": "Assess the flooded area and identify the cause of water accumulation." },
       { "template_id": "flood_clear", "title": "Clear obstruction", "description": "Clear any drainage blockages contributing to the flooding." },
       { "template_id": "flood_restore", "title": "Restore affected road", "description": "Ensure the road is safe and functional post-flooding." }
     ],
-    "Drainage Overflow": [
+    "Drainage": [
       { "template_id": "drainage_inspect", "title": "Inspect drainage system", "description": "Identify the point of overflow or blockage." },
       { "template_id": "drainage_clear", "title": "Clear drainage blockage", "description": "Remove debris or silt causing the overflow." },
       { "template_id": "drainage_sanitize", "title": "Sanitize area", "description": "Clean and sanitize the surrounding area affected by sewage." }
     ],
-    "Garbage Accumulation": [
+    "Garbage": [
       { "template_id": "garbage_assess", "title": "Assess garbage dump", "description": "Evaluate the volume and type of accumulated waste." },
       { "template_id": "garbage_clear", "title": "Clear garbage", "description": "Dispatch vehicles to collect and clear the accumulated garbage." },
       { "template_id": "garbage_clean", "title": "Clean area", "description": "Clean the area to prevent health hazards and stray animal gathering." }
     ],
-    "Streetlight Failure": [
+    "Streetlight": [
       { "template_id": "streetlight_inspect", "title": "Inspect streetlight", "description": "Identify if the issue is a fused bulb, wiring, or timer." },
       { "template_id": "streetlight_repair", "title": "Repair or replace streetlight", "description": "Fix the wiring or replace the faulty streetlight." }
     ],
-    "Electrical Hazard": [
+    "Electric Pole": [
       { "template_id": "elec_inspect", "title": "Inspect electrical hazard", "description": "Identify exposed wires, sparking, or broken infrastructure." },
       { "template_id": "elec_secure", "title": "Secure exposed electrical equipment", "description": "Isolate the area to prevent public access and electrocution." },
       { "template_id": "elec_repair", "title": "Repair electrical hazard", "description": "Fix the underlying electrical issue safely." },
       { "template_id": "elec_verify", "title": "Verify safety", "description": "Test the equipment to ensure it is completely safe." }
     ],
-    "Power Outage": [
-      { "template_id": "power_investigate", "title": "Investigate power outage", "description": "Identify the transformer or grid failure causing the outage." },
-      { "template_id": "power_restore", "title": "Restore power grid", "description": "Repair the fault and restore electricity supply." }
+    "Traffic Signal": [
+      { "template_id": "traffic_investigate", "title": "Investigate traffic signal", "description": "Identify the cause of traffic signal malfunction." },
+      { "template_id": "traffic_restore", "title": "Restore signal operation", "description": "Repair the fault and restore traffic signal operation." }
     ],
-    "Public Safety Hazard": [
+    "Tree Hazard": [
       { "template_id": "safety_secure", "title": "Secure area", "description": "Cordone off the hazardous area." },
       { "template_id": "safety_resolve", "title": "Resolve safety hazard", "description": "Remove or fix the object/structure causing the hazard." }
     ]
@@ -86,7 +86,7 @@
     { "before": "elec_secure", "after": "elec_repair" },
     { "before": "elec_repair", "after": "elec_verify" },
 
-    { "before": "power_investigate", "after": "power_restore" },
+    { "before": "traffic_investigate", "after": "traffic_restore" },
 
     { "before": "safety_secure", "after": "safety_resolve" },
 

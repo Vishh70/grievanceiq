@@ -8,6 +8,7 @@ const {
   createComplaint,
   getComplaints,
   getComplaintById,
+  getComplaintStatus,
   updateStatus,
   getSimilarComplaints,
   getPublicComplaints,
@@ -29,6 +30,7 @@ router.get('/public', optionalAuth, getPublicComplaints);
 router.use(protect);
 
 router.get('/:id',            getComplaintById);
+router.get('/:id/status',     getComplaintStatus);
 router.get('/:id/similar',    getSimilarComplaints);
 router.post('/',              upload.single('image'), validate(complaintSchema), createComplaint);
 router.get('/',               getComplaints);

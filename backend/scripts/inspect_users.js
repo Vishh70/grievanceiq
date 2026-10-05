@@ -1,8 +1,22 @@
+/**
+ * inspect_users.js — Database schema inspection utility
+ * 
+ * Usage: DATABASE_URL=postgresql://... node scripts/inspect_users.js
+ * 
+ * NEVER hardcode credentials. Always use environment variables.
+ */
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const { Client } = require('pg');
 
-const client = new Client({
-  connectionString: 'postgresql://postgres:janu%40Baby7066@db.bvyyeefapmdisxzuttds.supabase.co:5432/postgres'
-});
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error('ERROR: DATABASE_URL environment variable is required.');
+  console.error('Usage: DATABASE_URL=postgresql://user:pass@host:port/db node scripts/inspect_users.js');
+  process.exit(1);
+}
+
+const client = new Client({ connectionString });
 
 async function run() {
   await client.connect();
@@ -15,4 +29,7 @@ async function run() {
   await client.end();
 }
 
-run().catch(console.error);
+run().catch(err => {
+  console.error('Query failed:', err.message);
+  process.exit(1);
+});

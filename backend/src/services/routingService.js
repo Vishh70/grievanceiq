@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const supabase = require('../config/supabase');
-const { generateEmbedding, cosineSimilarity } = require('./embeddingService');
+const { generateEmbedding } = require('./embeddingService');
 const { applyDependencyRules } = require('./taskDependencyService');
 
 const RULES_PATH = path.join(__dirname, '../../data/routing_rules.json');
@@ -23,30 +23,10 @@ function loadRules() {
   return routingRules;
 }
 
-/**
- * Pre-computes embeddings for the controlled vocabulary of issue types.
- */
-async function getIssueTypeEmbeddings() {
-  const rules = loadRules();
-  if (Object.keys(issueTypeEmbeddingsCache).length === rules.issueTypes.length) {
-    return issueTypeEmbeddingsCache;
-  }
 
-  for (const type of rules.issueTypes) {
-    if (!issueTypeEmbeddingsCache[type]) {
-      try {
-        issueTypeEmbeddingsCache[type] = await generateEmbedding(type);
-      } catch (err) {
-        console.warn(`Failed to embed issue type "${type}":`, err.message);
-      }
-    }
-  }
-  return issueTypeEmbeddingsCache;
-}
 
 /**
- * Multi-label classification using zero-shot semantic matching.
- * Compares the aggregated issue text with the controlled issue types.
+ * Extracts issue types directly from the trained ML labels in the complaints.
  *
  * @param {object} civicIssue
  * @param {Array<object>} complaints
@@ -54,37 +34,25 @@ async function getIssueTypeEmbeddings() {
  */
 async function classifyCivicIssue(civicIssue, complaints) {
   const rules = loadRules();
-  const typeEmbeddings = await getIssueTypeEmbeddings();
-
-  // Aggregate evidence
-  const texts = complaints.map(c => c.description || c.text || '').filter(Boolean);
-  const categories = complaints.map(c => c.category).filter(Boolean);
-  const aggregatedText = `${civicIssue.title}. ${categories.join(', ')}. ${texts.join(' ')}`.substring(0, 1000);
-
-  let issueEmbedding = [];
-  try {
-    issueEmbedding = await generateEmbedding(aggregatedText);
-  } catch (err) {
-    console.error('Embedding failed for civic issue:', err.message);
-    return { issueTypes: [] };
+  
+  // Extract all ml_labels from all complaints in the issue
+  const allLabels = complaints.flatMap(c => c.ml_labels || []);
+  
+  // Frequency count to determine confidence
+  const labelCounts = {};
+  let totalLabels = 0;
+  for (const label of allLabels) {
+    labelCounts[label] = (labelCounts[label] || 0) + 1;
+    totalLabels++;
   }
-
+  
   const results = [];
-  const SIMILARITY_THRESHOLD = 0.5; // Threshold for assigning a label
-
-  for (const [label, emb] of Object.entries(typeEmbeddings)) {
-    if (emb && emb.length > 0 && issueEmbedding.length > 0) {
-      const similarity = cosineSimilarity(issueEmbedding, emb);
-      // Fallback: If category exactly matches the label, boost it
-      const categoryBoost = categories.some(c => c.toLowerCase() === label.toLowerCase()) ? 0.3 : 0;
-      const finalConfidence = Math.min(1.0, similarity + categoryBoost);
-
-      if (finalConfidence >= SIMILARITY_THRESHOLD) {
-        results.push({
-          label,
-          confidence: Number(finalConfidence.toFixed(4))
-        });
-      }
+  if (totalLabels > 0) {
+    for (const [label, count] of Object.entries(labelCounts)) {
+      results.push({
+        label,
+        confidence: Number((count / totalLabels).toFixed(4))
+      });
     }
   }
 
@@ -95,7 +63,7 @@ async function classifyCivicIssue(civicIssue, complaints) {
   if (results.length === 0 && civicIssue.primary_category) {
     const fallback = rules.issueTypes.find(t => t.toLowerCase().includes(civicIssue.primary_category.toLowerCase()));
     if (fallback) {
-      results.push({ label: fallback, confidence: 0.8 });
+      results.push({ label: fallback, confidence: 1.0 });
     }
   }
 
@@ -189,16 +157,21 @@ async function routeCivicIssue(civicIssueId) {
     // Find issue types for this department
     const deptIssueTypes = mappingReasons.filter(m => m.department === dept).map(m => m.issueType);
 
+    // Fetch existing workstream
+    const { data: existingWs } = await supabase.from('workstreams').select('id, status').eq('civic_issue_id', civicIssueId).eq('department_id', dept).single();
+
     // Upsert Workstream
+    const wsPayload = {
+      civic_issue_id: civicIssueId,
+      department_id: dept,
+      issue_types: deptIssueTypes,
+      updated_at: new Date().toISOString()
+    };
+    if (!existingWs) wsPayload.status = 'PENDING'; // Only set on insert
+
     const { data: workstream, error: wsErr } = await supabase
       .from('workstreams')
-      .upsert({
-        civic_issue_id: civicIssueId,
-        department_id: dept,
-        issue_types: deptIssueTypes,
-        status: 'PENDING',
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'civic_issue_id, department_id' })
+      .upsert(wsPayload, { onConflict: 'civic_issue_id, department_id' })
       .select()
       .single();
 
@@ -210,26 +183,34 @@ async function routeCivicIssue(civicIssueId) {
     workstreams.push(workstream);
     workstreamsCreated++;
 
+    // Fetch existing tasks
+    const { data: existingTasks } = await supabase.from('tasks').select('template_id').eq('civic_issue_id', civicIssueId);
+    const existingTemplateIds = new Set((existingTasks || []).map(t => t.template_id));
+
     // 5. Generate Tasks for this workstream
     for (const issueType of deptIssueTypes) {
       const templates = rules.taskTemplates[issueType] || [];
       for (const template of templates) {
         
         // Upsert Task (Idempotent)
+        const taskPayload = {
+          civic_issue_id: civicIssueId,
+          workstream_id: workstream.id,
+          department_id: dept,
+          issue_type: issueType,
+          template_id: template.template_id,
+          title: template.title,
+          description: template.description,
+          priority: civicIssue.priority, // Propagate priority
+          updated_at: new Date().toISOString()
+        };
+        if (!existingTemplateIds.has(template.template_id)) {
+          taskPayload.status = 'PENDING';
+        }
+
         const { error: taskErr } = await supabase
           .from('tasks')
-          .upsert({
-            civic_issue_id: civicIssueId,
-            workstream_id: workstream.id,
-            department_id: dept,
-            issue_type: issueType,
-            template_id: template.template_id,
-            title: template.title,
-            description: template.description,
-            priority: civicIssue.priority, // Propagate priority
-            status: 'PENDING',
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'civic_issue_id, template_id' });
+          .upsert(taskPayload, { onConflict: 'civic_issue_id, template_id' });
 
         if (taskErr) {
           console.error(`Failed to create task "${template.title}":`, taskErr.message);

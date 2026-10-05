@@ -22,7 +22,11 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('giq_token');
       localStorage.removeItem('giq_user');
-      window.location.href = '/login';
+      if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login') {
+        window.location.href = '/admin/login';
+      } else {
+        window.location.href = '/login';
+      }
     }
     
     // Handle Render Cold Start / Timeout / Bad Gateway

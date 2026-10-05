@@ -104,4 +104,4 @@ class ComplaintGraphService {
   }
 }
 
-module.exports = new ComplaintGraphService();
+module.exports = { ComplaintGraphService };

@@ -23,6 +23,11 @@ services:
         sync: false
       - key: CLIENT_URL
         sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: grievanceiq-redis
+          property: connectionString
 
   - type: web
     name: grievanceiq-ml
@@ -33,3 +38,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.12
+
+  - type: redis
+    name: grievanceiq-redis
+    ipAllowList: [] # internal connections only
+    plan: free

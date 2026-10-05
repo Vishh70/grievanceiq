@@ -31,7 +31,7 @@ async function runAudit9() {
   }
 
   // Step 2: Realistic multi-label complaint text
-  const complaintText = 'The road is damaged near the junction, water is leaking from the roadside pipeline, and the traffic signal is not working.';
+  const complaintText = 'A water pipeline has burst near the main road. Water is flooding the road and an electrical box nearby has exposed wires.';
   const complaintLocation = { lat: 18.5186, lng: 73.8415, address: 'FC Road near Goodluck Chowk, Deccan Gymkhana, Pune' };
   console.log(`\n2. Citizen Complaint Input:`);
   console.log(`   Text: "${complaintText}"`);
@@ -181,6 +181,7 @@ async function runAudit9() {
         sampleTasks.push({
           id: `TASK_${taskIdCounter++}`,
           title: t.title,
+          template_id: t.template_id,
           department_id: dept,
           issue_type: issueType,
           priority: civicPrio,
@@ -193,14 +194,14 @@ async function runAudit9() {
   sampleTasks.forEach(t => console.log(`     - [${t.department_id}] ${t.title} (${t.issue_type})`));
 
   // Build DAG using rules
-  const titleToId = {};
-  sampleTasks.forEach(t => { titleToId[t.title] = t.id; });
+  const templateToId = {};
+  sampleTasks.forEach(t => { templateToId[t.template_id] = t.id; });
   const sampleDeps = [];
   for (const rule of (rules.dependencyRules || [])) {
-    if (titleToId[rule.before] && titleToId[rule.after]) {
+    if (templateToId[rule.before] && templateToId[rule.after]) {
       sampleDeps.push({
-        task_id: titleToId[rule.after],
-        depends_on_task_id: titleToId[rule.before]
+        task_id: templateToId[rule.after],
+        depends_on_task_id: templateToId[rule.before]
       });
     }
   }

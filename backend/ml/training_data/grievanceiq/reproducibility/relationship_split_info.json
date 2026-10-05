@@ -1,9 +1,9 @@
 {
   "total_pairs": 16000,
-  "train_pairs": 11134,
-  "validation_pairs": 2446,
-  "test_pairs": 2420,
-  "remaining_pairs": 0,
+  "train_pairs": 8818,
+  "validation_pairs": 901,
+  "test_pairs": 836,
+  "excluded_pairs": 5445,
   "feature_count": 20,
   "features": [
     "semantic_similarity",

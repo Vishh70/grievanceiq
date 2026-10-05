@@ -20,25 +20,25 @@ const ML_SERVICE_TIMEOUT_MS = 8000;
 
 const LABEL_TO_ISSUE_TYPE = {
   road_damage_flag:       'Road Damage',
-  roadside_flooding_flag: 'Road Flooding',
+  roadside_flooding_flag: 'Roadside Flooding',
   water_leakage_flag:     'Water Leakage',
-  electric_pole_flag:     'Electrical Hazard',
-  streetlight_flag:       'Streetlight Failure',
-  traffic_signal_flag:    'Public Safety Hazard', // Traffic signals often route to safety/roads
-  garbage_flag:           'Garbage Accumulation',
-  tree_hazard_flag:       'Public Safety Hazard',
-  drainage_flag:          'Drainage Overflow',
+  electric_pole_flag:     'Electric Pole',
+  streetlight_flag:       'Streetlight',
+  traffic_signal_flag:    'Traffic Signal',
+  garbage_flag:           'Garbage',
+  tree_hazard_flag:       'Tree Hazard',
+  drainage_flag:          'Drainage',
 };
 
 const LABEL_TO_DEPARTMENT = {
   road_damage_flag:       'Road Department',
-  roadside_flooding_flag: 'Road Department',
+  roadside_flooding_flag: 'Drainage Department',
   water_leakage_flag:     'Water Department',
-  electric_pole_flag:     'Electrical Department',
-  streetlight_flag:       'Electrical Department',
-  traffic_signal_flag:    'Public Safety Department',
+  electric_pole_flag:     'Electricity Department',
+  streetlight_flag:       'Electricity Department',
+  traffic_signal_flag:    'Traffic Department',
   garbage_flag:           'Sanitation Department',
-  tree_hazard_flag:       'Public Safety Department',
+  tree_hazard_flag:       'Garden Department',
   drainage_flag:          'Drainage Department',
 };
 

@@ -3,8 +3,6 @@
 **PRIMARY INFERENCE:**
 Corrected Python Random Forest (served via `backend/ml/inference/grievanceiq_inference.py`)
 
-**FALLBACK:**
-Legacy Node Random Forest (`backend/models/relationship/model.json`)
 
 ## Architecture Flow
 
@@ -20,15 +18,7 @@ Corrected Random Forest (relationship_corrected_rf_10tree.joblib)
 Relationship Class (Duplicate / Similar / Related / Independent)
 ```
 
-## Fallback Flow
 
-```text
-Python unavailable (timeout / connection refused)
-    ↓
-Legacy Node Random Forest (ml-random-forest)
-    ↓
-Relationship result
-```
 
 *Note: The corrected model achieved 93.30% accuracy. This is a synthetic held-out research evaluation result, not a live production accuracy metric. The model is a Python `sklearn` Random Forest, NOT a Node.js `ml-random-forest` model.*
 

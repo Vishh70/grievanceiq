@@ -11,6 +11,13 @@ function signToken(id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 }
 
+function mapUser(user) {
+  if (!user) return user;
+  const mapped = { ...user, civicPoints: user.civic_points || 0 };
+  delete mapped.password_hash;
+  return mapped;
+}
+
 // POST /api/auth/register
 exports.register = async (req, res) => {
   try {
@@ -38,8 +45,7 @@ exports.register = async (req, res) => {
     if (error) throw error;
 
     const token = signToken(user.id);
-    delete user.password_hash;
-    res.status(201).json({ token, user });
+    res.status(201).json({ token, user: mapUser(user) });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: err.message });
@@ -69,8 +75,7 @@ exports.login = async (req, res) => {
     }
 
     const token = signToken(user.id);
-    delete user.password_hash;
-    res.json({ token, user });
+    res.json({ token, user: mapUser(user) });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: err.message });
@@ -135,8 +140,7 @@ exports.googleLogin = async (req, res) => {
       }
       
       const token = signToken(existingUser.id);
-      delete existingUser.password_hash;
-      return res.json({ token, user: existingUser });
+      return res.json({ token, user: mapUser(existingUser) });
     }
 
     // User does not exist, create a new citizen account
@@ -161,8 +165,7 @@ exports.googleLogin = async (req, res) => {
     }
 
     const token = signToken(newUser.id);
-    delete newUser.password_hash;
-    res.status(201).json({ token, user: newUser });
+    res.status(201).json({ token, user: mapUser(newUser) });
   } catch (err) {
     console.error('Google login error:', err);
     res.status(500).json({ error: 'Unable to complete Google login. Please try again.' });
@@ -171,5 +174,5 @@ exports.googleLogin = async (req, res) => {
 
 // GET /api/auth/me  (protected)
 exports.getMe = async (req, res) => {
-  res.json({ user: req.user });
+  res.json({ user: mapUser(req.user) });
 };

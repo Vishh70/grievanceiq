@@ -2,6 +2,8 @@
 const supabase = require('../config/supabase');
 const complaintGraphService = require('./complaintGraphService');
 const { predictRelationship } = require('./relationshipService');
+const knowledgeGraphService = require('./knowledgeGraphService');
+const routingService = require('./routingService');
 
 /**
  * Generates a deterministic title for a Civic Issue based on component complaints.
@@ -160,19 +162,30 @@ async function createOrUpdateCivicIssue(componentComplaints) {
  * @param {Array<object>} candidates 
  */
 async function processCivicIssueGrouping(newComplaint, candidates) {
-  if (!candidates || candidates.length === 0) return;
-
   const edges = [];
+  candidates = candidates || [];
   
   // Predict relationships between the new complaint and all candidates
   for (const cand of candidates) {
     try {
       const result = await predictRelationship(newComplaint, cand);
       if (result && result.relationship) {
+        let relationshipType = result.relationship;
+        let reason = null;
+
+        if (relationshipType === 'Related') {
+          const kgRelation = knowledgeGraphService.findRelationship(newComplaint.category, cand.category);
+          if (kgRelation) {
+            reason = `${newComplaint.category} ${kgRelation} ${cand.category}`;
+            console.log(`[Knowledge Graph] relationship = Related, reason/domain relation: ${reason}`);
+          }
+        }
+
         edges.push({
           sourceId: newComplaint.id,
           targetId: cand.id,
-          relationship: result.relationship
+          relationship: relationshipType,
+          reason: reason
         });
       }
     } catch (err) {
@@ -182,16 +195,24 @@ async function processCivicIssueGrouping(newComplaint, candidates) {
 
   // Build the graph and find components
   const allComplaints = [newComplaint, ...candidates];
-  complaintGraphService.buildGraph(allComplaints, edges);
+  const graphService = new (require('./complaintGraphService').ComplaintGraphService)();
+  graphService.buildGraph(allComplaints, edges);
   
-  const components = complaintGraphService.findConnectedComponents();
+  const components = graphService.findConnectedComponents();
   
-  // For each component that has more than 1 complaint, create a Civic Issue
+  // We process the component that contains the new complaint
   for (const compIds of components) {
-    if (compIds.length > 1) {
-      // It's a grouped issue!
+    if (compIds.includes(newComplaint.id)) {
       const compData = compIds.map(id => allComplaints.find(c => c.id === id)).filter(Boolean);
-      await createOrUpdateCivicIssue(compData);
+      const savedIssue = await createOrUpdateCivicIssue(compData);
+      if (savedIssue) {
+        console.log(`[CivicRouting] Automatically routing Civic Issue ${savedIssue.id}`);
+        try {
+          await routingService.routeCivicIssue(savedIssue.id);
+        } catch (routeErr) {
+          console.error(`[CivicRouting] Failed to automatically route Civic Issue ${savedIssue.id}:`, routeErr.message);
+        }
+      }
     }
   }
 }

@@ -24,9 +24,43 @@ jobs:
         cache: 'npm'
         cache-dependency-path: './backend/package-lock.json'
         
-    - name: Install dependencies
+    - name: Install Node dependencies
       working-directory: ./backend
       run: npm ci
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+        cache-dependency-path: './backend/ml/requirements.txt'
+
+    - name: Install Python dependencies
+      working-directory: ./backend/ml
+      run: pip install -r requirements.txt
+
+    - name: Start Flask ML service
+      working-directory: ./backend/ml
+      run: python inference/grievanceiq_inference.py &
+      env:
+        FLASK_APP: inference/grievanceiq_inference.py
+        PORT: 5001
+
+    - name: Wait for ML service to be healthy
+      run: |
+        timeout 30 bash -c 'until curl -s http://localhost:5001/health | grep "\"status\": \"healthy\""; do sleep 2; done'
+        
+    - name: Test /predict contract
+      run: |
+        curl -X POST http://localhost:5001/predict \
+          -H "Content-Type: application/json" \
+          -d '{"embedding": [0.0]'$(for i in {1..383}; do echo -n ",0.0"; done)'}' | grep "issue_types"
+
+    - name: Test /predict-relationship contract
+      run: |
+        curl -X POST http://localhost:5001/predict-relationship \
+          -H "Content-Type: application/json" \
+          -d '{"features": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}' | grep "relationship"
 
     - name: Run tests
       working-directory: ./backend

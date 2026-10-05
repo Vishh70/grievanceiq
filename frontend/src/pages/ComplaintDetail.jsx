@@ -23,7 +23,7 @@ export default function ComplaintDetail() {
         setComplaint(data.complaint);
         if (data.complaint.similarGroupId) {
           const simRes = await api.get(`/complaints/${id}/similar`);
-          setSimilar(simRes.data.similar || []);
+          setSimilar(simRes.data.complaints || []);
         }
       } catch (err) {
         console.error(err);
@@ -89,7 +89,7 @@ export default function ComplaintDetail() {
             <Link to="/complaints" className="btn btn-secondary" style={{ textDecoration: 'none', flex: 1, justifyContent: 'center', fontSize: '0.85rem' }}>
               My Complaints
             </Link>
-            <Link to="/submit" className="btn btn-secondary" style={{ textDecoration: 'none', flex: 1, justifyContent: 'center', fontSize: '0.85rem', gap: '0.3rem' }}>
+            <Link to="/complaints/new" className="btn btn-secondary" style={{ textDecoration: 'none', flex: 1, justifyContent: 'center', fontSize: '0.85rem', gap: '0.3rem' }}>
               <PlusCircle size={14} /> New Issue
             </Link>
           </div>

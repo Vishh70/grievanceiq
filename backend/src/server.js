@@ -18,11 +18,11 @@ const app = createApp();
     }
 
     if (!existingAdmin) {
-      if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_PASSWORD) {
-        console.warn('⚠️ No ADMIN_PASSWORD provided in production. Default admin not created.');
+      if (!process.env.ADMIN_PASSWORD) {
+        console.warn('⚠️ No ADMIN_PASSWORD provided. Default admin not created. Set ADMIN_PASSWORD env var to seed admin.');
       } else {
         const bcrypt = require('bcryptjs');
-        const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 12);
+        const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
         
         const { error: insertErr } = await supabase.from('users').insert([{
           name: 'System Admin',
@@ -32,7 +32,7 @@ const app = createApp();
         }]);
         
         if (insertErr) throw insertErr;
-        console.log(`✅ Default Admin created in Supabase: system@grievanceiq.com ${process.env.NODE_ENV === 'production' ? '(password from environment)' : '/ admin123'}`);
+        console.log('✅ Default Admin created in Supabase: system@grievanceiq.com');
       }
     }
   } catch (err) {
@@ -41,6 +41,40 @@ const app = createApp();
 })();
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 GrievanceIQ Backend running on port ${PORT} (Connected to Supabase)`);
+
+  // Initialize Worker
+  require('./workers/complaintWorker');
+  console.log(`👷 Complaint Background Worker Started`);
+
+  // Recovery Mechanism: Find PENDING or stale PROCESSING complaints and requeue
+  try {
+    const { complaintQueue } = require('./config/queue');
+    const { data: staleComplaints, error } = await supabase
+      .from('complaints')
+      .select('id, description, image_base64') // image processing might be lost on restart if not in db, but we have text
+      .in('processing_status', ['PROCESSING', 'PENDING']);
+      
+    if (error) throw error;
+
+    if (staleComplaints && staleComplaints.length > 0) {
+      console.log(`🔄 Recovering ${staleComplaints.length} stale complaints...`);
+      for (const complaint of staleComplaints) {
+        // Enqueue them safely again
+        await complaintQueue.add('process-complaint', {
+          complaintId: complaint.id,
+          text: complaint.description,
+          imageBase64: complaint.image_base64 || '', // Usually images are deleted after upload, but might be base64 in db
+          mimeType: '' // Best effort recovery
+        }, {
+          jobId: `recovery-${complaint.id}`, // Idempotent queuing
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 5000 }
+        });
+      }
+    }
+  } catch (recErr) {
+    console.error('Failed to run recovery mechanism:', recErr.message);
+  }
 });
