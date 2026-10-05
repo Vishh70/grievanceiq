@@ -264,7 +264,8 @@ async function processCivicIssueGrouping(newComplaint, candidates) {
         }
       }
     } catch (err) {
-      console.warn(`Relationship prediction failed for candidate ${cand.id}:`, err.message);
+      console.error(`Relationship prediction failed for candidate ${cand.id}:`, err.message);
+      throw new Error(`Relationship prediction failed: ${err.message}`);
     }
   }
 

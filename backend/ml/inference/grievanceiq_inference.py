@@ -110,12 +110,15 @@ def predict():
 
         # Predict using individual models
         for label in LABELS:
-            model = classifier[label]
-            prob_positive = float(model.predict_proba(X)[0][1])
-            threshold = THRESHOLDS.get(label, 0.5)
-            probabilities[label] = round(prob_positive, 4)
-            if prob_positive >= threshold:
-                active_labels.append(label)
+            try:
+                model = classifier[label]
+                prob_positive = float(model.predict_proba(X)[0][1])
+                threshold = THRESHOLDS.get(label, 0.5)
+                probabilities[label] = round(prob_positive, 4)
+                if prob_positive >= threshold:
+                    active_labels.append(label)
+            except Exception as exc:
+                raise RuntimeError(f"Label model failed for {label}: {exc}")
 
         return jsonify({
             'labels': active_labels,

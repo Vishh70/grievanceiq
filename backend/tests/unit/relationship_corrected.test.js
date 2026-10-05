@@ -78,20 +78,17 @@ describe('Phase 2B: Corrected Relationship Inference Integration', () => {
     expect(result.confidence).toBe(0.6);
   });
 
-  it('J. Python offline fallback triggers old Node model', async () => {
+  it('J. Python offline model triggers strict failure', async () => {
     axios.post.mockRejectedValueOnce(new Error('Network Error'));
     
-    const result = await predictRelationshipCorrected(dummyComplaintA, dummyComplaintB);
-    
-    // Because the old Node model returns "Unknown" if not loaded, or a valid label.
-    // It should not throw.
-    expect(result).toHaveProperty('relationship');
-    expect(result).toHaveProperty('confidence');
+    await expect(predictRelationshipCorrected(dummyComplaintA, dummyComplaintB))
+      .rejects.toThrow('Relationship model service unavailable: Network Error');
   });
 
-  it('K. old Node model still works directly', async () => {
-    const result = await predictRelationship(dummyComplaintA, dummyComplaintB);
-    expect(result).toHaveProperty('relationship');
+  it('K. predictRelationship triggers strict failure', async () => {
+    axios.post.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(predictRelationship(dummyComplaintA, dummyComplaintB))
+      .rejects.toThrow('Relationship model service unavailable: Network Error');
   });
 
   it('L. calculates same_category using multi-hot overlap (Phase 4A fix)', () => {
