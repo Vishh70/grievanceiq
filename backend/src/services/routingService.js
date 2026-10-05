@@ -141,7 +141,7 @@ async function routeCivicIssue(civicIssueId) {
   console.log(`[CivicRouting] Departments:`, departments.join(', '));
 
   // Store routing result for explainability
-  await supabase
+  const { error: routeResultErr } = await supabase
     .from('routing_results')
     .upsert({
       civic_issue_id: civicIssueId,
@@ -149,6 +149,10 @@ async function routeCivicIssue(civicIssueId) {
       departments: mappingReasons,
       updated_at: new Date().toISOString()
     }, { onConflict: 'civic_issue_id' });
+
+  if (routeResultErr) {
+    throw new Error(`Failed to persist routing results: ${routeResultErr.message}`);
+  }
 
   // 4. Create Workstreams (Idempotent)
   let workstreamsCreated = 0;

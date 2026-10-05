@@ -12,7 +12,8 @@ const worker = new Worker('ComplaintProcessing', async job => {
   const { complaintId, text, imageBase64, mimeType } = job.data;
   
   // 1. Mark as processing
-  await supabase.from('complaints').update({ processing_status: 'PROCESSING' }).eq('id', complaintId);
+  const { error: procErr } = await supabase.from('complaints').update({ processing_status: 'PROCESSING' }).eq('id', complaintId);
+  if (procErr) throw new Error(`Failed to mark PROCESSING: ${procErr.message}`);
   console.log(`[Worker] Started processing complaint ${complaintId}`);
 
   try {
@@ -26,7 +27,8 @@ const worker = new Worker('ComplaintProcessing', async job => {
     try {
       embeddingVector = await generateEmbedding(text);
     } catch (embedErr) {
-      console.error('[Worker] Embedding generation failed (graceful degradation):', embedErr.message);
+      console.error('[Worker] Embedding generation failed:', embedErr.message);
+      throw new Error(`Embedding generation failed: ${embedErr.message}`);
     }
 
     let mlPrediction = { labels: [], issueTypes: [], probabilities: {}, departments: [], serviceAvailable: false };
@@ -177,6 +179,10 @@ const worker = new Worker('ComplaintProcessing', async job => {
       break;
     }
     
+    if (!updateSuccess) {
+      throw new Error('Failed to update complaint with processed data after multiple attempts.');
+    }
+    
     // Phase 4: Civic Issue Grouping & Routing
     try {
       const newComplaintObj = {
@@ -195,7 +201,8 @@ const worker = new Worker('ComplaintProcessing', async job => {
       console.log(`[Worker] Complaint ${complaintData.id} Civic Issue grouping complete.`);
       
       // Finally mark as PROCESSED after all orchestration completes successfully
-      await supabase.from('complaints').update({ processing_status: 'PROCESSED' }).eq('id', complaintData.id);
+      const { error: processedErr } = await supabase.from('complaints').update({ processing_status: 'PROCESSED' }).eq('id', complaintData.id);
+      if (processedErr) throw new Error(`Failed to mark PROCESSED: ${processedErr.message}`);
       
     } catch (grpErr) {
       console.error('[Worker] Phase 4 Civic Issue Grouping failed:', grpErr.message);

@@ -234,7 +234,7 @@ async function applyDependencyRules(civicIssueId) {
     rules = JSON.parse(fs.readFileSync(RULES_PATH, 'utf8'));
   } catch (err) {
     console.error('Failed to load rules for dependencies:', err);
-    return;
+    throw new Error(`Failed to load rules for dependencies: ${err.message}`);
   }
   const dependencyRules = rules.dependencyRules || [];
   
@@ -245,7 +245,10 @@ async function applyDependencyRules(civicIssueId) {
     .select('id, template_id, civic_issue_id')
     .eq('civic_issue_id', civicIssueId);
     
-  if (error || !tasks || tasks.length === 0) return;
+  if (error) {
+    throw new Error(`Failed to fetch tasks for dependency generation: ${error.message}`);
+  }
+  if (!tasks || tasks.length === 0) return;
 
   const templateToId = {};
   for (const task of tasks) {
@@ -270,7 +273,10 @@ async function applyDependencyRules(civicIssueId) {
 
   if (inserts.length > 0) {
     // Use upsert to prevent duplicates
-    await supabase.from('task_dependencies').upsert(inserts, { onConflict: 'task_id, depends_on_task_id' });
+    const { error: depInsertErr } = await supabase.from('task_dependencies').upsert(inserts, { onConflict: 'task_id, depends_on_task_id' });
+    if (depInsertErr) {
+      throw new Error(`Failed to upsert task dependencies: ${depInsertErr.message}`);
+    }
   }
 }
 

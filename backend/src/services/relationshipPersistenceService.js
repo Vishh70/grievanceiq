@@ -43,14 +43,14 @@ class RelationshipPersistenceService {
 
       if (error) {
         console.error(`[RelationshipPersistence] Failed to persist ${relationshipType} edge between ${sourceId} and ${targetId}:`, error.message);
-        return null;
+        throw new Error(`Failed to persist relationship: ${error.message}`);
       }
 
       console.log(`[RelationshipPersistence] Persisted ${relationshipType} edge between ${sourceId} and ${targetId}`);
       return data;
     } catch (err) {
       console.error(`[RelationshipPersistence] Exception persisting edge:`, err.message);
-      return null;
+      throw err;
     }
   }
 

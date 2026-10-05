@@ -55,13 +55,13 @@ jobs:
       run: |
         cd ml
         python inference/grievanceiq_inference.py &
-        timeout 30 bash -c 'until curl -s http://localhost:5001/health | grep "\"status\": \"ok\""; do sleep 2; done'
+        timeout 30 bash -c 'until curl -s http://localhost:5001/health | jq -e ".status == \"ok\"" > /dev/null; do sleep 2; done'
         curl -X POST http://localhost:5001/predict \
           -H "Content-Type: application/json" \
-          -d '{"embedding": [0.0]'$(for i in {1..383}; do echo -n ",0.0"; done)'}' | grep "labels"
+          -d '{"embedding": [0.0]'$(for i in {1..383}; do echo -n ",0.0"; done)'}' | jq -e ".labels" > /dev/null
         curl -X POST http://localhost:5001/predict-relationship \
           -H "Content-Type: application/json" \
-          -d '{"features": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}' | grep "relationship"
+          -d '{"features": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}' | jq -e ".relationship" > /dev/null
         cd ..
         npm test
       env:

@@ -76,16 +76,8 @@ async function isMLServiceAvailable() {
  * }>}
  */
 async function predictIssueLabels(embedding, text = '') {
-  const fallback = {
-    labels: [],
-    issueTypes: [],
-    probabilities: {},
-    departments: [],
-    serviceAvailable: false,
-  };
-
   if (!embedding || embedding.length !== 384) {
-    return fallback;
+    throw new Error('Invalid or missing embedding. Expected 384-dimensional array.');
   }
 
   try {

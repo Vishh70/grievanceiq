@@ -83,14 +83,8 @@ async function predictRelationshipCorrected(complaintA, complaintB) {
       features: featureSummary,
     };
   } catch (err) {
-    console.warn(`[RELATIONSHIP MODEL] Python service unavailable (${err.message}).`);
-    return {
-      relationship: 'UNKNOWN',
-      confidence: 0.0,
-      probabilities: {},
-      features: featureSummary,
-      error: 'Relationship model service unavailable'
-    };
+    console.error(`[RELATIONSHIP MODEL] Python service unavailable (${err.message}).`);
+    throw new Error(`Relationship model service unavailable: ${err.message}`);
   }
 }
 
