@@ -50,14 +50,14 @@ describe('Phase 3: Relationship Classification', () => {
   describe('oneHotCategory', () => {
     it('encodes known categories correctly', () => {
       const idx = CATEGORIES.indexOf('Roads');
-      const vec = multiHotCategory('Roads');
+      const vec = multiHotCategory(['Roads']);
       expect(vec[idx]).toBe(1);
       expect(vec.reduce((a, b) => a + b, 0)).toBe(1); // Only one 1
     });
 
     it('falls back to Other for unknown categories', () => {
       const idxOther = CATEGORIES.indexOf('Other');
-      const vec = multiHotCategory('Unknown Random Category');
+      const vec = multiHotCategory(['Unknown Random Category']);
       expect(vec[idxOther]).toBe(1);
     });
   });
