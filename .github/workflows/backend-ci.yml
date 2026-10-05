@@ -39,32 +39,24 @@ jobs:
       working-directory: ./backend/ml
       run: pip install -r requirements.txt
 
-    - name: Start Flask ML service
-      working-directory: ./backend/ml
-      run: python inference/grievanceiq_inference.py &
-      env:
-        FLASK_APP: inference/grievanceiq_inference.py
-        PORT: 5001
-
-    - name: Wait for ML service to be healthy
+    - name: Run ML service and tests
+      working-directory: ./backend
       run: |
+        cd ml
+        python inference/grievanceiq_inference.py &
+        
         timeout 30 bash -c 'until curl -s http://localhost:5001/health | grep "\"status\": \"ok\""; do sleep 2; done'
         
-    - name: Test /predict contract
-      run: |
         curl -X POST http://localhost:5001/predict \
           -H "Content-Type: application/json" \
-          -d '{"embedding": [0.0]'$(for i in {1..383}; do echo -n ",0.0"; done)'}' | grep "issue_types"
-
-    - name: Test /predict-relationship contract
-      run: |
+          -d '{"embedding": [0.0]'$(for i in {1..383}; do echo -n ",0.0"; done)'}' | grep "labels"
+          
         curl -X POST http://localhost:5001/predict-relationship \
           -H "Content-Type: application/json" \
           -d '{"features": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}' | grep "relationship"
-
-    - name: Run tests
-      working-directory: ./backend
-      run: npm test
+          
+        cd ..
+        npm test
       env:
         NODE_OPTIONS: --experimental-vm-modules
         NODE_ENV: test
