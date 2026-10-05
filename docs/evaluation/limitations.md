@@ -9,7 +9,7 @@ This document objectively outlines the architectural, dataset, and implementatio
 
 ## 2. Testing and Evaluation
 - **Synthetic Evaluation Data**: All E2E validations rely on synthetic, idealized scenarios (e.g., "Water pipe burst"). Real civic data is noisier and more ambiguous.
-- **CI-Certified vs. Production-Validated**: While the system is "CI-certified" (the automated backend test suite passes all 101 tests within GitHub Actions infrastructure), it has not been stress-tested on live municipal production workloads. The CI certification proves algorithmic correctness in the prototype environment, not real-world deployment readiness, nor does it guarantee production-level security certification due to unresolved transitive dependencies.
+- **CI-Verified vs. Production-Validated**: While the system is verified by GitHub Actions (the automated backend test suite passes all 101 tests and integration checks within GitHub Actions infrastructure), it has not been stress-tested on live municipal production workloads. Passing CI verifies the configured automated test suite and integration checks, but does not establish production security or municipal deployment readiness.
 
 ## 3. Workflow and Architecture
 - **Equal Task Weighting in Progress**: The Civic Issue progress calculation treats all tasks equally (e.g., "Inspect leakage" is mathematically equal to "Rebuild entire road segment"). True progress tracking would require effort/time estimations per task.

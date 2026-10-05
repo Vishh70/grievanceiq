@@ -54,7 +54,7 @@
 - **Complaint Multi-Label Classifier**: Generates 9 distinct issue flags from the citizen's complaint using trained Logistic Regression models.
 - **Deterministic Department Routing**: Uses aggregated supervised ML issue labels -> deterministic routing_rules.json -> department mapping -> workstreams/tasks.
 ### 2. Graph Algorithms
-- **Relationship Graph & Connected Components**: Uses an undirected graph traversal to link independent citizen complaints into a unified `Civic Issue` if they share 'Duplicate', 'Similar', or 'Related' edges.
+- **Relationship Graph & Connected Components**: Uses an undirected graph traversal to link independent citizen complaints into a unified `Civic Issue` if they share 'Duplicate' or 'Related' edges (note that 'Similar' relationships do not create automatic grouping edges).
 - **Dependency Graph**: A Directed Acyclic Graph (DAG) constructed from operational rules (e.g., Water Department must finish before Road Department).
 - **Cycle Detection**: Integrated into Kahn's topological sort — when the sorted node count is smaller than the total task count, the remaining nodes with non-zero in-degree are reported as the cycle set, preventing circular dependencies in the operational workflow.
 - **Topological Sort**: Kahn's Algorithm is used to flatten the DAG into parallel, executable stages.

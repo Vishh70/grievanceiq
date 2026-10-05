@@ -1,6 +1,14 @@
 {
   "version": "2.0.0-fast",
   "phase": 3,
+  "trainingDate": "2026-10-01T16:27:55.972Z",
+  "modelArtifact": "relationship_corrected_rf_10tree.joblib",
+  "splitMethod": "canonical_issue_pair_group",
+  "leakageControls": {
+    "same_issue_used": false,
+    "relationship_label_used": false,
+    "pair_group_overlap": false
+  },
   "originalPairs": 16000,
   "usablePairs": 10555,
   "excludedCrossSplit": 5445,

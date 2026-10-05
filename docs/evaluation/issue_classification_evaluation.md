@@ -1,15 +1,18 @@
 # Phase 5: Multi-Label Issue Classification Evaluation
 
 ## Overview
-The issue classifier takes grouped Civic Issues and predicts the required operational issue types. Since a single Civic Issue (e.g., pipe burst + flooded road + exposed wires) can require multiple distinct actions, this is a **multi-label classification** task.
+The complaint-level multi-label classifier produces issue flags, which are later aggregated for Civic Issue routing. Since a single Civic Issue (e.g., pipe burst + flooded road + exposed wires) can require multiple distinct actions, predicting these flags is a **multi-label classification** task.
 
 ## Evaluation Dataset
 - **Source**: Synthetic evaluation data (`backend/data/evaluation_cases.json`).
-- **Dataset Size**: 3 multi-complaint Civic Issues.
-- **Approach**: Trained multi-label Logistic Regression models using local embeddings against a predefined set of department routing labels.
+- **Dataset Size**: 
+  - Training: 4196 records
+  - Validation: 904 records
+  - Held-out test: 900 records
+- **Approach**: Trained multi-label Logistic Regression models using local embeddings against a predefined set of issue-type labels/flags.
 
 ## Results
-*Note: These metrics evaluate multi-label performance, which is fundamentally different from single-label accuracy. The results below are strictly derived from a synthetic held-out evaluation dataset and do not represent real-world municipal performance.*
+*Note: These metrics evaluate multi-label performance, which is fundamentally different from single-label accuracy. The reported Exact Match (95.00%) and Micro F1 (98.53%) below are held-out synthetic test metrics specifically from those 900 test records, not real-world municipal performance.*
 
 | Metric | Score |
 |:---|:---|
