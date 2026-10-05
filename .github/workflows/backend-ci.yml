@@ -64,6 +64,7 @@ jobs:
         NODE_ENV: test
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     - name: Run real MiniLM smoke test
       working-directory: ./backend

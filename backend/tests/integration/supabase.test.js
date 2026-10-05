@@ -7,7 +7,8 @@ const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+// Use SUPABASE_SERVICE_ROLE_KEY for integration tests as they need to bypass RLS for workflow records
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 
 const hasValidCredentials = supabaseUrl && supabaseKey && !supabaseUrl.includes('placeholder');
 
