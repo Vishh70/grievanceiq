@@ -38,8 +38,24 @@
 <img src="https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini" />
 <img src="https://img.shields.io/badge/Flask-Inference-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask" />
 
-<br/>
-<br/>
+<br/><br/>
+
+<!-- OPEN SOURCE BADGES -->
+<a href="https://github.com/Vishh70/grievanceiq/stargazers">
+  <img src="https://img.shields.io/github/stars/Vishh70/grievanceiq?style=social" alt="Stars" />
+</a>
+<a href="https://github.com/Vishh70/grievanceiq/network/members">
+  <img src="https://img.shields.io/github/forks/Vishh70/grievanceiq?style=social" alt="Forks" />
+</a>
+<a href="https://github.com/Vishh70/grievanceiq/releases">
+  <img src="https://img.shields.io/github/v/release/Vishh70/grievanceiq?style=flat-square&color=blue" alt="Release" />
+</a>
+<a href="https://github.com/Vishh70/grievanceiq/blob/main/LICENSE">
+  <img src="https://img.shields.io/github/license/Vishh70/grievanceiq?style=flat-square&color=blue" alt="License" />
+</a>
+
+<br/><br/>
+
 
 <!-- HIGHLIGHTS / JUMP LINKS -->
 <table>
