@@ -11,14 +11,13 @@
                  │ AI / ML LAYER   │
                  │                 │
                  │ Embedding       │
+                 │ Multi-Label     │
+                 │ Classification  │
                  │ Duplicate       │
                  │ Relationship    │
-                 │ Classification  │
                  └────────┬────────┘
                           ↓
                   CIVIC ISSUE GROUP
-                          ↓
-                 ISSUE TYPE LABELS
                           ↓
                  DEPARTMENT ROUTING
                           ↓
