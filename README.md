@@ -3,11 +3,14 @@
 GrievanceIQ is an end-to-end civic intelligence and operational routing platform. It transforms unstructured citizen complaints into structured, dependency-aware workflows for municipal departments using a hybrid of AI and deterministic graph algorithms.
 
 ## What GrievanceIQ Does
-1. **Intelligent Intake**: Accepts citizen complaints and generates local semantic embeddings.
-2. **Deduplication & Clustering**: Uses similarity, location, and time to detect duplicates and uses graph connected-components to cluster related issues into a unified `Civic Issue`.
-3. **Multi-Label Routing**: Evaluates complex issues (e.g., "pipe burst caused road flood") and assigns them to multiple required departments simultaneously.
-4. **Dependency-Aware Execution**: Converts assigned departmental workstreams into a Directed Acyclic Graph (DAG) of executable tasks.
-5. **Execution Tracking**: Provides a strict state machine to track resolution progress without allowing operators to skip required prerequisites.
+1. **Intelligent Intake**: Accepts citizen complaints, persists them, and generates local semantic embeddings via MiniLM.
+2. **Issue Classification**: Uses a trained multi-label issue classifier (Logistic Regression) to identify categorical issues.
+3. **Deduplication & Clustering**: Uses duplicate detection, the corrected Python Random Forest relationship classifier, and relationship persistence to identify linkages.
+4. **Knowledge Graph Enrichment**: Enriches the linkages using a domain-specific Knowledge Graph.
+5. **Civic Issue Aggregation**: Uses a complaint relationship graph and Connected Components to aggregate relationships into a unified `Civic Issue` containing canonical issue types. A deterministic Civic Issue merge policy ensures consistent state merging.
+6. **Multi-Label Routing**: Deterministically maps canonical issue types to specific departments and generates department-specific workstreams and tasks.
+7. **Dependency-Aware Execution**: Uses a dependency DAG and Kahn's topological sort to determine executable sequences.
+8. **Execution Tracking**: Provides strict transactional execution via the full processing lifecycle (PROCESSING -> PROCESSED/FAILED).
 
 ## Architecture & Technology Stack
 - **Frontend**: React (Vite), Recharts, Leaflet
@@ -103,9 +106,13 @@ cd backend
 npm run demo:reset
 ```
 
-## Known Limitations
+## Final Architecture Pipeline
+Citizen -> React -> Node/Express -> complaint persistence -> MiniLM -> multi-label issue classifier -> duplicate detection -> Python Random Forest relationship classifier -> relationship persistence -> Knowledge Graph enrichment -> complaint relationship graph -> Connected Components -> Civic Issue -> canonical issue types -> deterministic departments -> workstreams -> tasks -> dependency DAG -> Kahn topological sort -> transactional execution
+
+## Known Limitations & Lifecycle
 Please review `docs/evaluation/limitations.md` for a comprehensive list of architectural and prototype boundaries. Most notably:
-- The AI models run locally and are evaluated on synthetic/prototype datasets.
-- The system is "CI-certified" (94 tests passed, 0 skipped; CI workflow succeeded) but is not validated on real-world municipal production scale workloads, nor is it production-security-certified. The 0.9330 accuracy and 0.8999 macro F1 are synthetic held-out evaluation results, not real-world generalization proofs.
-- Progress metrics treat all tasks equally (no effort-based weighting).
-- There is no live physical workforce dispatching or external municipal legacy system integration.
+- **Synthetic Dataset Limitation**: The AI models run locally and are evaluated on synthetic/prototype datasets. The corrected Random Forest relationship model was trained on 8,818 training pairs, validated on 901 pairs, and evaluated on 836 held-out synthetic test pairs, achieving 93.30% test accuracy and 89.99% macro F1. These are synthetic held-out evaluation results, not real-world generalization proofs.
+- **Merge & Persistence Operations**: The system now utilizes relationship persistence and a deterministic Civic Issue merge policy for grouping connected issues, protecting data integrity.
+- **Processing Lifecycle**: Workflows proceed strictly through the tracked `PROCESSING` -> `PROCESSED` or `FAILED` lifecycle via transactional DAG updates. 
+- **Operational Boundaries**: There is no live municipality integration, no autonomous field-agent dispatch, and no production-scale municipal deployment validation.
+- **Metric Limitations**: Progress metrics treat all tasks equally (no effort-based weighting).
