@@ -4,7 +4,7 @@ This document objectively outlines the architectural, dataset, and implementatio
 
 ## 1. AI and Machine Learning Limitations
 - **Synthetic Relationship Dataset**: The active relationship classifier (corrected Python Flask model) was evaluated against a synthetic held-out dataset of 836 pairs rather than a large corpus of real municipal data. Its performance in understanding highly colloquial or ungrammatical citizen reports in a live environment is unproven.
-- **Issue Classification Fallback**: The mapping of complaints to official department categories relies on 9 supervised Logistic Regression models. If the ML service is unavailable, the pipeline strictly fails to ensure routing safety.
+- **ML Availability vs. Label Fallback**: The mapping of complaints to official department categories relies on 9 supervised Logistic Regression models. These create two distinct operational paths: (1) If the ML service is entirely unavailable, the processing pipeline strictly fails. (2) If the ML service is available but produces zero positive issue labels for a complaint, routing falls back to a deterministic mapping of the user-provided primary category.
 - **Prototype Duplicate Thresholds**: The combination of weights for text similarity, Haversine location distance, and the 30-day temporal cutoff are experimental. They have not been scientifically tuned using historical duplicate data.
 
 ## 2. Testing and Evaluation

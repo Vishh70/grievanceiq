@@ -20,7 +20,6 @@ The complaint-level multi-label classifier produces issue flags, which are later
 | **Micro Precision** | 0.9786 (97.86%) |
 | **Micro Recall** | 0.9921 (99.21%) |
 | **Micro F1** | 0.9853 (98.53%) |
-| **Single-label fallback accuracy** | (Varies by Gemini triage performance) |
 
 ## Limitations
 1. **Colloquial Text Vulnerability**: The model relies on trained semantic thresholds. It may struggle if the citizen uses unconventional vocabulary that doesn't embed closely to the training distribution.
