@@ -74,7 +74,7 @@ except Exception as e:
 # In a true production environment, this service should be placed within a private network (VPC)
 # or require a secure API key / mutual TLS to prevent unauthorized external access.
 app = Flask(__name__)
-CORS(app)   # Allow Node.js backend on a different port to call this
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:5000", "https://grievanceiq.onrender.com", "https://grievanceiq-api.onrender.com"]}})
 
 @app.route('/health', methods=['GET'])
 def health():
