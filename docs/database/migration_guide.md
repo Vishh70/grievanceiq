@@ -38,5 +38,16 @@ Execute the following files found in `docs/database/` in the exact order listed 
 8. **`phase10_ml_multilabel.sql`**
    - **Purpose**: Adds columns `ml_labels`, `ml_probabilities`, and `ml_departments` to the `complaints` table to persist Python model outputs.
 
+9. **`phase11_google_auth.sql`**
+   - **Purpose**: Adds Google OAuth authentication support.
+   - **Changes**: Adds `google_id`, `avatar_url`, and related columns to the users table.
+
+10. **`phase12_relationships.sql`**
+    - **Purpose**: Creates the `complaint_relationships` table for persistent relationship storage and adds `merged_into_id` to `civic_issues` for merge traceability.
+    - **Table**: `complaint_relationships` (id, source_complaint_id, target_complaint_id, relationship_type, confidence, reason, created_at).
+    - **Constraints**: Canonical edge ordering (`source < target`), unique relationship pair, foreign keys to `complaints`.
+    - **Indexes**: source_complaint_id, target_complaint_id, relationship_type.
+    - **Changes**: Adds `merged_into_id` column to `civic_issues`.
+
 ## Verification
-You can verify the schema by running a simple test insert or checking the Table Editor in the Supabase dashboard to confirm all 7 tables (`complaints`, `civic_issues`, `routing_results`, `workstreams`, `tasks`, `task_dependencies`, `task_status_history`) exist and contain the correct foreign key relationships.
+You can verify the schema by running a simple test insert or checking the Table Editor in the Supabase dashboard to confirm all 9 tables (`complaints`, `civic_issues`, `complaint_relationships`, `routing_results`, `workstreams`, `tasks`, `task_dependencies`, `task_status_history`) exist and contain the correct foreign key relationships. Verify `civic_issues.merged_into_id` exists for merge traceability.
