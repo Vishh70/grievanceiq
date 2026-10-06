@@ -5,7 +5,8 @@ const crypto = require('crypto');
 const supabase = require('../config/supabase');
 const { OAuth2Client } = require('google-auth-library');
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
+const googleClient = new OAuth2Client(clientId);
 
 function signToken(id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -94,7 +95,7 @@ exports.googleLogin = async (req, res) => {
     try {
       const ticket = await googleClient.verifyIdToken({
         idToken: credential,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: clientId,
       });
       payload = ticket.getPayload();
     } catch (err) {
