@@ -109,16 +109,24 @@ exports.googleLogin = async (req, res) => {
     }
 
     // Check if user already exists
+    console.log('[Google Auth] Looking up existing user by email');
     const { data: existingUser, error: findError } = await supabase
       .from('users')
       .select('*')
       .eq('email', email.toLowerCase())
       .single();
 
+    if (findError && findError.code !== 'PGRST116') {
+      console.error('[Google Auth] Database error during user lookup:', findError);
+      throw new Error('Database error during user lookup');
+    }
+
     if (existingUser) {
+      console.log('[Google Auth] Existing user found. Checking for Google linking');
       // User exists (either via previous Google login or Email/Password login)
       // Explicitly link the Google identity if it's not already linked
       if (!existingUser.google_id) {
+        console.log('[Google Auth] Linking Google identity to existing account');
         const { error: updateError } = await supabase
           .from('users')
           .update({ 
@@ -130,7 +138,8 @@ exports.googleLogin = async (req, res) => {
           .eq('id', existingUser.id);
         
         if (updateError) {
-          throw new Error('Failed to link Google identity to existing account: ' + updateError.message);
+          console.error('[Google Auth] Failed to link Google identity:', updateError);
+          throw new Error('Failed to link Google identity to existing account');
         }
         
         existingUser.google_id = google_id;
@@ -139,10 +148,12 @@ exports.googleLogin = async (req, res) => {
         existingUser.avatar_url = picture || null;
       }
       
+      console.log('[Google Auth] Generating token for existing user');
       const token = signToken(existingUser.id);
       return res.json({ token, user: mapUser(existingUser) });
     }
 
+    console.log('[Google Auth] User does not exist, creating new citizen account');
     // User does not exist, create a new citizen account
     // Generate a random, unusable password hash for safety
     const randomPassword = crypto.randomBytes(32).toString('hex');
@@ -161,14 +172,16 @@ exports.googleLogin = async (req, res) => {
     }]).select().single();
 
     if (createError) {
-      throw createError;
+      console.error('[Google Auth] Failed to create new user:', createError);
+      throw new Error('Database error during user creation');
     }
 
+    console.log('[Google Auth] New user created, generating token');
     const token = signToken(newUser.id);
     res.status(201).json({ token, user: mapUser(newUser) });
   } catch (err) {
-    console.error('Google login error:', err);
-    res.status(500).json({ error: 'Unable to complete Google login. Please try again.' });
+    console.error('Google login error:', err.message || err);
+    res.status(500).json({ error: 'Unable to complete Google login due to a server error. Please try again.' });
   }
 };
 

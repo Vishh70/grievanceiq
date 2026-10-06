@@ -22,15 +22,21 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('giq_token');
       localStorage.removeItem('giq_user');
-      if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login') {
-        window.location.href = '/admin/login';
-      } else {
-        window.location.href = '/login';
+      
+      const isLoginPath = window.location.pathname === '/login' || window.location.pathname === '/admin/login';
+      
+      if (!isLoginPath) {
+        if (window.location.pathname.startsWith('/admin')) {
+          window.location.href = '/admin/login';
+        } else {
+          window.location.href = '/login';
+        }
       }
     }
     
     // Handle Render Cold Start / Timeout / Bad Gateway
-    if (err.code === 'ECONNABORTED' || err.message === 'Network Error' || err.response?.status >= 500) {
+    const isColdStartError = err.response?.status === 502 || err.response?.status === 503 || err.response?.status === 504;
+    if (err.code === 'ECONNABORTED' || err.message === 'Network Error' || isColdStartError) {
       toast.error('The backend server is waking up or unreachable. Please wait 30 seconds and try again.', { id: 'network-error' });
     }
     
