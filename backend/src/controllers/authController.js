@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const supabase = require('../config/supabase');
 const { OAuth2Client } = require('google-auth-library');
 
-const clientId = (process.env.GOOGLE_CLIENT_ID || '').replace(/\s+/g, '');
+const clientId = (process.env.GOOGLE_CLIENT_ID || '').replace(/[\s"]/g, '');
 const googleClient = new OAuth2Client(clientId);
 
 function signToken(id) {
