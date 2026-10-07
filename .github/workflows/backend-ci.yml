@@ -64,7 +64,11 @@ jobs:
         NODE_ENV: test
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        ML_SERVICE_SECRET: ${{ secrets.ML_SERVICE_SECRET }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        REDIS_URL: redis://127.0.0.1:6379
 
     - name: Run real MiniLM smoke test
       working-directory: ./backend
