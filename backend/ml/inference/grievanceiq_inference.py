@@ -76,6 +76,20 @@ except Exception as e:
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:5000", "https://grievanceiq.onrender.com", "https://grievanceiq-api.onrender.com"]}})
 
+# ── Authentication ─────────────────────────────────────────────────────────────
+ML_SERVICE_SECRET = os.environ.get('ML_SERVICE_SECRET')
+
+def check_auth():
+    if not ML_SERVICE_SECRET:
+        return None
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'error': 'Unauthorized'}), 401
+    token = auth_header.split(' ')[1]
+    if token != ML_SERVICE_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    return None
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({
@@ -89,6 +103,10 @@ def health():
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    auth_err = check_auth()
+    if auth_err:
+        return auth_err
+        
     try:
         body = request.get_json(force=True)
 
@@ -133,6 +151,10 @@ def predict():
 
 @app.route('/predict/batch', methods=['POST'])
 def predict_batch():
+    auth_err = check_auth()
+    if auth_err:
+        return auth_err
+        
     try:
         body = request.get_json(force=True)
 
@@ -183,6 +205,10 @@ RELATIONSHIP_LABELS = {
 
 @app.route('/predict-relationship', methods=['POST'])
 def predict_relationship():
+    auth_err = check_auth()
+    if auth_err:
+        return auth_err
+
     if not relationship_classifier:
         return jsonify({'error': 'Relationship classifier not loaded'}), 503
     try:

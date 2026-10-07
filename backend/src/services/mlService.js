@@ -81,10 +81,15 @@ async function predictIssueLabels(embedding, text = '') {
   }
 
   try {
+    const headers = {};
+    if (process.env.ML_SERVICE_SECRET) {
+      headers['Authorization'] = `Bearer ${process.env.ML_SERVICE_SECRET}`;
+    }
+
     const response = await axios.post(
       `${ML_SERVICE_URL}/predict`,
       { embedding, text },
-      { timeout: ML_SERVICE_TIMEOUT_MS }
+      { timeout: ML_SERVICE_TIMEOUT_MS, headers }
     );
 
     if (response.data.model_loaded !== true) {

@@ -173,14 +173,18 @@ const worker = new Worker('ComplaintProcessing', async job => {
       }
       
       if (badCol) {
+        console.warn(`[Worker] Schema mismatch: Dropping missing column '${badCol}' from update payload.`);
         delete currentPayload[badCol];
         continue;
       }
-      break;
+      
+      // If it's a real database error (connection, constraint, syntax), don't swallow it.
+      console.error(`[Worker] Critical DB Update Error: ${updateErr.message}`);
+      throw new Error(`Database update failed: ${updateErr.message}`);
     }
     
     if (!updateSuccess) {
-      throw new Error('Failed to update complaint with processed data after multiple attempts.');
+      throw new Error('Failed to update complaint with processed data after multiple attempts (schema fallback exhausted).');
     }
     
     // Phase 4: Civic Issue Grouping & Routing

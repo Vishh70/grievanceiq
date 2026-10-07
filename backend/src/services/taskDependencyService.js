@@ -272,10 +272,39 @@ async function applyDependencyRules(civicIssueId) {
   }
 
   if (inserts.length > 0) {
-    // Use upsert to prevent duplicates
-    const { error: depInsertErr } = await supabase.from('task_dependencies').upsert(inserts, { onConflict: 'task_id, depends_on_task_id' });
+    // 1. Snapshot existing dependencies before insert so we know what to revert if necessary
+    const { data: existingDeps } = await supabase
+      .from('task_dependencies')
+      .select('*')
+      .in('task_id', tasks.map(t => t.id));
+    
+    // 2. Use upsert to prevent duplicates
+    const { data: inserted, error: depInsertErr } = await supabase
+      .from('task_dependencies')
+      .upsert(inserts, { onConflict: 'task_id, depends_on_task_id' })
+      .select();
+      
     if (depInsertErr) {
       throw new Error(`Failed to upsert task dependencies: ${depInsertErr.message}`);
+    }
+
+    // 3. Validate DAG
+    const plan = await getExecutionPlan(civicIssueId);
+    if (!plan.validDag) {
+      // 4. Rollback: delete the newly inserted dependencies
+      if (inserted && inserted.length > 0) {
+        const insertedIds = inserted.map(d => d.id);
+        // Exclude the ones that were already there before this operation
+        const existingIds = existingDeps ? existingDeps.map(d => d.id) : [];
+        const toDeleteIds = insertedIds.filter(id => !existingIds.includes(id));
+        
+        if (toDeleteIds.length > 0) {
+          await supabase.from('task_dependencies').delete().in('id', toDeleteIds);
+        }
+      }
+      const cycleMsg = `Automatic dependency generation created a cycle: ${plan.cycle.join(' -> ')}. Rolled back invalid dependencies.`;
+      console.error(`[DependencyRules] ${cycleMsg}`);
+      throw new Error(cycleMsg);
     }
   }
 }

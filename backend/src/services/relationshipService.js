@@ -73,7 +73,12 @@ async function predictRelationshipCorrected(complaintA, complaintB) {
   });
 
   try {
-    const response = await axios.post(`${ML_SERVICE_URL}/predict-relationship`, { features }, { timeout: 3000 });
+    const headers = {};
+    if (process.env.ML_SERVICE_SECRET) {
+      headers['Authorization'] = `Bearer ${process.env.ML_SERVICE_SECRET}`;
+    }
+
+    const response = await axios.post(`${ML_SERVICE_URL}/predict-relationship`, { features }, { timeout: 3000, headers });
     console.log('[RELATIONSHIP MODEL] corrected-python');
 
     return {
