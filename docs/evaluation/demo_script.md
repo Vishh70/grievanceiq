@@ -38,9 +38,9 @@ Open the GrievanceIQ application at `http://localhost:5173`.
 - **Action**: Scroll to the "Execution Plan" view.
 - **Talking Point**: Highlight that tasks are not just a flat list. The system built a Directed Acyclic Graph (DAG) and used Kahn's Topological Sort to group them into stages.
 
-### 8. Attempt Blocked Task
+### 8. Attempt Locked Task
 - **Action**: Attempt to click "Start Task" on the Road Department's resurfacing task.
-- **Talking Point**: The system actively prevents this. It shows `🔒 Blocked (Waiting for: Repair Water Pipe)`. Explain dependency-aware workflows.
+- **Talking Point**: The system actively prevents this. It shows `🔒 Locked (Waiting for: Repair Water Pipe)`. Explain dependency-aware workflows.
 
 ### 9. Complete Dependency
 - **Action**: Click "Start Task" then "Complete" on the Water Department's pipe repair task.
@@ -48,7 +48,7 @@ Open the GrievanceIQ application at `http://localhost:5173`.
 
 ### 10. Show Task Becomes Ready
 - **Action**: Look at the Road Department task again.
-- **Talking Point**: The status dynamically changed to `▶ Ready`. The human operator is now unblocked.
+- **Talking Point**: The status dynamically changed to `▶ Ready`. The human operator is now unlocked.
 
 ### 11. Complete Final Task
 - **Action**: Complete the Electrical and Road tasks.

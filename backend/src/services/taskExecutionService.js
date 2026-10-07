@@ -82,7 +82,7 @@ async function updateTaskStatus(taskId, newStatus, userEmail, reason) {
     const plan = await getExecutionPlan(task.civic_issue_id);
     const readiness = plan.taskReadiness[taskId];
     if (readiness && !readiness.ready) {
-      throw new Error(`Cannot start task. Blocked by: ${readiness.blockedBy.join(', ')}`);
+      throw new Error(`Cannot start task. Locked by: ${readiness.lockedBy.join(', ')}`);
     }
   }
 

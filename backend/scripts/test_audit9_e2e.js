@@ -44,7 +44,7 @@ async function runAudit9() {
     embedding = await generateEmbedding(complaintText);
     console.log(`   Embedding generated: length = ${embedding.length}, isArray = ${Array.isArray(embedding)}`);
   } catch (err) {
-    console.warn('   (Native Windows ONNX blocked, loading realistic 384-D vector aligned with the 3 issues)');
+    console.warn('   (Native Windows ONNX locked, loading realistic 384-D vector aligned with the 3 issues)');
     const vectorPath = path.join(__dirname, '../ml/models/test_3issue_vector.json');
     embedding = JSON.parse(fs.readFileSync(vectorPath, 'utf8'));
   }

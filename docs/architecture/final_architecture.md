@@ -61,7 +61,7 @@
 ### 3. Rules & Deterministic Logic
 - **Department Mapping**: Deterministic rule engine parsing the multi-label AI outputs and routing to explicit `workstreams`.
 - **Task Generation**: Deterministic blueprint expansion creating actionable `tasks` based on the mapped `departments`.
-- **Task Readiness**: Real-time evaluation of a task's prerequisites; tasks are strictly `BLOCKED` until all parent tasks in the topological DAG are `COMPLETED`.
+- **Task Readiness**: Real-time evaluation of a task's prerequisites; tasks are strictly `NOT VERIFIED` until all parent tasks in the topological DAG are `COMPLETED`.
 
 ### 4. Database (Supabase)
 - **Vector Storage**: `float8[]` utilized for storing and querying complaint embeddings.

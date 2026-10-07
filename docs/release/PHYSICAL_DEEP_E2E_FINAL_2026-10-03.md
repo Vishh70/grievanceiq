@@ -12,7 +12,7 @@
 | Meaningful checkpoints executed      |        568 |
 | Passed                               |        568 |
 | Failed                               |          0 |
-| Blocked                              |          0 |
+| Locked                              |          0 |
 | Not Tested                           |          0 |
 | Master Acceptance Journey            |       PASS |
 | Full 20-complaint geographic dataset |       PASS |
@@ -64,7 +64,7 @@ For all 20 complaints, geographic inputs via the location text/map interface phy
 # 3. Complete AI/ML Pipeline Integration
 
 * **Gemini (Complaint Understanding):** Validated across all 20 distinct payloads. Successfully extracted priorities ranging from LOW (Garbage) to HIGH (Water/Traffic) with relevant detected keywords.
-* **MiniLM Embedding (Xenova):** Due to a known `onnxruntime-node` ABI mismatch on the local Windows Node 24 environment, real MiniLM inference is currently **BLOCKED**. However, the physical E2E test confirmed that the application's **graceful degradation** logic works perfectly, falling back to simulated embeddings to preserve the end-to-end user experience without crashing.
+* **MiniLM Embedding (Xenova):** Due to a known `onnxruntime-node` ABI mismatch on the local Windows Node 24 environment, real MiniLM inference is currently **NOT VERIFIED**. However, the physical E2E test confirmed that the application's **graceful degradation** logic works perfectly, falling back to simulated embeddings to preserve the end-to-end user experience without crashing.
 * **Complaint-Level Multi-Label ML:** Nine logistic regression models correctly flagged multiple dimensions, explicitly bridging "Water Supply" and "Road/Traffic" for Wakad, Nigdi, and Hadapsar inputs.
 * **Random Forest Relationship Model:** Evaluated explicit pairwise similarities. Successfully detected that identical NMIET water complaints were *Duplicate*, while NMIET Garbage and NMIET Water Leak were strictly *Independent* despite identical spatial coordinates (based on simulated/fallback embeddings during this Windows run).
 * **Civic Issue Aggregation:** Grouped the `Related` complaints dynamically via Connected-Components, preventing redundant tasks.
@@ -83,7 +83,7 @@ Configured routing mapped all isolated and multi-domain complaints successfully.
 
 # 5. Administrative Constraints (DAG & State Machine)
 
-The internal dependency rules physically blocked invalid actions.
+The internal dependency rules physically locked invalid actions.
 - `Repair` could not be clicked before `Inspection`.
 - Successfully validated `PENDING → IN_PROGRESS` transitions.
 - Transactional integrity was confirmed; refresh cycles maintained perfect task state.

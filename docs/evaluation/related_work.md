@@ -39,7 +39,7 @@ The system first extracts semantic, spatial, temporal, and category-based featur
 
 For each Civic Issue, GrievanceIQ performs multi-label issue classification and maps the resulting issue types to **all applicable municipal departments** rather than restricting the issue to a single department. Departmental workstreams are then generated from deterministic task templates.
 
-The resulting workstreams are converted into a dependency-aware **Directed Acyclic Graph (DAG)**. Kahn's topological sorting produces executable stages, allowing independent tasks to proceed in parallel while prerequisite-dependent tasks remain blocked until their dependencies are completed. The system validates the graph for cycles via Kahn's residual-node detection: when the sorted node count is smaller than the total task count, the remaining nodes are reported as the cycle set.
+The resulting workstreams are converted into a dependency-aware **Directed Acyclic Graph (DAG)**. Kahn's topological sorting produces executable stages, allowing independent tasks to proceed in parallel while prerequisite-dependent tasks remain locked until their dependencies are completed. The system validates the graph for cycles via Kahn's residual-node detection: when the sorted node count is smaller than the total task count, the remaining nodes are reported as the cycle set.
 
 Finally, task execution is propagated upward to workstream and Civic Issue status. A Civic Issue is not considered complete merely because one department has finished its task; its overall status reflects the state of **all** required coordinated tasks.
 

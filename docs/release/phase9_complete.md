@@ -7,7 +7,7 @@ Addressed internal test harness syntactical bugs preventing end-to-end trace val
 Created `backend/data/demo_scenario.json` and a fully reproducible `npm run demo` / `npm run demo:reset` injection script. The script mimics a 3-complaint cascade event (Water Leakage -> Flooded Road -> Electrical Hazard) passing through AI and DAG formulation.
 
 ## 3. Frontend Improvements
-The Admin Dashboard UI inherently handles complex DAG block states (`🔒 Blocked`, `▶ Ready`, `✓ Completed`), progress visualization, and issue hierarchies established during Phase 7. The execution UI forces operators to obey dependency rules dynamically via backend API constraints.
+The Admin Dashboard UI inherently handles complex DAG block states (`🔒 Locked`, `▶ Ready`, `✓ Completed`), progress visualization, and issue hierarchies established during Phase 7. The execution UI forces operators to obey dependency rules dynamically via backend API constraints.
 
 ## 4. Backend Improvements
 Implemented final startup health checks and configuration validation layers. Re-audited `routing_rules.json` to guarantee cyclic safety. Simplified initialization commands.

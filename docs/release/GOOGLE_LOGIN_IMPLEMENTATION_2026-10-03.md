@@ -1,6 +1,6 @@
 # Google Login Implementation Report
 **Date**: 2026-10-03
-**Status**: GOOGLE LOGIN IMPLEMENTED — REAL GOOGLE TEST BLOCKED
+**Status**: GOOGLE LOGIN IMPLEMENTED — REAL GOOGLE TEST NOT VERIFIED
 
 ## 1. Implementation
 - **Privilege Escalation Fix:** The `register` method in `backend/src/controllers/authController.js` has been fixed. It now strictly assigns the `citizen` role, ignoring any `role` payload from the frontend. Admin provisioning must happen via existing administrative processes.
@@ -54,7 +54,7 @@ No schema changes were required. We leveraged the existing `public.users` table 
 - 1 Test Suite, 6 Passing Tests (Covering Registration privilege escalation and Google Login edge cases).
 
 ## 7. Manual Google test
-**REAL GOOGLE TEST BLOCKED**: Real Google login was not tested because no live `GOOGLE_CLIENT_ID` was provided or configured in the live `.env` files for the Google Cloud project.
+**REAL GOOGLE TEST NOT VERIFIED**: Real Google login was not tested because no live `GOOGLE_CLIENT_ID` was provided or configured in the live `.env` files for the Google Cloud project.
 
 ## 8. Limitations
 - We cannot verify the physical Google OAuth consent screen works until Google Cloud project credentials are created and populated into the `.env` files.

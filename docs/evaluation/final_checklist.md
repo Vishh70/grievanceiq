@@ -16,7 +16,7 @@
 - [x] Dependencies generate correctly
 - [x] Cycle detection works
 - [x] Execution plan works
-- [x] Blocked tasks cannot start
+- [x] Locked tasks cannot start
 - [x] Ready tasks can start
 - [x] Completed tasks unlock downstream work
 - [x] Progress updates correctly

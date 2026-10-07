@@ -53,7 +53,7 @@ The evaluation uses a prototype dataset (`backend/data/evaluation_cases.json`) c
 
 ## 12. Task Execution Validation
 - **Approach**: Finite state machine with readiness checks.
-- **Correctness**: Verified. Blocked tasks return HTTP 409. Transitions are securely audited with timestamps.
+- **Correctness**: Verified. Locked tasks return HTTP 409. Transitions are securely audited with timestamps.
 
 ## 13. End-to-End Validation
 - **Result**: PASS with isolated mocks. The entire 14-step pipeline executed correctly in `endToEnd.test.js` from input array to verified Directed Acyclic Graph structure.

@@ -26,8 +26,8 @@ jest.mock('../src/services/taskDependencyService', () => ({
     return {
       taskReadiness: {
         'T1': { ready: mockTasks[0].status === 'PENDING' },
-        'T2': { ready: mockTasks[1].status === 'PENDING' && mockTasks[0].status === 'COMPLETED', blockedBy: mockTasks[0].status !== 'COMPLETED' ? ['T1'] : [] },
-        'T3': { ready: mockTasks[2].status === 'PENDING' && mockTasks[1].status === 'COMPLETED', blockedBy: mockTasks[1].status !== 'COMPLETED' ? ['T2'] : [] },
+        'T2': { ready: mockTasks[1].status === 'PENDING' && mockTasks[0].status === 'COMPLETED', lockedBy: mockTasks[0].status !== 'COMPLETED' ? ['T1'] : [] },
+        'T3': { ready: mockTasks[2].status === 'PENDING' && mockTasks[1].status === 'COMPLETED', lockedBy: mockTasks[1].status !== 'COMPLETED' ? ['T2'] : [] },
       }
     };
   })
@@ -108,10 +108,10 @@ describe('Phase 7: Task Execution & Progress Tracking', () => {
     mockTasks[2].status = 'PENDING';
   });
 
-  it('Test 2 — Cannot start blocked task', async () => {
+  it('Test 2 — Cannot start locked task', async () => {
     await expect(
       executionService.updateTaskStatus('T2', 'IN_PROGRESS', 'test@user.com')
-    ).rejects.toThrow(/Blocked by/);
+    ).rejects.toThrow(/Locked by/);
   });
 
   it('Test 1 — Start ready task & Test 11 — Timestamp tracking', async () => {

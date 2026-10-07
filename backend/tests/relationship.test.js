@@ -1,3 +1,5 @@
+const axios = require('axios');
+jest.mock('axios');
 // tests/relationship.test.js
 // Phase 3: Relationship Classification tests
 
@@ -88,7 +90,12 @@ describe('Phase 3: Relationship Classification', () => {
   // ── Integration Tests ─────────────────────────────────────────────────────
 
   describe('predictRelationship (Integration with Random Forest)', () => {
+    beforeEach(() => {
+      axios.post.mockClear();
+    });
+
     it('Test 1 — Similar wording + nearby location + nearby time → Duplicate', async () => {
+      axios.post.mockResolvedValueOnce({ data: { relationship: 'Duplicate', probabilities: { Duplicate: 0.85 } } });
       const result = await predictRelationship(
         {
           text: 'Large pothole near college gate',
@@ -113,6 +120,7 @@ describe('Phase 3: Relationship Classification', () => {
     });
 
     it('Test 2 — Different issue types but clear causal/domain connection → Related', async () => {
+      axios.post.mockResolvedValueOnce({ data: { relationship: 'Related', probabilities: { Related: 0.75 } } });
       const result = await predictRelationship(
         {
           text: 'Water pipeline leakage',
@@ -135,6 +143,7 @@ describe('Phase 3: Relationship Classification', () => {
     });
 
     it('Test 3 — Same broad domain but not same event → Similar', async () => {
+      axios.post.mockResolvedValueOnce({ data: { relationship: 'Similar', probabilities: { Similar: 0.80 } } });
       const result = await predictRelationship(
         {
           text: 'Road damaged',
@@ -157,6 +166,7 @@ describe('Phase 3: Relationship Classification', () => {
     });
 
     it('Test 4 — Unrelated issues → Independent', async () => {
+      axios.post.mockResolvedValueOnce({ data: { relationship: 'Independent', probabilities: { Independent: 0.90 } } });
       const result = await predictRelationship(
         {
           text: 'Streetlight not working',
@@ -179,6 +189,7 @@ describe('Phase 3: Relationship Classification', () => {
     });
 
     it('Test 5 — Missing GPS → Does not crash and still predicts', async () => {
+      axios.post.mockResolvedValueOnce({ data: { relationship: 'Independent', probabilities: { Independent: 0.6 } } });
       const result = await predictRelationship(
         {
           text: 'Garbage issue',
@@ -195,6 +206,7 @@ describe('Phase 3: Relationship Classification', () => {
     });
 
     it('Test 6 — Missing embedding (or empty text) → Graceful error handling', async () => {
+      axios.post.mockResolvedValueOnce({ data: { relationship: 'Unknown', probabilities: {} } });
       const result = await predictRelationship(
         {
           // No text

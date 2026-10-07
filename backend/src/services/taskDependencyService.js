@@ -185,15 +185,15 @@ async function getExecutionPlan(civicIssueId) {
   const taskReadiness = {};
   for (const task of tasks) {
     // A task is ready if all its dependencies are COMPLETED
-    const blockedBy = deps.filter(d => d.task_id === task.id).map(d => d.depends_on_task_id);
-    const blockedByIncomplete = blockedBy.filter(depId => {
+    const lockedBy = deps.filter(d => d.task_id === task.id).map(d => d.depends_on_task_id);
+    const lockedByIncomplete = lockedBy.filter(depId => {
       const depTask = tasks.find(t => t.id === depId);
       return depTask && depTask.status !== 'COMPLETED';
     });
 
     taskReadiness[task.id] = {
-      ready: blockedByIncomplete.length === 0 && task.status === 'PENDING',
-      blockedBy: blockedByIncomplete
+      ready: lockedByIncomplete.length === 0 && task.status === 'PENDING',
+      lockedBy: lockedByIncomplete
     };
   }
 

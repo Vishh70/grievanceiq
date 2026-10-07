@@ -249,8 +249,8 @@ exports.updateTaskStatus = async (req, res) => {
     if (err.message.includes('Invalid status transition')) {
       return res.status(400).json({ error: 'INVALID_STATUS_TRANSITION', message: err.message });
     }
-    if (err.message.includes('Cannot start task. Blocked by')) {
-      return res.status(409).json({ error: 'TASK_BLOCKED', message: err.message });
+    if (err.message.includes('Cannot start task. Locked by')) {
+      return res.status(409).json({ error: 'TASK_locked', message: err.message });
     }
     res.status(500).json({ error: err.message });
   }

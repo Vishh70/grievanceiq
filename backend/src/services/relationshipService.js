@@ -39,11 +39,14 @@ const {
 // ── Public API ──────────────────────────────────────────────────────────────
 
 let ML_SERVICE_URL = process.env.ML_SERVICE_URL;
+let ML_SERVICE_STATUS = 'VERIFIED';
 if (!ML_SERVICE_URL) {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('CRITICAL CONFIGURATION ERROR: ML_SERVICE_URL is missing in production environment. Cannot fallback to localhost.');
+    console.warn('ML_SERVICE_URL is not configured for the current runtime');
+    ML_SERVICE_STATUS = 'NOT_VERIFIED';
+  } else {
+    ML_SERVICE_URL = 'http://localhost:5001';
   }
-  ML_SERVICE_URL = 'http://localhost:5001';
 }
 
 /**
@@ -77,6 +80,17 @@ async function predictRelationshipCorrected(complaintA, complaintB) {
   featureNames.forEach((name, i) => {
     featureSummary[name] = Number(features[i].toFixed(4));
   });
+
+  if (ML_SERVICE_STATUS === 'NOT_VERIFIED') {
+    return {
+      relationship: 'Unknown',
+      confidence: 0,
+      probabilities: {},
+      features: featureSummary,
+      status: 'not_verified',
+      message: 'External ML service could not be verified in the current environment.'
+    };
+  }
 
   try {
     const headers = {};

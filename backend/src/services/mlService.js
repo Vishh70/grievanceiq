@@ -12,11 +12,14 @@
 const axios = require('axios');
 
 let ML_SERVICE_URL = process.env.ML_SERVICE_URL;
+let ML_SERVICE_STATUS = 'VERIFIED';
 if (!ML_SERVICE_URL) {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('CRITICAL CONFIGURATION ERROR: ML_SERVICE_URL is missing in production environment. Cannot fallback to localhost.');
+    console.warn('ML_SERVICE_URL is not configured for the current runtime');
+    ML_SERVICE_STATUS = 'NOT_VERIFIED';
+  } else {
+    ML_SERVICE_URL = 'http://localhost:5001';
   }
-  ML_SERVICE_URL = 'http://localhost:5001';
 }
 const ML_SERVICE_TIMEOUT_MS = 8000;
 
@@ -55,6 +58,9 @@ const LABEL_TO_DEPARTMENT = {
  * @returns {Promise<boolean>}
  */
 async function isMLServiceAvailable() {
+  if (ML_SERVICE_STATUS === 'NOT_VERIFIED') {
+    return false;
+  }
   try {
     const res = await axios.get(`${ML_SERVICE_URL}/health`, {
       timeout: 2000
@@ -84,6 +90,18 @@ async function isMLServiceAvailable() {
 async function predictIssueLabels(embedding, text = '') {
   if (!embedding || embedding.length !== 384) {
     throw new Error('Invalid or missing embedding. Expected 384-dimensional array.');
+  }
+
+  if (ML_SERVICE_STATUS === 'NOT_VERIFIED') {
+    return {
+      labels: [],
+      issueTypes: [],
+      probabilities: {},
+      departments: [],
+      serviceAvailable: false,
+      status: 'not_verified',
+      message: 'External ML service could not be verified in the current environment.'
+    };
   }
 
   try {

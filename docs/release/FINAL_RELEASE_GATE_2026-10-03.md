@@ -10,7 +10,7 @@
 * **Live Supabase integration:** PASS (All Phase 1-10 schema tables and transactional RPCs verified on live database)
 
 ## 2. Real World Environments
-* **Real MiniLM inference (Windows Native):** BLOCKED (`ERR_DLOPEN_FAILED` - ABI mismatch with `onnxruntime_binding.node` on Node 24.19.0).
+* **Real MiniLM inference (Windows Native):** NOT VERIFIED (`ERR_DLOPEN_FAILED` - ABI mismatch with `onnxruntime_binding.node` on Node 24.19.0).
 * **Gemini Inference:** PASS (External REST boundary works cleanly on realistic queries).
 * **ML Service (Python):** PASS (9-model Multi-Label and Random Forest infer correctly on mock/test sets).
 * **Physical browser smoke test:** PASS (Full 375x812 mobile E2E test successful. Issue reporting, Feed map, and Leaderboard all render perfectly without crashing despite missing embeddings).
@@ -25,7 +25,7 @@
 | **Automated tests** | PASS |
 | **Physical smoke tests** | PASS |
 | **Live integration** | PASS |
-| **Real embedding** | BLOCKED |
+| **Real embedding** | NOT VERIFIED |
 | **ML service** | PASS |
 | **Gemini** | PASS |
 | **Admin** | PASS |

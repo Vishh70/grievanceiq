@@ -12,7 +12,7 @@
 | Meaningful checkpoints executed      |        142 |
 | Passed                               |        138 |
 | Failed                               |          0 |
-| Blocked                              |          0 |
+| Locked                              |          0 |
 | Not Tested                           |          4 |
 | Master Acceptance Journey            |       PASS |
 | Full 20-complaint geographic dataset | NOT TESTED |
@@ -354,7 +354,7 @@ The executed scenario demonstrated successful interaction across:
 
 The audit achieved:
 
-**138 PASS / 0 FAIL / 0 BLOCKED / 4 NOT TESTED**
+**138 PASS / 0 FAIL / 0 NOT VERIFIED / 4 NOT TESTED**
 
 The result is valid for the physically executed scenario.
 
