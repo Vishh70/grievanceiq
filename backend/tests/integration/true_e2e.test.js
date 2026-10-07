@@ -82,6 +82,8 @@ describe('True E2E Asynchronous Flow', () => {
     await worker.close();
     if (worker.workerConnection) await worker.workerConnection.quit();
     await connection.quit();
+    
+    delete process.env.MOCK_REDIS;
   });
 
   it('Submits complaints via real HTTP API, processes asynchronously via BullMQ, and generates Civic Issues', async () => {
