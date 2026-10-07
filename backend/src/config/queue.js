@@ -4,7 +4,7 @@ require('dotenv').config();
 
 let RedisClass = Redis;
 if (process.env.NODE_ENV === 'test') {
-  RedisClass = require('ioredis-mock');
+  RedisClass = require('../../__mocks__/ioredis');
 }
 
 const connection = new RedisClass(process.env.REDIS_URL || 'redis://localhost:6379', { 
