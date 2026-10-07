@@ -11,7 +11,13 @@
 
 const axios = require('axios');
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+let ML_SERVICE_URL = process.env.ML_SERVICE_URL;
+if (!ML_SERVICE_URL) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('CRITICAL CONFIGURATION ERROR: ML_SERVICE_URL is missing in production environment. Cannot fallback to localhost.');
+  }
+  ML_SERVICE_URL = 'http://localhost:5001';
+}
 const ML_SERVICE_TIMEOUT_MS = 8000;
 
 // ── Label → Canonical Mappings ───────────────────────────────────────────────

@@ -38,7 +38,13 @@ const {
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+let ML_SERVICE_URL = process.env.ML_SERVICE_URL;
+if (!ML_SERVICE_URL) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('CRITICAL CONFIGURATION ERROR: ML_SERVICE_URL is missing in production environment. Cannot fallback to localhost.');
+  }
+  ML_SERVICE_URL = 'http://localhost:5001';
+}
 
 /**
  * Predicts the relationship between two complaints using the corrected Python model.
