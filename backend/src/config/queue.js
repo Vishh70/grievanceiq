@@ -3,7 +3,7 @@ const Redis = require('ioredis');
 require('dotenv').config();
 
 let RedisClass = Redis;
-if (process.env.NODE_ENV === 'test') {
+if (process.env.NODE_ENV === 'test' && process.env.MOCK_REDIS !== 'false') {
   RedisClass = require('../../__mocks__/ioredis');
 }
 

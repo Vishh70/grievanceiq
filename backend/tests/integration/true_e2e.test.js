@@ -1,4 +1,8 @@
 // tests/integration/true_e2e.test.js
+process.env.MOCK_REDIS = 'false';
+jest.unmock('bullmq');
+jest.unmock('ioredis');
+
 const request = require('supertest');
 const app = require('../../src/app');
 const crypto = require('crypto');
