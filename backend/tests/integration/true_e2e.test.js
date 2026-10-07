@@ -80,6 +80,7 @@ describe('True E2E Asynchronous Flow', () => {
     
     // Disconnect worker and redis to allow Jest to exit gracefully
     await worker.close();
+    if (worker.workerConnection) await worker.workerConnection.quit();
     await connection.quit();
   });
 

@@ -1,5 +1,5 @@
 const { Worker } = require('bullmq');
-const { connection } = require('../config/queue');
+const { createConnection } = require('../config/queue');
 const supabase = require('../config/supabase');
 
 const { analyzeComplaint } = require('../services/aiService');
@@ -8,6 +8,7 @@ const { predictIssueLabels } = require('../services/mlService');
 const { findBestDuplicate, DUPLICATE_CONFIG } = require('../services/duplicateDetectionService');
 const { processCivicIssueGrouping } = require('../services/civicIssueService');
 
+const workerConnection = createConnection();
 const worker = new Worker('ComplaintProcessing', async job => {
   const { complaintId, text, imageBase64, mimeType } = job.data;
   
@@ -216,9 +217,9 @@ const worker = new Worker('ComplaintProcessing', async job => {
   } catch (err) {
     console.error(`[Worker] Failed processing ${complaintId}:`, err);
     await supabase.from('complaints').update({ processing_status: 'FAILED', processing_error: err.message }).eq('id', complaintId);
-    throw err;
-  }
-}, { connection });
+}, { connection: workerConnection });
+
+worker.workerConnection = workerConnection;
 
 worker.on('failed', (job, err) => {
   console.log(`[Worker] Job ${job.id} has failed with ${err.message}`);

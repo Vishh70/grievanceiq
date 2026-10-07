@@ -7,7 +7,7 @@ if (process.env.NODE_ENV === 'test' && process.env.MOCK_REDIS !== 'false') {
   RedisClass = require('../../__mocks__/ioredis');
 }
 
-const connection = new RedisClass(process.env.REDIS_URL || 'redis://localhost:6379', { 
+const redisOptions = { 
   maxRetriesPerRequest: null,
   retryStrategy: (times) => {
     if (times > 3) {
@@ -16,8 +16,11 @@ const connection = new RedisClass(process.env.REDIS_URL || 'redis://localhost:63
     }
     return Math.min(times * 50, 2000);
   }
-});
+};
 
-const complaintQueue = new Queue('ComplaintProcessing', { connection });
+const createConnection = () => new RedisClass(process.env.REDIS_URL || 'redis://localhost:6379', redisOptions);
 
-module.exports = { complaintQueue, connection };
+const connection = createConnection(); // Keep for backward compatibility/generic ops
+const complaintQueue = new Queue('ComplaintProcessing', { connection: createConnection() });
+
+module.exports = { complaintQueue, connection, createConnection };
