@@ -217,6 +217,8 @@ const worker = new Worker('ComplaintProcessing', async job => {
   } catch (err) {
     console.error(`[Worker] Failed processing ${complaintId}:`, err);
     await supabase.from('complaints').update({ processing_status: 'FAILED', processing_error: err.message }).eq('id', complaintId);
+    throw err;
+  }
 }, { connection: workerConnection });
 
 worker.workerConnection = workerConnection;
