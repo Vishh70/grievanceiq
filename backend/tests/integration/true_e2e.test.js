@@ -18,6 +18,15 @@ const hasValidCredentials = supabaseUrl && supabaseKey && !supabaseUrl.includes(
 describe('True E2E Asynchronous Flow', () => {
   if (!hasValidCredentials) {
     it.skip('SKIPPED — integration environment not configured', () => {});
+    
+    // We must register an afterAll to clean up the globally required worker
+    afterAll(async () => {
+      if (worker) {
+        await worker.close(true); // Force close
+        if (worker.workerConnection) worker.workerConnection.disconnect();
+      }
+      if (connection) connection.disconnect();
+    });
     return;
   }
 
@@ -72,9 +81,11 @@ describe('True E2E Asynchronous Flow', () => {
     await supabase.from('users').delete().eq('id', userId);
     
     // Disconnect worker and redis to allow Jest to exit gracefully
-    await worker.close();
-    if (worker.workerConnection) await worker.workerConnection.quit();
-    await connection.quit();
+    if (worker) {
+      await worker.close(true);
+      if (worker.workerConnection) worker.workerConnection.disconnect();
+    }
+    if (connection) connection.disconnect();
     
     delete process.env.MOCK_REDIS;
   });

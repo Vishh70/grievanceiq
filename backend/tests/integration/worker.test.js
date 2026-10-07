@@ -8,7 +8,7 @@ describe('Worker Integration Test', () => {
   });
 
   afterAll(async () => {
-    await connection.quit();
+    if (connection) connection.disconnect();
   });
 
   test('Queue is defined', () => {
