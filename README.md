@@ -865,11 +865,12 @@ npm run build
 npm start
 
 # Setup ML Service (Separate Terminal)
-cd ml-service
+cd backend/ml
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# Windows: venv\Scripts\activate
+# Mac/Linux: source venv/bin/activate
 pip install -r requirements.txt
-python app.py
+python inference/grievanceiq_inference.py
 
 # Setup Frontend (Separate Terminal)
 cd frontend
@@ -877,7 +878,8 @@ npm install
 npm run dev
 ```
 
-> Note: You must configure the `.env` files in `backend/` and `frontend/` as outlined in `backend/.env.example`.
+> [!IMPORTANT]
+> You must configure the `.env` files in `backend/` and `frontend/` before starting the application. See `backend/.env.example` for required variables.
 
 ## Limitations
 
