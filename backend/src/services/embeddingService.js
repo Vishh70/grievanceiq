@@ -100,12 +100,8 @@ async function generateEmbedding(text) {
     }
     
     // In production, NEVER use Xenova if we are on a 512MB RAM free tier instance.
-    // If HF API fails, return a dummy embedding to prevent worker crash loop.
-    console.warn('Returning fallback dummy embedding in production due to HF API failure/timeout.');
-    const v = new Array(384).fill(0.123);
-    v[0] = 0.5;
-    const norm = Math.sqrt(v.reduce((sum, val) => sum + val * val, 0));
-    return v.map(val => val / (norm || 1));
+    // If HF API fails, do NOT return a silent dummy embedding. Throw an error so the job fails safely and retries.
+    throw new Error('HuggingFace API embedding generation failed. No fallback embedding generated.');
   }
 
   try {

@@ -122,8 +122,12 @@ def predict():
 
         # Reshape to (1, 384) for sklearn
         X = np.array(embedding, dtype=np.float32).reshape(1, -1)
+        # Validate all are numeric and finite
+        if not np.isfinite(X).all():
+            return jsonify({'error': 'Embeddings must be finite numbers'}), 400
 
         probabilities = {}
+        raw_probs = {}
         active_labels = []
 
         # Predict using individual models
@@ -132,24 +136,40 @@ def predict():
                 model = classifier[label]
                 prob_positive = float(model.predict_proba(X)[0][1])
                 threshold = THRESHOLDS.get(label, 0.5)
+                raw_probs[label] = prob_positive
                 probabilities[label] = round(prob_positive, 4)
                 if prob_positive >= threshold:
                     active_labels.append(label)
             except Exception as exc:
                 raise RuntimeError(f"Label model failed for {label}: {exc}")
 
-        # Fallback: if no labels crossed the threshold, pick the absolute highest probability one
-        if len(active_labels) == 0 and len(probabilities) > 0:
-            top_label = max(probabilities, key=probabilities.get)
-            active_labels.append(top_label)
+        fallback_used = False
+        fallback_metadata = {}
 
-        return jsonify({
+        # Fallback: if no labels crossed the threshold, pick the absolute highest probability one
+        if len(active_labels) == 0 and len(raw_probs) > 0:
+            fallback_used = True
+            top_label = max(raw_probs, key=raw_probs.get)
+            active_labels.append(top_label)
+            fallback_metadata = {
+                "fallback_reason": "No predictions crossed confidence thresholds",
+                "selected_label_probability": probabilities[top_label],
+                "requires_review": True
+            }
+
+        response = {
             'labels': active_labels,
             'probabilities': probabilities,
             'thresholds': THRESHOLDS,
             'model_type': '9 individual LogisticRegression models',
-            'model_loaded': True
-        })
+            'model_loaded': True,
+            'fallback_used': fallback_used
+        }
+        
+        if fallback_used:
+            response['fallback_metadata'] = fallback_metadata
+            
+        return jsonify(response)
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -172,28 +192,48 @@ def predict_batch():
         if X.ndim != 2 or X.shape[1] != 384:
             return jsonify({'error': f'Expected shape (N, 384), got {X.shape}'}), 400
 
+        # Validate all are numeric and finite
+        if not np.isfinite(X).all():
+            return jsonify({'error': 'Embeddings must be finite numbers'}), 400
+
         results = []
         for row_idx in range(len(embeddings)):
             active_labels = []
             probabilities = {}
+            raw_probs = {}
             row_X = X[row_idx].reshape(1, -1)
             
             for label in LABELS:
                 model = classifier[label]
                 prob_positive = float(model.predict_proba(row_X)[0][1])
                 threshold = THRESHOLDS.get(label, 0.5)
+                raw_probs[label] = prob_positive
                 probabilities[label] = round(prob_positive, 4)
                 if prob_positive >= threshold:
                     active_labels.append(label)
                     
-            if len(active_labels) == 0 and len(probabilities) > 0:
-                top_label = max(probabilities, key=probabilities.get)
+            fallback_used = False
+            fallback_metadata = {}
+            
+            if len(active_labels) == 0 and len(raw_probs) > 0:
+                fallback_used = True
+                top_label = max(raw_probs, key=raw_probs.get)
                 active_labels.append(top_label)
+                fallback_metadata = {
+                    "fallback_reason": "No predictions crossed confidence thresholds",
+                    "selected_label_probability": probabilities[top_label],
+                    "requires_review": True
+                }
                 
-            results.append({
+            res_obj = {
                 'labels': active_labels, 
-                'probabilities': probabilities
-            })
+                'probabilities': probabilities,
+                'fallback_used': fallback_used
+            }
+            if fallback_used:
+                res_obj['fallback_metadata'] = fallback_metadata
+                
+            results.append(res_obj)
 
         return jsonify({
             'results': results, 
