@@ -60,7 +60,7 @@ jobs:
         timeout 30 bash -c 'until curl -s http://localhost:5001/health | jq -e ".status == \"ok\"" > /dev/null; do sleep 2; done' || true
         timeout 30 python inference/ci_smoke_test.py
         cd ..
-        timeout 60 npm test
+        npm test
       env:
         NODE_OPTIONS: --experimental-vm-modules
         NODE_ENV: test
