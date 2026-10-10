@@ -8,12 +8,20 @@ const app = require('../../src/app');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const supabase = require('../../src/config/supabase');
-const { connection } = require('../../src/config/queue');
-const worker = require('../../src/workers/complaintWorker'); // Ensures worker is running during the test
-
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 const hasValidCredentials = supabaseUrl && supabaseKey && !supabaseUrl.includes('placeholder');
+
+let worker = null;
+let connection = null;
+let complaintQueue = null;
+
+if (hasValidCredentials) {
+  worker = require('../../src/workers/complaintWorker'); // Ensures worker is running during the test
+  const queueConfig = require('../../src/config/queue');
+  connection = queueConfig.connection;
+  complaintQueue = queueConfig.complaintQueue;
+}
 
 describe('True E2E Asynchronous Flow', () => {
   if (!hasValidCredentials) {
@@ -24,6 +32,10 @@ describe('True E2E Asynchronous Flow', () => {
       if (worker) {
         await worker.close(true); // Force close
         if (worker.workerConnection) worker.workerConnection.disconnect();
+      }
+      if (complaintQueue) {
+        await complaintQueue.close();
+        if (complaintQueue.client) await complaintQueue.client.then(c => c.disconnect());
       }
       if (connection) connection.disconnect();
     });
@@ -84,6 +96,10 @@ describe('True E2E Asynchronous Flow', () => {
     if (worker) {
       await worker.close(true);
       if (worker.workerConnection) worker.workerConnection.disconnect();
+    }
+    if (complaintQueue) {
+      await complaintQueue.close();
+      if (complaintQueue.client) await complaintQueue.client.then(c => c.disconnect());
     }
     if (connection) connection.disconnect();
     
