@@ -1,5 +1,11 @@
 // src/server.js
 require('dotenv').config();
+
+// Fix: Set ML_SERVICE_URL before any modules are required so mlService.js doesn't disable itself
+if (!process.env.ML_SERVICE_URL) {
+  process.env.ML_SERVICE_URL = 'http://127.0.0.1:5001';
+}
+
 const createApp = require('./app');
 const supabase = require('./config/supabase');
 

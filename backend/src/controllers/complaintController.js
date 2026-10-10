@@ -17,7 +17,7 @@ const mapComplaint = (row, includeEmbedding = false) => {
     category: row.category,
     priority: row.priority,
     status: row.status,
-    recommendedDepartment: row.department_id,
+    recommendedDepartment: row.department_id || (row.ml_departments && row.ml_departments.length > 0 ? row.ml_departments[0] : null),
     location: {
       lat: row.location_lat,
       lng: row.location_lng,
