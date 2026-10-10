@@ -138,6 +138,11 @@ def predict():
             except Exception as exc:
                 raise RuntimeError(f"Label model failed for {label}: {exc}")
 
+        # Fallback: if no labels crossed the threshold, pick the absolute highest probability one
+        if len(active_labels) == 0 and len(probabilities) > 0:
+            top_label = max(probabilities, key=probabilities.get)
+            active_labels.append(top_label)
+
         return jsonify({
             'labels': active_labels,
             'probabilities': probabilities,
@@ -181,6 +186,10 @@ def predict_batch():
                 if prob_positive >= threshold:
                     active_labels.append(label)
                     
+            if len(active_labels) == 0 and len(probabilities) > 0:
+                top_label = max(probabilities, key=probabilities.get)
+                active_labels.append(top_label)
+                
             results.append({
                 'labels': active_labels, 
                 'probabilities': probabilities
