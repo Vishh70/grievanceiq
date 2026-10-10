@@ -60,18 +60,34 @@ app.listen(PORT, async () => {
 
     if (staleComplaints && staleComplaints.length > 0) {
       console.log(`🔄 Recovering ${staleComplaints.length} stale complaints...`);
+      const queueConfig = require('./config/queue');
+      const { processComplaintLogic } = require('./workers/complaintWorker');
+      
       for (const complaint of staleComplaints) {
-        // Enqueue them safely again
-        await complaintQueue.add('process-complaint', {
-          complaintId: complaint.id,
-          text: complaint.description,
-          imageBase64: complaint.image_base64 || '', // Usually images are deleted after upload, but might be base64 in db
-          mimeType: '' // Best effort recovery
-        }, {
-          jobId: `recovery-${complaint.id}`, // Idempotent queuing
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 5000 }
-        });
+        if (queueConfig.connection && queueConfig.connection.status === 'ready') {
+          // Enqueue them safely again
+          await complaintQueue.add('process-complaint', {
+            complaintId: complaint.id,
+            text: complaint.description,
+            imageBase64: complaint.image_base64 || '', // Usually images are deleted after upload, but might be base64 in db
+            mimeType: '' // Best effort recovery
+          }, {
+            jobId: `recovery-${complaint.id}`, // Idempotent queuing
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 5000 }
+          });
+        } else {
+          // Free Tier / Redis Disconnected Fallback
+          console.warn(`⚠️ Redis not ready. Recovering complaint ${complaint.id} in-memory.`);
+          setTimeout(() => {
+            processComplaintLogic({
+              complaintId: complaint.id,
+              text: complaint.description,
+              imageBase64: complaint.image_base64 || '',
+              mimeType: ''
+            }).catch(err => console.error('In-memory recovery failed:', err));
+          }, 100);
+        }
       }
     }
   } catch (recErr) {

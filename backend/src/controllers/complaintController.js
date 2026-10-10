@@ -104,19 +104,38 @@ exports.createComplaint = async (req, res) => {
       await supabase.from('users').update({ civic_points: (user.civic_points || 0) + 50 }).eq('id', req.user.id);
     }
 
-    // 2. Enqueue for durable background processing
-    await complaintQueue.add('process-complaint', {
-      complaintId: complaintData.id,
-      text,
-      imageBase64,
-      mimeType
-    }, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000
-      }
-    });
+    // 2. Determine if Redis is available. If not, run in-process background execution
+    const queueConfig = require('../config/queue');
+    if (queueConfig.connection && queueConfig.connection.status === 'ready') {
+      await complaintQueue.add('process-complaint', {
+        complaintId: complaintData.id,
+        text,
+        imageBase64,
+        mimeType
+      }, {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000
+        }
+      });
+    } else {
+      // Free Tier / Redis Disconnected Fallback
+      console.warn('⚠️ Redis is not ready. Processing complaint in-memory to prevent hangs!');
+      const { processComplaintLogic } = require('../workers/complaintWorker');
+      
+      // Fire and forget (process asynchronously without blocking the HTTP response)
+      setTimeout(() => {
+        processComplaintLogic({
+          complaintId: complaintData.id,
+          text,
+          imageBase64,
+          mimeType
+        }).catch(err => {
+          console.error('In-memory processing failed:', err);
+        });
+      }, 100);
+    }
 
     res.status(201).json({ message: 'Complaint submitted', complaint: mapComplaint(complaintData) });
   } catch (error) {

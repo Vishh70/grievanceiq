@@ -9,8 +9,8 @@ const { findBestDuplicate, DUPLICATE_CONFIG } = require('../services/duplicateDe
 const { processCivicIssueGrouping } = require('../services/civicIssueService');
 
 const workerConnection = createConnection();
-const worker = new Worker('ComplaintProcessing', async job => {
-  const { complaintId, text, imageBase64, mimeType } = job.data;
+async function processComplaintLogic(jobData) {
+  const { complaintId, text, imageBase64, mimeType } = jobData;
   
   // 1. Mark as processing
   const { error: procErr } = await supabase.from('complaints').update({ processing_status: 'PROCESSING' }).eq('id', complaintId);
@@ -219,6 +219,10 @@ const worker = new Worker('ComplaintProcessing', async job => {
     await supabase.from('complaints').update({ processing_status: 'FAILED', processing_error: err.message }).eq('id', complaintId);
     throw err;
   }
+}
+
+const worker = new Worker('ComplaintProcessing', async job => {
+  return processComplaintLogic(job.data);
 }, { connection: workerConnection });
 
 worker.workerConnection = workerConnection;
@@ -227,4 +231,4 @@ worker.on('failed', (job, err) => {
   console.log(`[Worker] Job ${job.id} has failed with ${err.message}`);
 });
 
-module.exports = worker;
+module.exports = { worker, processComplaintLogic };
