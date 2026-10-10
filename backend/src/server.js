@@ -44,6 +44,28 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {
   console.log(`🚀 GrievanceIQ Backend running on port ${PORT} (Connected to Supabase)`);
 
+  // ── Spawn Embedded ML Service ──────────────────────────────────────────────
+  const { spawn } = require('child_process');
+  const path = require('path');
+  const os = require('os');
+  
+  // Set ML_SERVICE_URL to localhost since we run it embedded now
+  process.env.ML_SERVICE_URL = 'http://127.0.0.1:5001';
+  
+  const isWin = os.platform() === 'win32';
+  const pythonBin = isWin ? path.join(__dirname, '..', '.venv', 'Scripts', 'python') : path.join(__dirname, '..', '.venv', 'bin', 'python');
+  
+  const mlProcess = spawn(pythonBin, [path.join(__dirname, '..', 'ml', 'inference', 'grievanceiq_inference.py')]);
+  
+  mlProcess.stdout.on('data', (data) => console.log(`[ML Embedded]: ${data}`));
+  mlProcess.stderr.on('data', (data) => console.error(`[ML Embedded ERR]: ${data}`));
+  
+  mlProcess.on('close', (code) => {
+    console.warn(`⚠️ Embedded ML Service exited with code ${code}`);
+  });
+  console.log(`🧠 Embedded ML Service spawned on ${process.env.ML_SERVICE_URL}`);
+
+
   // Initialize Worker
   require('./workers/complaintWorker');
   console.log(`👷 Complaint Background Worker Started`);
