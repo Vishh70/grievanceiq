@@ -9,10 +9,15 @@ def run_test():
     
     data = {"embedding": embedding}
     
+    import os
+    secret = os.environ.get('ML_SERVICE_SECRET', 'test_secret')
     req = urllib.request.Request(
         url,
         data=json.dumps(data).encode('utf-8'),
-        headers={'Content-Type': 'application/json'},
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {secret}'
+        },
         method='POST'
     )
     
