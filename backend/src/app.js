@@ -88,6 +88,18 @@ function createApp() {
       health.database = 'disconnected';
     }
 
+    // Check Redis
+    try {
+      const { connection } = require('./config/queue');
+      if (connection.status === 'ready') {
+        health.redis = 'connected';
+      } else {
+        health.redis = connection.status;
+      }
+    } catch (e) {
+      health.redis = 'error';
+    }
+
     const statusCode = health.database === 'connected' ? 200 : 503;
     res.status(statusCode).json(health);
   });
