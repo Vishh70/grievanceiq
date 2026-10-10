@@ -54,8 +54,7 @@ describe('True E2E Asynchronous Flow', () => {
       id: userId,
       email: `e2e_test_${testRunId}@example.com`,
       name: 'E2E Test User',
-      role: 'citizen',
-      civic_points: 0
+      role: 'citizen'
     });
     
     userToken = jwt.sign({ id: userId, role: 'citizen' }, process.env.JWT_SECRET || 'test_jwt_secret', { expiresIn: '1h' });

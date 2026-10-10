@@ -68,8 +68,8 @@ jobs:
         SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        ML_SERVICE_SECRET: ${{ secrets.ML_SERVICE_SECRET || 'test_secret' }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_jwt_secret_12345' }}
+        ML_SERVICE_SECRET: 'test_secret'
+        JWT_SECRET: 'test_jwt_secret_12345'
         REDIS_URL: redis://127.0.0.1:6379
 
     - name: Run real MiniLM smoke test

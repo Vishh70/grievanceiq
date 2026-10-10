@@ -98,11 +98,7 @@ exports.createComplaint = async (req, res) => {
 
     if (error) throw error;
 
-    // Gamification: Award points to the creator
-    const { data: user } = await supabase.from('users').select('civic_points').eq('id', req.user.id).single();
-    if (user) {
-      await supabase.from('users').update({ civic_points: (user.civic_points || 0) + 50 }).eq('id', req.user.id);
-    }
+
 
     // 2. Determine if Redis is available. If not, run in-process background execution
     const queueConfig = require('../config/queue');
@@ -294,16 +290,12 @@ exports.upvoteComplaint = async (req, res) => {
     const hasUpvoted = upvotedBy.includes(req.user.id);
     let priority = complaint.priority;
     
-    // Fetch user for civic points update
-    const { data: user } = await supabase.from('users').select('civic_points').eq('id', req.user.id).single();
-    const currentPoints = user ? (user.civic_points || 0) : 0;
+
     
     if (hasUpvoted) {
       upvotedBy = upvotedBy.filter(id => id !== req.user.id);
       upvotes = Math.max(0, upvotes - 1);
-      if (user) {
-        await supabase.from('users').update({ civic_points: Math.max(0, currentPoints - 10) }).eq('id', req.user.id);
-      }
+
     } else {
       upvotedBy.push(req.user.id);
       upvotes += 1;
@@ -311,9 +303,7 @@ exports.upvoteComplaint = async (req, res) => {
       if (upvotes >= 5 && priority !== 'Critical') {
         priority = 'Critical';
       }
-      if (user) {
-        await supabase.from('users').update({ civic_points: currentPoints + 10 }).eq('id', req.user.id);
-      }
+
     }
 
     await supabase.from('complaints').update({ upvotes, upvoted_by: upvotedBy, priority }).eq('id', req.params.id);

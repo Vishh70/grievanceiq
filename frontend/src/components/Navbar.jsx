@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, LayoutDashboard, FileText, PlusCircle, Globe, Trophy, User as UserIcon } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, PlusCircle, Globe, User as UserIcon } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -29,9 +29,6 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <>
-                  <Link to="/leaderboard" className="btn btn-secondary btn-sm" style={{ color: '#F59E0B' }}>
-                    <Trophy size={15} /> <span>Leaderboard</span>
-                  </Link>
                   <Link to="/feed" className="btn btn-secondary btn-sm" style={{ background: 'var(--accent-glow)', color: 'var(--accent-dark)', borderColor: 'var(--accent-light)' }}>
                     <Globe size={15} /> <span>Public Feed</span>
                   </Link>
@@ -70,10 +67,6 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/leaderboard" className={`mobile-nav-item ${location.pathname === '/leaderboard' ? 'active' : ''}`}>
-                <Trophy size={20} />
-                <span>Ranks</span>
-              </Link>
               <Link to="/feed" className={`mobile-nav-item ${location.pathname === '/feed' ? 'active' : ''}`}>
                 <Globe size={20} />
                 <span>Feed</span>

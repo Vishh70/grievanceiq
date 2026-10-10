@@ -55,7 +55,6 @@ function createApp() {
 
   // ── Routes ─────────────────────────────────────────────────────────────────
   app.use('/api/auth',         require('./routes/authRoutes'));
-  app.use('/api/users',        require('./routes/userRoutes'));
   app.use('/api/complaints',   require('./routes/complaintRoutes'));
   app.use('/api/dashboard',    require('./routes/dashboardRoutes'));
   app.use('/api/civic-issues', require('./routes/civicIssueRoutes'));

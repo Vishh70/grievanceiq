@@ -14,8 +14,10 @@ function signToken(id) {
 
 function mapUser(user) {
   if (!user) return user;
-  const mapped = { ...user, civicPoints: user.civic_points || 0 };
+  const mapped = { ...user };
   delete mapped.password_hash;
+  delete mapped.civic_points;
+  delete mapped.badges;
   return mapped;
 }
 
