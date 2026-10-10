@@ -8,6 +8,6 @@ afterAll(async () => {
     await complaintQueue.close();
   }
   if (connection) {
-    connection.disconnect();
+    await connection.quit();
   }
 });
