@@ -13,13 +13,17 @@ const axios = require('axios');
 
 let ML_SERVICE_URL = process.env.ML_SERVICE_URL;
 let ML_SERVICE_STATUS = 'VERIFIED';
-if (!ML_SERVICE_URL) {
+if (!ML_SERVICE_URL || !ML_SERVICE_URL.startsWith('http')) {
   if (process.env.NODE_ENV === 'production') {
-    console.warn('ML_SERVICE_URL is not configured for the current runtime');
+    console.warn(`⚠️ ML_SERVICE_URL is missing or invalid: "${ML_SERVICE_URL}". Disabling external ML service.`);
     ML_SERVICE_STATUS = 'NOT_VERIFIED';
+    ML_SERVICE_URL = ''; // Clear to prevent axios crash
   } else {
     ML_SERVICE_URL = 'http://localhost:5001';
   }
+} else {
+  // Ensure no trailing slash
+  ML_SERVICE_URL = ML_SERVICE_URL.replace(/\/$/, '');
 }
 const ML_SERVICE_TIMEOUT_MS = 8000;
 
