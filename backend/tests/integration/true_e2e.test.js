@@ -1,8 +1,3 @@
-// tests/integration/true_e2e.test.js
-process.env.MOCK_REDIS = 'false';
-jest.unmock('bullmq');
-jest.unmock('ioredis');
-
 const request = require('supertest');
 const app = require('../../src/app');
 const crypto = require('crypto');
@@ -17,6 +12,9 @@ let connection = null;
 let complaintQueue = null;
 
 if (hasValidCredentials) {
+  process.env.MOCK_REDIS = 'false';
+  jest.unmock('bullmq');
+  jest.unmock('ioredis');
   worker = require('../../src/workers/complaintWorker'); // Ensures worker is running during the test
   const queueConfig = require('../../src/config/queue');
   connection = queueConfig.connection;
