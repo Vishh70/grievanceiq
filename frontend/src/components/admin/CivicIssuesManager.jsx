@@ -25,6 +25,17 @@ export default function CivicIssuesManager({
   const [prereqTaskId, setPrereqTaskId] = useState('');
   const [savingDep, setSavingDep] = useState(false);
 
+  useEffect(() => {
+    if (!showAddDepModal) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowAddDepModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showAddDepModal]);
+
   // Load details whenever an issue is selected
   const loadIssueDetails = async (id) => {
     setSelectedIssueId(id);
@@ -450,6 +461,9 @@ export default function CivicIssuesManager({
         >
           <div
             className="admin-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add Task Dependency Constraint"
             style={{ width: '100%', maxWidth: 500, background: '#ffffff', position: 'relative' }}
             onClick={(e) => e.stopPropagation()}
           >

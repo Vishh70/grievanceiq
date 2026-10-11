@@ -4,6 +4,24 @@ const supabase = require('../config/supabase');
 const ACTIVE_STATUSES = ['Pending', 'In Review', 'Assigned'];
 const SLA_HOURS = 48;
 const MS_PER_HOUR = 60 * 60 * 1000;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function resolveDepartmentName(c) {
+  if (c.department_id && !UUID_REGEX.test(c.department_id)) {
+    return c.department_id;
+  }
+  if (Array.isArray(c.ml_departments) && c.ml_departments.length > 0 && typeof c.ml_departments[0] === 'string') {
+    return c.ml_departments[0];
+  }
+  if (c.department_id) {
+    return 'Municipal General';
+  }
+  return 'Unassigned';
+}
+
+exports.ACTIVE_STATUSES = ACTIVE_STATUSES;
+exports.SLA_HOURS = SLA_HOURS;
+exports.resolveDepartmentName = resolveDepartmentName;
 
 exports.getSummary = async (_req, res) => {
   try {
@@ -48,7 +66,7 @@ exports.getSummary = async (_req, res) => {
       // 2. Breakdowns
       categoryMap[c.category] = (categoryMap[c.category] || 0) + 1;
       priorityMap[c.priority] = (priorityMap[c.priority] || 0) + 1;
-      const dept = c.department_id || 'Unassigned';
+      const dept = resolveDepartmentName(c);
       departmentMap[dept] = (departmentMap[dept] || 0) + 1;
       statusMap[c.status] = (statusMap[c.status] || 0) + 1;
 

@@ -10,13 +10,22 @@ export default function ComplaintsTable({
   limit = 10,
   filters = {},
   categories = [],
+  departments = [],
   onFilterChange,
+  onResetFilters,
   onPageChange,
   onOpenDrawer,
   onOpenStatusModal,
   loading = false
 }) {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
+  // Synchronize local searchTerm if filters.search is externally cleared/reset
+  useEffect(() => {
+    if (!filters.search && searchTerm) {
+      setSearchTerm('');
+    }
+  }, [filters.search]);
 
   // Debounce search input
   useEffect(() => {
@@ -29,14 +38,21 @@ export default function ComplaintsTable({
     return () => clearTimeout(handler);
   }, [searchTerm, filters.search, onFilterChange]);
 
-  const hasActiveFilters = Boolean(filters.search || filters.category || filters.priority || filters.status);
+  const hasActiveFilters = Boolean(
+    filters.search || filters.category || filters.priority || filters.status || filters.department
+  );
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    onFilterChange('search', '');
-    onFilterChange('category', '');
-    onFilterChange('priority', '');
-    onFilterChange('status', '');
+    if (typeof onResetFilters === 'function') {
+      onResetFilters();
+    } else {
+      onFilterChange('search', '');
+      onFilterChange('category', '');
+      onFilterChange('priority', '');
+      onFilterChange('status', '');
+      onFilterChange('department', '');
+    }
   };
 
   const startRecord = total === 0 ? 0 : (page - 1) * limit + 1;
@@ -115,9 +131,22 @@ export default function ComplaintsTable({
             <option value="">All Statuses</option>
             <option value="Pending">Pending</option>
             <option value="In Review">In Review</option>
+            <option value="Assigned">Assigned</option>
             <option value="In Progress">In Progress</option>
             <option value="Resolved">Resolved</option>
             <option value="Rejected">Rejected</option>
+          </select>
+
+          <select
+            className="admin-filter-select"
+            value={filters.department || ''}
+            onChange={(e) => onFilterChange('department', e.target.value)}
+            aria-label="Filter by department"
+          >
+            <option value="">All Departments</option>
+            {departments.map((d, idx) => (
+              <option key={idx} value={d.name}>{d.name}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -165,9 +194,9 @@ export default function ComplaintsTable({
               </tr>
             ) : (
               complaints.map((c) => {
-                const isPending = c.status === 'Pending' || c.status === 'In Review';
+                const isActiveWorkload = ['Pending', 'In Review', 'Assigned'].includes(c.status);
                 const hoursPending = (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60);
-                const isSlaBreached = isPending && hoursPending > 48;
+                const isSlaBreached = isActiveWorkload && hoursPending > 48;
                 const shortId = (c._id || '').slice(-6);
 
                 const priorityLower = (c.priority || 'medium').toLowerCase();

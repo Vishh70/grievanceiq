@@ -94,7 +94,7 @@ export default function AiSafetyIntelligence({
             <span>AI & Machine Learning Architecture Overview</span>
           </h3>
           <span className="admin-badge admin-badge-medium" style={{ textTransform: 'none' }}>
-            Production ML Pipeline
+            Configured Pipeline Architecture
           </span>
         </div>
 
@@ -113,7 +113,7 @@ export default function AiSafetyIntelligence({
               <code>all-MiniLM-L6-v2</code> transforms complaint descriptions into 384-dimensional dense vectors with L2 normalization for vector cosine similarity.
             </p>
             <div style={{ fontSize: '0.72rem', color: 'var(--admin-primary)', fontWeight: 600 }}>
-              Verified: Xenova / HuggingFace Transformers
+              Architecture: Xenova / Hugging Face Transformers
             </div>
           </div>
 
@@ -127,7 +127,7 @@ export default function AiSafetyIntelligence({
               9 independent binary <code>LogisticRegression</code> estimators predict issues against category-specific decision thresholds from <code>multilabel_thresholds.csv</code>.
             </p>
             <div style={{ fontSize: '0.72rem', color: 'var(--admin-info)', fontWeight: 600 }}>
-              Verified: 9 Category Estimators (Python 3.12)
+              Architecture: 9 Binary Logistic Regression Estimators
             </div>
           </div>
 
@@ -141,7 +141,7 @@ export default function AiSafetyIntelligence({
               10-tree Random Forest evaluating 20 strictly ordered numerical features to classify issue pairs as <em>Duplicate</em>, <em>Similar</em>, <em>Related</em>, or <em>Independent</em>.
             </p>
             <div style={{ fontSize: '0.72rem', color: 'var(--admin-warning)', fontWeight: 600 }}>
-              Verified: 20-Feature Random Forest
+              Architecture: 20-Feature Random Forest Classifier
             </div>
           </div>
 
@@ -155,7 +155,7 @@ export default function AiSafetyIntelligence({
               Dynamic model selection (default: <code>gemini-3.8-flash</code>) with automated fallback to <code>gemini-3.5-flash-lite</code> for JSON triage extraction and safety hazard indexing.
             </p>
             <div style={{ fontSize: '0.72rem', color: '#b45309', fontWeight: 600 }}>
-              Verified: Dual-Model Fallback Resilience
+              Architecture: Dual-Model Fallback Engine
             </div>
           </div>
         </div>

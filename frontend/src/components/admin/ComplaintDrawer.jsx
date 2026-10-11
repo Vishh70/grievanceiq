@@ -1,5 +1,5 @@
 // src/components/admin/ComplaintDrawer.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X, AlertTriangle, ShieldAlert, Cpu, Sparkles, MapPin, Clock,
   User, CheckCircle2, Building, Tag, ExternalLink, Edit3
@@ -27,11 +27,28 @@ export default function ComplaintDrawer({
 }) {
   const [activeTab, setActiveTab] = useState('triage');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !complaint) return null;
 
   const priorityLower = (complaint.priority || 'medium').toLowerCase();
   const statusSlug = (complaint.status || 'pending').toLowerCase().replace(/\s+/g, '');
   const shortId = (complaint._id || '').slice(-6);
+
+  const isActiveWorkload = ['Pending', 'In Review', 'Assigned'].includes(complaint.status);
+  const hoursPending = complaint.createdAt
+    ? (Date.now() - new Date(complaint.createdAt).getTime()) / (1000 * 60 * 60)
+    : 0;
+  const isSlaBreached = isActiveWorkload && hoursPending > 48;
 
   const mlLabels = complaint.mlLabels || [];
   const mlProbabilities = complaint.mlProbabilities || {};
@@ -40,11 +57,17 @@ export default function ComplaintDrawer({
 
   return (
     <div className="admin-drawer-overlay" onClick={onClose}>
-      <aside className="admin-drawer" onClick={(e) => e.stopPropagation()}>
+      <aside
+        className="admin-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Complaint #${shortId} details`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Drawer Header */}
         <div className="admin-drawer-header">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
               <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '1.1rem', color: 'var(--admin-primary)' }}>
                 #{shortId}
               </span>
@@ -54,6 +77,11 @@ export default function ComplaintDrawer({
               <span className={`admin-badge admin-badge-status-${statusSlug}`}>
                 {complaint.status}
               </span>
+              {isSlaBreached && (
+                <span className="admin-badge admin-badge-critical" style={{ fontSize: '0.7rem' }}>
+                  <AlertTriangle size={12} /> SLA Breach ({hoursPending.toFixed(1)}h)
+                </span>
+              )}
             </div>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--admin-text-main)' }}>
               {complaint.category} Grievance

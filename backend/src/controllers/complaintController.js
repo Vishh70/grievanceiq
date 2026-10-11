@@ -7,6 +7,21 @@ const { processCivicIssueGrouping } = require('../services/civicIssueService');
 const { complaintQueue } = require('../config/queue');
 const fs = require('fs');
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const resolveDepartment = (row) => {
+  if (row.department_id && !UUID_REGEX.test(row.department_id)) {
+    return row.department_id;
+  }
+  if (Array.isArray(row.ml_departments) && row.ml_departments.length > 0 && typeof row.ml_departments[0] === 'string') {
+    return row.ml_departments[0];
+  }
+  if (row.department_id) {
+    return 'Municipal General';
+  }
+  return null;
+};
+
 // Helper to map Supabase row back to frontend-expected Mongoose format
 const mapComplaint = (row, includeEmbedding = false) => {
   const mapped = {
@@ -17,7 +32,7 @@ const mapComplaint = (row, includeEmbedding = false) => {
     category: row.category,
     priority: row.priority,
     status: row.status,
-    recommendedDepartment: row.department_id || (row.ml_departments && row.ml_departments.length > 0 ? row.ml_departments[0] : null),
+    recommendedDepartment: resolveDepartment(row),
     location: {
       lat: row.location_lat,
       lng: row.location_lng,
@@ -166,8 +181,9 @@ exports.getComplaints = async (req, res) => {
 
     if (category)   query = query.eq('category', category);
     if (priority)   query = query.eq('priority', priority);
-    if (status)     query = query.eq('status', status);
-    if (department) query = query.eq('department_id', department); // This requires UUID department in UI
+    if (department) {
+      query = query.or(`department_id.eq."${department}",ml_departments.cs.{"${department}"}`);
+    }
     
     if (search) {
       query = query.ilike('description', `%${search}%`);

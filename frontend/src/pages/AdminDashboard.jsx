@@ -37,13 +37,16 @@ export default function AdminDashboard() {
   });
 
   // Complaint Filters & Pagination
-  const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState({
+  const INITIAL_FILTERS = {
     search: '',
     category: '',
     priority: '',
-    status: ''
-  });
+    status: '',
+    department: ''
+  };
+
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [complaintsLoading, setComplaintsLoading] = useState(false);
 
   // Active Modals & Drawer State
@@ -86,6 +89,7 @@ export default function AdminDashboard() {
       if (currentFilters.category) params.category = currentFilters.category;
       if (currentFilters.priority) params.priority = currentFilters.priority;
       if (currentFilters.status) params.status = currentFilters.status;
+      if (currentFilters.department) params.department = currentFilters.department;
 
       const res = await api.get('/complaints', { params });
 
@@ -128,6 +132,13 @@ export default function AdminDashboard() {
     fetchComplaints(1, updated);
   };
 
+  // Atomic reset callback for all filters
+  const handleResetFilters = () => {
+    setFilters(INITIAL_FILTERS);
+    setPage(1);
+    fetchComplaints(1, INITIAL_FILTERS);
+  };
+
   const handlePageChange = (newPage) => {
     setPage(newPage);
     fetchComplaints(newPage, filters);
@@ -155,6 +166,7 @@ export default function AdminDashboard() {
       if (filters.category) params.category = filters.category;
       if (filters.priority) params.priority = filters.priority;
       if (filters.status) params.status = filters.status;
+      if (filters.department) params.department = filters.department;
 
       const res = await api.get('/complaints', { params });
       const exportItems = res.data.complaints || [];
@@ -379,7 +391,9 @@ export default function AdminDashboard() {
             limit={10}
             filters={filters}
             categories={categoryData}
+            departments={deptData}
             onFilterChange={handleFilterChange}
+            onResetFilters={handleResetFilters}
             onPageChange={handlePageChange}
             onOpenDrawer={handleOpenDrawer}
             onOpenStatusModal={setStatusModalComplaint}

@@ -1,5 +1,5 @@
 // src/components/admin/StatusUpdateModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
@@ -13,6 +13,23 @@ export default function StatusUpdateModal({
   const [newStatus, setNewStatus] = useState(complaint?.status || '');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (complaint?.status) {
+      setNewStatus(complaint.status);
+    }
+  }, [complaint]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !complaint) return null;
 
@@ -60,6 +77,9 @@ export default function StatusUpdateModal({
     >
       <div
         className="admin-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Update Complaint Status"
         style={{
           width: '100%',
           maxWidth: 480,
@@ -109,6 +129,7 @@ export default function StatusUpdateModal({
               <option value="">Select Target Status...</option>
               <option value="Pending">Pending (Awaiting Initial Action)</option>
               <option value="In Review">In Review (Under Investigation)</option>
+              <option value="Assigned">Assigned (Assigned to Department)</option>
               <option value="In Progress">In Progress (Field Work Active)</option>
               <option value="Resolved">Resolved (Completed & Verified)</option>
               <option value="Rejected">Rejected (Out of Municipal Scope / Invalid)</option>
