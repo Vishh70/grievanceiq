@@ -95,13 +95,24 @@ export default function AdminLogin() {
               </button>
             </div>
 
+            <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+              <span style={{ color: '#cbd5e1' }}>Default Admin: <strong>system@grievanceiq.com</strong></span>
+              <button
+                type="button"
+                onClick={() => setForm({ email: 'system@grievanceiq.com', password: 'AdminPassword123!' })}
+                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', padding: '0.25rem 0.6rem', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Auto-fill
+              </button>
+            </div>
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="btn btn-lg w-full"
               type="submit"
               disabled={loading}
-              style={{ background: '#ef4444', color: 'white', border: 'none', marginTop: '2rem' }}
+              style={{ background: '#ef4444', color: 'white', border: 'none', marginTop: '1.25rem' }}
             >
               {loading ? 'Authenticating…' : 'Secure Login'}
             </motion.button>

@@ -16,7 +16,7 @@ const app = createApp();
 (async () => {
   try {
     const adminEmail = 'system@grievanceiq.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@GrievanceIQ2026!';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'AdminPassword123!';
     const bcrypt = require('bcryptjs');
 
     const checkAdminQuery = supabase.from('users').select('id, password_hash').eq('email', adminEmail);
