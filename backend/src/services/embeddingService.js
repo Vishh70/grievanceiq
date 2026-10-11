@@ -157,7 +157,6 @@ async function generateEmbedding(text) {
         clearTimeout(timeoutId);
       }
     }
-  }
 
   // Local / Development / Test embedding extraction using @xenova/transformers
   try {
