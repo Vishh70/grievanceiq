@@ -1,7 +1,7 @@
 // src/controllers/dashboardController.js
 const supabase = require('../config/supabase');
 
-const ACTIVE_STATUSES = ['Pending', 'In Review'];
+const ACTIVE_STATUSES = ['Pending', 'In Review', 'Assigned'];
 const SLA_HOURS = 48;
 const MS_PER_HOUR = 60 * 60 * 1000;
 
@@ -17,6 +17,8 @@ exports.getSummary = async (_req, res) => {
     let pending = 0;
     let resolved = 0;
     let highPriority = 0;
+    let criticalCount = 0;
+    let highCount = 0;
 
     const categoryMap = {};
     const priorityMap = {};
@@ -39,6 +41,8 @@ exports.getSummary = async (_req, res) => {
       // 1. Basic Counts
       if (['Pending', 'In Review', 'Assigned'].includes(c.status)) pending++;
       if (c.status === 'Resolved') resolved++;
+      if (c.priority === 'Critical') criticalCount++;
+      if (c.priority === 'High') highCount++;
       if (['Critical', 'High'].includes(c.priority)) highPriority++;
 
       // 2. Breakdowns
@@ -118,7 +122,7 @@ exports.getSummary = async (_req, res) => {
     const avgSeverityScore = assessedCount > 0 ? Number((totalSeverityScore / assessedCount).toFixed(1)) : null;
 
     res.json({
-      summary: { total, pending, resolved, highPriority },
+      summary: { total, pending, resolved, highPriority, criticalCount, highCount },
       categoryBreakdown,
       priorityBreakdown,
       departmentBreakdown,
