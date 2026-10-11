@@ -66,3 +66,13 @@
 * **Execution Enforcement**:
   * Self-dependencies are rejected.
   * Blocks execution of dependent tasks until all parent tasks are `COMPLETED`.
+
+## 7. Remote CI Validation & Verification Status
+All algorithmic modules have been verified across isolated unit test suites and end-to-end integration workflows on remote CI infrastructure:
+* **Backend CI Run #146**: Verified passed cleanly on commit `c99ca86fa2e5b8e7fe74ff77abe258b5824b7c66` ([View Backend CI Run #146](https://github.com/Vishh70/grievanceiq/actions/runs/38117823915)).
+  * **Test Suite Metrics**: 12 of 12 unit suites passed (110 unit tests); 3 of 3 integration suites passed (3 integration tests under unmocked runner `jest.integration.config.js`). Total: 15/15 suites and 113/113 tests passed.
+  * **Real Redis & Queue State**: Real Redis connection verified with `PONG`; BullMQ worker readiness and two processed complaint jobs (`[BullMQ Worker] Processing job...`) confirmed without any `[MockBullMQ]` or in-memory fallback execution.
+  * **MiniLM Embedding Step**: Remote CI step `Run real MiniLM smoke test` passed successfully.
+  * **Algorithmic Graph Grouping & Routing in CI**: During `true_e2e.test.js`, two distinct complaints were enqueued, processed by BullMQ, embedded via MiniLM, evaluated for relationships, and grouped into Civic Issues using DFS connected components.
+  * **Persisted ML & Department Assertions**: Validated persistence and API responses for `ml_labels`, `ml_probabilities`, and `ml_departments` in both database records and `GET /api/complaints/:id`.
+

@@ -92,5 +92,11 @@
   3. Added `"test:unit"` and `"test:integration"` scripts to `backend/package.json`.
   4. Added explicit assertions verifying all three ML metadata fields (`ml_labels`, `ml_probabilities`, `ml_departments`) in database records and HTTP retrieval.
   5. Calibrated master audit report to distinguish mock CI triage from standalone live Gemini smoke testing.
-* **Status**: **RESOLVED & VERIFIED**
+* **Status**: **VERIFIED & CERTIFIED ON GITHUB CI (RUN #146 / COMMIT c99ca86)**
+* **Verification Evidence ([Backend CI Run #146](https://github.com/Vishh70/grievanceiq/actions/runs/38117823915))**:
+  * **Test Counts**: 12 unit suites and 110 unit tests passed; 3 integration suites and 3 integration tests passed (15/15 suites, 113/113 tests passed, exit code 0).
+  * **Real Redis Connection**: Confirmed `PONG` response from live Redis container (`[E2E Test] Real Redis connection verified: PONG`).
+  * **Real BullMQ Worker**: `BullMQ Worker verified ready` and `[BullMQ Worker] Processing job...` confirmed across both submitted complaints with zero `[MockBullMQ]` or in-memory fallback messages.
+  * **MiniLM Embedding**: Remote CI step `Run real MiniLM smoke test` passed cleanly.
+  * **Persisted ML Metadata**: Verified explicit assertions for all three fields (`ml_labels`, `ml_probabilities`, `ml_departments`) in both Supabase records and API response payloads (`GET /api/complaints/:id`).
 

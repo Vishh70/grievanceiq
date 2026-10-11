@@ -81,20 +81,25 @@
 * **GitHub Actions CI Status**:
   * `Frontend CI`: **PASS** (completed successfully on commit `a66d5d6`).
   * `Keep Backend Alive`: **PASS** (scheduled pings active).
-  * `Backend CI Runs #144 & #145`: **PASS (100% Passed, 15/15 suites, 113/113 tests passed, 1m 36s)**.
-    * Job `build-and-test (22.x)` completed with green checkmark.
-    * Step `Run ML service and tests` passed completely.
-    * `true_e2e.test.js` passed in 12.68s, validating full HTTP complaint intake, Supabase storage, ML classification, and Civic Issue grouping.
-    * *Verification Limit Note on Run #144*: The CI logs showed `[MockBullMQ] Queue created` and `⚠️ Redis is not ready. Processing complaint in-memory...`. Because `backend/tests/setup.js` unconditionally mocked `bullmq` and `ioredis` in the shared Jest config, the E2E test in Run #144 executed via the verified in-memory fallback rather than a real BullMQ job on Redis.
-    * *Generative AI in CI*: CI runs without `GEMINI_API_KEY`, exercising the internal fallback triage path. Live Gemini API connectivity is verified via standalone smoke testing (`scripts/smoke_test_gemini.js`).
-    * *Remediation*: Created a separate integration-test runner path (`jest.integration.config.js` and `tests/setup.integration.js`) with unmocked BullMQ/Redis (`process.env.MOCK_REDIS = 'false'`) and explicit assertions for all three ML metadata fields (`ml_labels`, `ml_probabilities`, `ml_departments`).
+  * `Backend CI Run #146`: **PASS — FULLY VERIFIED & CERTIFIED ON COMMIT `c99ca86fa2e5b8e7fe74ff77abe258b5824b7c66`** ([View Backend CI Run #146](https://github.com/Vishh70/grievanceiq/actions/runs/38117823915)).
+    * **Duration**: 1m 31s. All jobs and workflow steps succeeded with green checkmarks.
+    * **Unit Test Runner**: 12 of 12 unit suites passed, 110 of 110 unit tests passed without live infrastructure dependencies (`npm run test:unit`).
+    * **Integration Test Runner**: 3 of 3 integration suites passed (`worker.test.js`, `supabase.test.js`, `true_e2e.test.js`), 3 of 3 integration tests passed under unmocked runner `jest.integration.config.js` (`npm run test:integration`).
+    * **Total Test Counts**: 15 of 15 test suites passed, 113 of 113 tests passed (0 failures).
+    * **Real Redis PONG**: Verified in CI logs: `[E2E Test] Real Redis connection verified: PONG`.
+    * **Real BullMQ Worker & Queue Execution**: Verified worker readiness (`BullMQ Worker verified ready`, `BullMQ Queue verified ready`) and real background job consumption (`[BullMQ Worker] Processing job... for complaint...`) across both submitted complaints.
+    * **Absence of Mock Fallbacks**: Zero `[MockBullMQ]` or in-memory fallback messages appeared in the integration run.
+    * **MiniLM Smoke Test**: Step `Run real MiniLM smoke test` passed cleanly in CI.
+    * **Database & API ML Metadata Assertions**: Explicit assertions verified for all three fields (`ml_labels`, `ml_probabilities`, `ml_departments`) in Supabase records and returned via API response `GET /api/complaints/:id`.
+    * *Generative AI in CI*: CI executes without `GEMINI_API_KEY`, validating the internal fallback triage path. Live Gemini API connectivity is verified via standalone smoke testing (`scripts/smoke_test_gemini.js`).
+    * *Historical Context*: Runs #144 & #145 passed with 113 tests using the in-memory fallback due to global mock hoisting in `setup.js`. This was resolved in commits `0316df0` and `c99ca86` with decoupled runners, now fully certified in Run #146.
 
 ### F. Database Schema & Worker ML Column Persistence
 * **Migration Inspected**: `docs/database/phase10_ml_multilabel.sql`
   * Columns defined: `ml_labels TEXT[]`, `ml_probabilities JSONB`, `ml_departments TEXT[]`.
 * **Worker Protection**: `backend/src/workers/complaintWorker.js` verifies all three fields are written during background processing.
 * **API Controller Mapping**: `backend/src/controllers/complaintController.js` maps `mlLabels`, `mlProbabilities`, and `mlDepartments` in `mapComplaint`.
-* **Explicit Assertions Added**: `backend/tests/integration/true_e2e.test.js` now contains explicit assertions verifying that:
+* **Explicit Assertions Verified in CI Run #146**:
   * `ml_labels` is defined and non-empty.
   * `ml_probabilities` is defined and is a valid JSON object.
   * `ml_departments` is defined and is an array.
@@ -107,12 +112,13 @@
 | Frontend Build | Real Compilation | **PASS** | Vite build exit code 0 (822ms) |
 | Python ML Models | Real Deserialization & Inference | **PASS** | `test_inference.py` exit code 0 |
 | MiniLM Local Embedding | Real Node Runtime | **PASS** | `embedding.test.js` passing |
+| MiniLM CI Smoke Test | Remote CI Step | **PASS** | Step `Run real MiniLM smoke test` passed in Run #146 |
 | Gemini Unit Logic | Mocked Unit Tests | **PASS** | `aiService.test.js` 11/11 passed |
 | Gemini Live API Pipeline | Live HTTP Request with Fallback | **PASS (Standalone)** | Standalone smoke test recovered via fallback (`gemini-3.5-flash-lite`) with valid schema (CI uses mock analysis) |
-| Backend Core Logic | Unit & Module Tests | **PASS** | 110 unit tests passed (0 failures) |
-| Real Redis & BullMQ Execution | Unmocked Integration Path | **CONDITIONAL** | Dedicated `test:integration` path created with `jest.integration.config.js`; Run #144 executed via in-memory fallback |
+| Backend Core Logic | Unit & Module Tests | **PASS** | 12 suites, 110 unit tests passed (0 failures) |
+| Real Redis & BullMQ Execution | Unmocked Integration Path | **PASS (CI RUN #146)** | Real Redis PONG verified, BullMQ worker readiness, and two processed complaint jobs with zero mock fallbacks |
 | Supabase Integration | Live Staging Supabase | **PASS (CI)** | Complaint intake, user auth, and Civic Issue creation verified in CI |
-| ML Metadata Assertions (All 3) | Automated Test Suite | **PASS** | Explicit assertions for `ml_labels`, `ml_probabilities`, `ml_departments` added to `true_e2e.test.js` |
+| ML Metadata Assertions (All 3) | Database & API Response | **PASS (CI RUN #146)** | Explicit assertions for `ml_labels`, `ml_probabilities`, `ml_departments` verified in DB and `GET /api/complaints/:id` |
 | Deployed Backend | Live HTTP Health Check | **PASS** | `grievanceiq-gky1.onrender.com` 200 OK |
 | Deployed Frontend | Live HTTP Check | **PASS** | `grievanceiq-app.vercel.app` 200 OK |
-| GitHub CI Full E2E Workflow | Remote GitHub Actions | **PASS** | Runs #144 & #145 passed (113/113 tests passed, 15/15 suites passed) | |
+| GitHub CI Full E2E Workflow | Remote GitHub Actions | **PASS (RUN #146)** | Run #146 passed (113/113 tests passed, 15/15 suites passed in 1m 31s on commit `c99ca86`) [Run #146](https://github.com/Vishh70/grievanceiq/actions/runs/38117823915) |

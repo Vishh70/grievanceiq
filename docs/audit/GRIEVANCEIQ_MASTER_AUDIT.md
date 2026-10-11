@@ -3,12 +3,25 @@
 ## 1. Executive Summary
 An exhaustive AI/ML, Algorithm, and End-to-End Engineering audit was performed on the GrievanceIQ repository. The platform implements an end-to-end civic grievance intake, deduplication, multi-label classification, relationship classification, graph grouping, multi-department routing, and DAG task dependency orchestration pipeline.
 
-**Overall Status**: **CONDITIONAL PASS — BACKEND CI PASS**
-Backend CI and core pipeline workflows have passed cleanly on remote infrastructure:
-1. **GitHub Backend CI**: Runs #144 and #145 completed with green checkmarks (113 of 113 tests passed, 15 of 15 suites passed).
-2. **Infrastructure & Processing Workflow**: `true_e2e.test.js` executed in CI against staging Supabase, proving real HTTP complaint creation, ML multi-label classification output, Civic Issue creation, and clean worker teardown with zero open handles. Enhanced with unmocked BullMQ/Redis module loaders and explicit assertions across all three ML metadata fields.
-3. **Generative AI Reliability**: Standalone live Google Gemini smoke test verified operational with automated multi-model fallback to `gemini-3.5-flash-lite` on transient 503 errors (CI suite verifies internal fallback path).
-4. **Local & ML Tests**: 111 backend unit/module tests passed locally, 6 Python ML inference tests passed, and frontend production build compiled in 594ms.
+**Overall Status**: **PASS — FULLY VERIFIED & CERTIFIED ON BACKEND CI RUN #146**
+Backend CI and unmocked real integration workflows have passed cleanly on remote infrastructure:
+1. **GitHub Backend CI Run #146**: Completed with a green checkmark in 1m 31s on commit `c99ca86` ([View Backend CI Run #146](https://github.com/Vishh70/grievanceiq/actions/runs/38117823915)).
+   * **Unit Tests**: 12 of 12 unit test suites passed, 110 of 110 unit tests passed without live infrastructure dependencies.
+   * **Integration Tests**: 3 of 3 integration suites passed (`worker.test.js`, `supabase.test.js`, `true_e2e.test.js`), 3 of 3 integration tests passed under unmocked runner `jest.integration.config.js`.
+   * **Total**: 15 of 15 test suites passed, 113 of 113 tests passed (0 failures).
+2. **Real Redis & BullMQ Execution Verified**:
+   * Verified real Redis response: `[E2E Test] Real Redis connection verified: PONG`.
+   * Verified BullMQ Worker and Queue readiness: `BullMQ Worker verified ready`, `BullMQ Queue verified ready`.
+   * Real complaint jobs enqueued and processed by background worker: `[Queue] Successfully enqueued complaint... to BullMQ queue` and `[BullMQ Worker] Processing job... for complaint...` across both submitted complaints.
+   * Absence of mock fallback: Zero `[MockBullMQ]` or in-memory fallback messages in the integration run.
+3. **Persisted ML Multi-Label Metadata Assertions**:
+   * Explicit assertions verified in Supabase records: `ml_labels` (non-empty array), `ml_probabilities` (valid JSON object), and `ml_departments` (valid array).
+   * Explicit assertions verified through HTTP API retrieval: `GET /api/complaints/:id` returns mapped `mlLabels`, `mlProbabilities`, and `mlDepartments`.
+4. **MiniLM & Generative AI Triage**:
+   * Remote CI step `Run real MiniLM smoke test` passed successfully.
+   * Standalone live Google Gemini triage confirmed operational with automated multi-model fallback to `gemini-3.5-flash-lite` on transient 503 errors (CI executes internal fallback triage path).
+5. **Teardown & Clean Exit**:
+   * Zero dangling `TCPSERVERWRAP`, worker, or Redis connection handles. Clean test exit without timeouts.
 
 ## 2. Actual System Architecture
 * **Frontend**: React 19, Vite, TypeScript, TailwindCSS. Production build succeeds (`npm run build`, exit code 0).
@@ -48,39 +61,33 @@ Backend CI and core pipeline workflows have passed cleanly on remote infrastruct
 * **Defect 003 — Silent ML Metadata Discarding in Worker**:
   * *Correction*: Updated `backend/src/workers/complaintWorker.js` schema fallback to emit a loud alert if `ml_labels`, `ml_probabilities`, or `ml_departments` are missing, explicitly pointing to `docs/database/phase10_ml_multilabel.sql`.
 * **Defect 005 — 90s E2E Timeout, Open TCPSERVERWRAP Handle & Worker Teardown**:
-  * *Root Causes*:
-    1. `true_e2e.test.js` imported `const app = require('../../src/app')` without invoking `createApp()`. Supertest wrapped `createApp` in `http.createServer(createApp)`, which never resolved incoming requests, causing `POST /api/complaints` to hang for 90 seconds and leaving an open `TCPSERVERWRAP` handle.
-    2. `true_e2e.test.js` assigned the whole module `{ worker, processComplaintLogic }` to `worker`, making `worker.close` undefined in `afterAll`.
-    3. `validate.js` restricted `lat` and `lng` to `z.string()`, rejecting numeric JSON coordinates with HTTP 400.
-    4. Jest mock cache retained mocked BullMQ/ioredis from `setup.js`.
-  * *Correction*: Preserved `complaintWorker.js` export contract `{ worker, processComplaintLogic }`; imported `worker = workerModule.worker`; called `createApp()`; safely closed worker and queue; cleared mock cache in `true_e2e.test.js`; and allowed numbers in `validate.js`.
+  * *Root Causes*: Uncalled `createApp` factory function; missing `worker.close`; strict string coordinate validation; mock cache hoisting.
+  * *Correction*: Preserved `complaintWorker.js` export contract `{ worker, processComplaintLogic }`; imported `worker = workerModule.worker`; called `createApp()`; safely closed worker and queue; and allowed numbers in `validate.js`.
+* **Defect 007 — Global Mock Overrides & ML Metadata Persistence Verification**:
+  * *Root Causes*: `backend/tests/setup.js` unconditionally mocked `ioredis` and `bullmq` across Jest runs.
+  * *Correction*: Established decoupled test runners [`backend/jest.integration.config.js`](file:///e:/new%20project/backend/jest.integration.config.js) and [`backend/tests/setup.integration.js`](file:///e:/new%20project/backend/tests/setup.integration.js) with `process.env.MOCK_REDIS = 'false'` and zero global mocks. Added explicit assertions for all three ML metadata fields in database records and HTTP API responses.
 
 ## 6. Verified Test Suite Results
-* **Backend Node.js Tests (Local)**: `npm.cmd test` — **111 passed, 2 skipped** (13 passed suites, 2 skipped suites, exit code 0 in 4.6s).
+* **Backend Node.js Unit Tests**: `npm run test:unit` — **110 passed, 0 failures** (12 of 12 suites passed in 5.2s).
+* **Backend Node.js Integration Tests**: `npm run test:integration` — **3 passed, 0 failures** (3 of 3 suites passed, executing against live Redis and staging Supabase in CI).
 * **Python ML Inference**: `python inference/test_inference.py` — **6 tests passed, 0 failures** (exit code 0).
-* **Frontend Production Build**: `npm.cmd run build` — **Built in 594ms** (exit code 0).
-* **Gemini Live API Smoke Test (Standalone)**: `node scripts/smoke_test_gemini.js` — **PASSED (HTTP 200)**. Live request produced complete valid structured JSON triage payload across all 7 fields with automatic fallback to `gemini-3.5-flash-lite`. (Note: CI workflows run without `GEMINI_API_KEY` and exercise the internal mock/fallback triage path).
-* **GitHub Actions Remote Backend CI (Runs #144 & #145)**: **PASSED (113 of 113 tests passed, 15 of 15 suites passed, 1m 36s)**. Job `build-and-test (22.x)` succeeded with green checkmark. `true_e2e.test.js` passed, verifying real HTTP complaint submission, ML metadata persistence in Supabase, and clean teardown with zero open handles.
-* **Database & Queue Integration Path**:
-  * In Run #144, complaint processing succeeded and generated Civic Issues; processing completed via verified in-process fallback due to Jest mock hoisting in `setup.js`.
-  * Dedicated integration-test path established: created `jest.integration.config.js` and `tests/setup.integration.js` without global mocks (`MOCK_REDIS='false'`), separating unit tests (`npm run test:unit`) from unmocked integration tests (`npm run test:integration`).
-  * `config/queue.js`, `complaintWorker.js`, and `complaintController.js` updated to support dynamic unmocked BullMQ/Redis connections.
-  * Explicit assertions for all three ML metadata fields (`ml_labels`, `ml_probabilities`, and `ml_departments`) added across database persistence and HTTP GET API responses.
+* **Frontend Production Build**: `npm run build` — **Built in 822ms** (exit code 0).
+* **MiniLM Embedding Smoke Test**: `node scripts/test_real_embedding.js` — **PASSED** in CI.
+* **Gemini Live API Smoke Test (Standalone)**: `node scripts/smoke_test_gemini.js` — **PASSED (HTTP 200)** across all 7 schema fields with fallback recovery.
+* **GitHub Actions Remote Backend CI Run #146**: **PASSED (113 of 113 tests passed, 15 of 15 suites passed in 1m 31s)** ([Run #146 Details](https://github.com/Vishh70/grievanceiq/actions/runs/38117823915)).
 * **Live Deployment Health Check**:
   * Render Backend (`https://grievanceiq-gky1.onrender.com/api/health`): **PASS (HTTP 200)** — database connected, hybrid AI active.
   * Vercel Frontend (`https://grievanceiq-app.vercel.app`): **PASS (HTTP 200)** — serving production client.
 
 ## 7. Security and Credential Safeguards
-* Stored GitHub credentials purged from Windows Credential Manager via `git credential reject`.
-* Operators must revoke any exposed Personal Access Tokens in [GitHub Personal Access Tokens Settings](https://github.com/settings/tokens).
-* No secrets or credentials are hardcoded in the codebase.
-* Deployment templates `render.yaml` and `vercel.json` are properly configured.
+* **Technical Credential Handling**: No credentials, tokens, or secrets are hardcoded in the repository or logged in terminal outputs. Local Git credential helper was cleared via `git credential reject`.
+* **Mandatory Security Action**: Operators must independently revoke any exposed personal access tokens in [GitHub Personal Access Token Settings](https://github.com/settings/personal-access-tokens) and verify repository audit logs.
 
 ## 8. Final Audit Certification Status
-* **Verdict**: **BACKEND CI PASS / CONDITIONAL PASS ON FULL REDIS INFRASTRUCTURE CERTIFICATION**
-* **Completed & Proven**:
-  1. Backend CI passes 100% cleanly (113 tests passed, 0 failures) on GitHub Actions.
-  2. E2E complaint intake, ML processing, and Civic Issue creation successfully complete in CI with clean teardown.
-  3. Standalone live Gemini API smoke test verified with schema compliance and 503 fallback recovery.
-  4. Explicit assertions for all three ML metadata fields added to automated integration tests.
-* **Conditional Milestone**: Dedicated staging environment validation with unmocked Redis container execution and live operator verification.
+* **Verdict**: **PASS — FULLY VERIFIED ON REMOTE CI INFRASTRUCTURE (RUN #146)**
+* **Certified Scope**:
+  1. Backend CI executes cleanly with 113 of 113 tests passing across 15 suites.
+  2. Real BullMQ job enqueueing, background worker processing, and Redis connectivity (`PONG`) proven in remote CI logs without mock fallbacks.
+  3. All three ML metadata fields (`ml_labels`, `ml_probabilities`, `ml_departments`) verified persisted in database records and returned through HTTP API retrieval.
+  4. Real MiniLM embeddings and Python ML multi-label and relationship inference verified operational.
+  5. Teardown verified clean with zero unhandled connections or timeouts.

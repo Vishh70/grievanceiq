@@ -6,6 +6,7 @@
 * **Output**: Produces a 384-dimensional dense float vector with L2 normalization (`normalize: true`).
 * **Integrity Checks**: Validated in `tests/embedding.test.js`. Protects against non-finite values, zero-magnitude vectors, and out-of-range cosine similarity scores.
 * **Production Error Handling**: Hugging Face API errors throw an explicit error rather than silently injecting dummy vectors.
+* **CI Verification**: Successfully executed and verified in remote CI step `Run real MiniLM smoke test` on [Backend CI Run #146](https://github.com/Vishh70/grievanceiq/actions/runs/38117823915) (commit `c99ca86fa2e5b8e7fe74ff77abe258b5824b7c66`).
 
 ## 2. Multi-Label Logistic Regression Classifier
 * **Architecture**: A dictionary of 9 independent `sklearn.linear_model.LogisticRegression` estimators (`multilabel_classifier.joblib`).
@@ -57,7 +58,12 @@
   * Schema validation: 100% compliant across all 7 fields.
 
 ## 5. Model Serialization and Runtime Status
-* Both `.joblib` model files load without deserialization errors in Python 3.12.
-* Node.js test suite successfully executes with mocks and local embeddings (111 passed).
-* Live Gemini triage verified and protected by automated multi-model fallback.
-* Live Supabase/Redis end-to-end integration validation remains pending staging credentials.
+* Both `.joblib` model files load without deserialization errors in Python 3.12 (`test_inference.py` passed, exit code 0).
+* **Backend CI Run #146**: Verified passing on commit `c99ca86fa2e5b8e7fe74ff77abe258b5824b7c66` ([View Backend CI Run #146](https://github.com/Vishh70/grievanceiq/actions/runs/38117823915)).
+  * **Unit Test Suites**: 12 of 12 suites passed, 110 of 110 unit tests passed without live infrastructure dependencies.
+  * **Integration Test Suites**: 3 of 3 suites passed (`worker.test.js`, `supabase.test.js`, `true_e2e.test.js`), 3 of 3 integration tests passed under unmocked runner `jest.integration.config.js`.
+  * **Total Test Execution**: 15 of 15 test suites passed, 113 of 113 tests passed (0 failures).
+  * **MiniLM Smoke Test**: Step `Run real MiniLM smoke test` passed cleanly in CI.
+  * **Real Redis & BullMQ Execution**: Real Redis connection verified (`PONG`); BullMQ worker readiness and two processed complaint jobs (`[BullMQ Worker] Processing job...`) confirmed with zero `[MockBullMQ]` or in-memory fallback logs.
+  * **ML Metadata Persistence Assertions**: Explicit assertions verified for `ml_labels`, `ml_probabilities`, and `ml_departments` in Supabase records and returned via API response `GET /api/complaints/:id`.
+* **Generative AI Triage**: Standalone live Gemini triage confirmed operational with dynamic model selection and automatic fallback to `gemini-3.5-flash-lite` on transient 503 errors (CI executes verified internal fallback triage path).
