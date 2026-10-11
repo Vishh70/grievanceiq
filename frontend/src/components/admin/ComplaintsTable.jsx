@@ -383,16 +383,16 @@ export default function ComplaintsTable({
 
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '0.4rem', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        {c.processingStatus === 'FAILED' && typeof onRetryProcessing === 'function' && (
+                        {c.processingStatus !== 'PROCESSED' && typeof onRetryProcessing === 'function' && (
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"
-                            onClick={() => onRetryProcessing(c)}
+                            onClick={() => onRetryProcessing(c._id || c)}
                             style={{ padding: '0.35rem 0.6rem', color: '#b91c1c', borderColor: '#fecaca' }}
                             title="Reprocess complaint through AI/ML pipeline"
                           >
                             <RotateCcw size={13} />
-                            <span>Retry</span>
+                            <span>Retry AI</span>
                           </button>
                         )}
 

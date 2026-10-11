@@ -262,13 +262,14 @@ export default function AdminDashboard() {
     }
   };
 
-  // Retry AI processing for a failed complaint
-  const handleRetryProcessing = async (complaintId) => {
+  // Retry AI processing for a complaint
+  const handleRetryProcessing = async (complaintOrId) => {
     try {
-      const res = await api.post(`/complaints/${complaintId}/retry`);
+      const id = typeof complaintOrId === 'object' && complaintOrId?._id ? complaintOrId._id : complaintOrId;
+      const res = await api.post(`/complaints/${id}/retry`);
       toast.success(res.data.message || 'AI processing job enqueued');
       await fetchComplaints(page, filters);
-      if (drawerComplaint && drawerComplaint._id === complaintId) {
+      if (drawerComplaint && drawerComplaint._id === id) {
         setDrawerComplaint((prev) => ({
           ...prev,
           processingStatus: 'PROCESSING',

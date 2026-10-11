@@ -108,8 +108,8 @@ export default function ComplaintDrawer({
           </button>
         </div>
 
-        {/* AI Processing Failure Alert */}
-        {complaint.processingStatus === 'FAILED' && (
+        {/* AI Processing Status Banner */}
+        {complaint.processingStatus === 'FAILED' ? (
           <div style={{
             margin: '0.75rem 1.5rem',
             padding: '0.75rem 1rem',
@@ -164,7 +164,62 @@ export default function ComplaintDrawer({
               </button>
             )}
           </div>
-        )}
+        ) : complaint.processingStatus === 'PENDING' ? (
+          <div style={{
+            margin: '0.75rem 1.5rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '8px',
+            background: '#fefce8',
+            border: '1px solid #fef08a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+              <Clock size={16} color="#ca8a04" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#854d0e' }}>
+                  AI Processing Pending
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#a16207', marginTop: '1px' }}>
+                  Awaiting worker inference execution. You can trigger immediate AI triage below.
+                </div>
+              </div>
+            </div>
+            {onRetryProcessing && (
+              <button
+                type="button"
+                disabled={retrying}
+                onClick={async () => {
+                  setRetrying(true);
+                  try {
+                    await onRetryProcessing(complaint._id);
+                  } finally {
+                    setRetrying(false);
+                  }
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  background: '#ca8a04',
+                  color: '#ffffff',
+                  border: 'none',
+                  cursor: retrying ? 'not-allowed' : 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                <RefreshCw size={12} className={retrying ? 'spin' : ''} />
+                {retrying ? 'Processing...' : 'Run AI Now'}
+              </button>
+            )}
+          </div>
+        ) : null}
 
         {/* Tab Switcher inside Drawer */}
         <div style={{ display: 'flex', borderBottom: '1px solid var(--admin-border)', background: '#f8fafc', padding: '0 1.5rem' }}>

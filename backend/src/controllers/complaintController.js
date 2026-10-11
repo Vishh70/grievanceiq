@@ -411,17 +411,24 @@ exports.retryComplaintProcessing = async (req, res) => {
     }
 
     // Reset status to PENDING
-    const { data: updatedComplaint, error: updateErr } = await supabase
-      .from('complaints')
-      .update({
-        processing_status: 'PENDING',
-        processing_error: null
-      })
-      .eq('id', id)
-      .select('*, users (id, name, email)')
-      .single();
+    let updatedComplaint = null;
+    try {
+      const { data: updated, error: updateErr } = await supabase
+        .from('complaints')
+        .update({
+          processing_status: 'PENDING',
+          processing_error: null
+        })
+        .eq('id', id)
+        .select('*')
+        .single();
 
-    if (updateErr) throw updateErr;
+      if (!updateErr && updated) {
+        updatedComplaint = updated;
+      }
+    } catch (uErr) {
+      console.warn('Non-fatal retry update error:', uErr.message);
+    }
 
     const queueConfig = require('../config/queue');
     const { processComplaintLogic } = require('../workers/complaintWorker');
@@ -459,7 +466,7 @@ exports.retryComplaintProcessing = async (req, res) => {
 
     res.json({
       message: 'Complaint reprocessing initiated',
-      complaint: mapComplaint(updatedComplaint)
+      complaint: mapComplaint(updatedComplaint || complaint)
     });
   } catch (error) {
     console.error('Retry processing error:', error);
