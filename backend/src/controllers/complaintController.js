@@ -5,21 +5,13 @@ const { findBestDuplicate, DUPLICATE_CONFIG } = require('../services/duplicateDe
 const { predictRelationship } = require('../services/relationshipService');
 const { processCivicIssueGrouping } = require('../services/civicIssueService');
 const { complaintQueue } = require('../config/queue');
+const { resolveDisplayDepartment } = require('../utils/departmentResolver');
 const fs = require('fs');
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const resolveDepartment = (row) => {
-  if (row.department_id && !UUID_REGEX.test(row.department_id)) {
-    return row.department_id;
-  }
-  if (Array.isArray(row.ml_departments) && row.ml_departments.length > 0 && typeof row.ml_departments[0] === 'string') {
-    return row.ml_departments[0];
-  }
-  if (row.department_id) {
-    return 'Municipal General';
-  }
-  return null;
+  return resolveDisplayDepartment(row);
 };
 
 // Helper to map Supabase row back to frontend-expected Mongoose format
@@ -32,7 +24,7 @@ const mapComplaint = (row, includeEmbedding = false) => {
     category: row.category,
     priority: row.priority,
     status: row.status,
-    recommendedDepartment: resolveDepartment(row),
+    recommendedDepartment: resolveDisplayDepartment(row),
     location: {
       lat: row.location_lat,
       lng: row.location_lng,
@@ -53,7 +45,8 @@ const mapComplaint = (row, includeEmbedding = false) => {
     isDuplicate: row.ai_duplicate_flag || false,
     duplicateScore: row.duplicate_score || 0,
     aiProcessed: row.ai_processed || false,
-    processingStatus: row.processing_status || 'PROCESSED',
+    processingStatus: row.processing_status || (row.ai_processed ? 'PROCESSED' : 'PENDING'),
+    processingError: row.processing_error || null,
     statusHistory: row.status_history || [],
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -400,3 +393,78 @@ exports.classifyRelationship = async (req, res) => {
   }
 };
 
+/**
+ * Admin action: Reprocess a complaint through the AI/ML pipeline
+ * POST /api/complaints/:id/retry
+ */
+exports.retryComplaintProcessing = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: complaint, error: fetchErr } = await supabase
+      .from('complaints')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr || !complaint) {
+      return res.status(404).json({ error: 'Complaint not found' });
+    }
+
+    // Reset status to PENDING
+    const { data: updatedComplaint, error: updateErr } = await supabase
+      .from('complaints')
+      .update({
+        processing_status: 'PENDING',
+        processing_error: null
+      })
+      .eq('id', id)
+      .select('*, users (id, name, email)')
+      .single();
+
+    if (updateErr) throw updateErr;
+
+    const queueConfig = require('../config/queue');
+    const { processComplaintLogic } = require('../workers/complaintWorker');
+    const activeQueue = queueConfig.complaintQueue;
+
+    let enqueued = false;
+    if (queueConfig.connection && queueConfig.connection.status === 'ready') {
+      try {
+        await activeQueue.add('process-complaint', {
+          complaintId: complaint.id,
+          text: complaint.description,
+          imageBase64: complaint.image_base64 || '',
+          mimeType: ''
+        }, {
+          jobId: `retry-${complaint.id}-${Date.now()}`,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 5000 }
+        });
+        enqueued = true;
+      } catch (qErr) {
+        console.warn('Queue retry failed, falling back to in-memory:', qErr.message);
+      }
+    }
+
+    if (!enqueued) {
+      setTimeout(() => {
+        processComplaintLogic({
+          complaintId: complaint.id,
+          text: complaint.description,
+          imageBase64: complaint.image_base64 || '',
+          mimeType: ''
+        }).catch(err => console.error('In-memory retry processing failed:', err));
+      }, 50);
+    }
+
+    res.json({
+      message: 'Complaint reprocessing initiated',
+      complaint: mapComplaint(updatedComplaint)
+    });
+  } catch (error) {
+    console.error('Retry processing error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.mapComplaint = mapComplaint;

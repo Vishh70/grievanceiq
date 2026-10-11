@@ -2,8 +2,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const supabase = require('../src/config/supabase');
-const { generateEmbedding } = require('../src/services/embeddingService');
-const { processComplaint } = require('../src/services/complaintService');
+const { processComplaintLogic } = require('../src/workers/complaintWorker');
 const { routeCivicIssue } = require('../src/services/routingService');
 const crypto = require('crypto');
 
@@ -12,8 +11,6 @@ async function seed() {
 
   if (isReset) {
     console.log('[DEMO] Resetting demo data...');
-    // Demo data is identified by having 'DEMO DATA' in the source/category/title or known tags.
-    // We'll delete complaints containing '[DEMO]'
     const { error: delCmp } = await supabase.from('complaints').delete().like('description', '%[DEMO]%');
     const { error: delIss } = await supabase.from('civic_issues').delete().like('title', '%[DEMO]%');
     if (delCmp || delIss) {
@@ -28,33 +25,63 @@ async function seed() {
   const scenarioPath = path.join(__dirname, '../data/demo_scenario.json');
   const scenario = JSON.parse(fs.readFileSync(scenarioPath, 'utf8'));
 
+  // Ensure a demo citizen user exists
+  let demoCitizenId = null;
+  const { data: demoUser } = await supabase.from('users').select('id').eq('email', 'demo@grievanceiq.com').single();
+  if (demoUser) {
+    demoCitizenId = demoUser.id;
+  } else {
+    const { data: newUser } = await supabase.from('users').insert([{
+      name: 'Demo Citizen',
+      email: 'demo@grievanceiq.com',
+      role: 'citizen'
+    }]).select('id').single();
+    if (newUser) demoCitizenId = newUser.id;
+  }
+
   let firstIssueId = null;
 
   for (const [index, cmp] of scenario.complaints.entries()) {
     console.log(`[DEMO] Processing complaint ${index + 1}/${scenario.complaints.length}: "${cmp.text}"`);
     
-    // To identify it as demo data, we inject [DEMO] tag
     const demoText = `[DEMO] ${cmp.text}`;
     
-    // Simulate API POST /api/complaints
-    const complaintData = {
+    // Insert into Supabase using supported intake schema
+    const { data: created, error: insertErr } = await supabase.from('complaints').insert([{
+      citizen_id: demoCitizenId,
+      title: cmp.text.substring(0, 50) + '...',
       description: demoText,
-      category: cmp.category,
-      location: cmp.location,
-      priority: cmp.priority || 'Medium',
-      citizen_id: 'demo-user-123'
-    };
+      location_address: cmp.location?.address || 'Municipal Demo Zone',
+      location_lat: cmp.location?.lat || 18.5204,
+      location_lng: cmp.location?.lng || 73.8567,
+      status: 'Pending',
+      processing_status: 'PENDING',
+      status_history: [{ status: 'Pending', date: new Date().toISOString(), note: 'Demo submission' }]
+    }]).select().single();
+
+    if (insertErr || !created) {
+      console.error(`[DEMO] Insert failed: ${insertErr?.message}`);
+      continue;
+    }
 
     try {
-      const result = await processComplaint(complaintData);
-      console.log(`[DEMO] -> Complaint ID: ${result.complaintId}, Assigned to Civic Issue: ${result.civicIssueId}`);
-      if (!firstIssueId) firstIssueId = result.civicIssueId;
+      // Execute through the real supported background processing logic
+      await processComplaintLogic({
+        complaintId: created.id,
+        text: demoText,
+        imageBase64: null,
+        mimeType: null
+      });
+
+      const { data: updated } = await supabase.from('complaints').select('civic_issue_id').eq('id', created.id).single();
+      const civicIssueId = updated?.civic_issue_id;
+      console.log(`[DEMO] -> Complaint ID: ${created.id}, Assigned to Civic Issue: ${civicIssueId || 'None'}`);
+      if (!firstIssueId && civicIssueId) firstIssueId = civicIssueId;
     } catch (err) {
-      console.error(`[DEMO] Failed to process complaint: ${err.message}`);
+      console.error(`[DEMO] Processing pipeline failed for complaint: ${err.message}`);
     }
     
-    // Wait briefly to allow timestamps to stagger naturally
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 500));
   }
 
   if (firstIssueId) {

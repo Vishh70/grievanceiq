@@ -55,6 +55,8 @@ export default function AdminDashboard() {
 
   // Stale request guard for complaints
   const complaintsRequestSeq = useRef(0);
+  const pollTimerRef = useRef(null);
+  const pollCountRef = useRef(0);
 
   // Fetch Summary, Similar Groups, and Civic Issues
   const fetchGlobalMetrics = useCallback(async () => {
@@ -80,6 +82,11 @@ export default function AdminDashboard() {
     setComplaintsLoading(true);
     const seq = ++complaintsRequestSeq.current;
 
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+
     try {
       const params = {
         page: targetPage,
@@ -95,12 +102,24 @@ export default function AdminDashboard() {
 
       // Guard against out-of-order stale responses
       if (seq === complaintsRequestSeq.current) {
+        const list = res.data.complaints || [];
         setComplaintsData({
-          complaints: res.data.complaints || [],
-          total: res.data.total ?? (res.data.complaints || []).length,
+          complaints: list,
+          total: res.data.total ?? list.length,
           page: res.data.page ?? targetPage,
           pages: res.data.pages ?? 1
         });
+
+        // Bounded polling: if active background processing is underway, refresh up to 5 times
+        const hasActiveJobs = list.some(c => c.processingStatus === 'PROCESSING' || c.processingStatus === 'PENDING');
+        if (hasActiveJobs && pollCountRef.current < 5) {
+          pollCountRef.current += 1;
+          pollTimerRef.current = setTimeout(() => {
+            fetchComplaints(targetPage, currentFilters);
+          }, 3500);
+        } else if (!hasActiveJobs) {
+          pollCountRef.current = 0;
+        }
       }
     } catch (err) {
       if (seq === complaintsRequestSeq.current) {
@@ -113,6 +132,15 @@ export default function AdminDashboard() {
       }
     }
   }, [filters]);
+
+  // Clean up polling timer on unmount
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) {
+        clearTimeout(pollTimerRef.current);
+      }
+    };
+  }, []);
 
   // Initial Data Load
   useEffect(() => {
@@ -231,6 +259,28 @@ export default function AdminDashboard() {
     } catch (err) {
       // Fall back to in-memory complaint if detail fetch fails
       setDrawerComplaint(complaint);
+    }
+  };
+
+  // Retry AI processing for a failed complaint
+  const handleRetryProcessing = async (complaintId) => {
+    try {
+      const res = await api.post(`/complaints/${complaintId}/retry`);
+      toast.success(res.data.message || 'AI processing job enqueued');
+      await fetchComplaints(page, filters);
+      if (drawerComplaint && drawerComplaint._id === complaintId) {
+        setDrawerComplaint((prev) => ({
+          ...prev,
+          processingStatus: 'PROCESSING',
+          processingError: null
+        }));
+      }
+      return true;
+    } catch (err) {
+      console.error('Retry processing error:', err);
+      const msg = err.response?.data?.error || err.message || 'Failed to queue reprocessing';
+      toast.error(msg);
+      return false;
     }
   };
 
@@ -397,6 +447,7 @@ export default function AdminDashboard() {
             onPageChange={handlePageChange}
             onOpenDrawer={handleOpenDrawer}
             onOpenStatusModal={setStatusModalComplaint}
+            onRetryProcessing={handleRetryProcessing}
             loading={complaintsLoading}
           />
         )}
@@ -434,6 +485,7 @@ export default function AdminDashboard() {
         isOpen={Boolean(drawerComplaint)}
         onClose={() => setDrawerComplaint(null)}
         onOpenStatusModal={setStatusModalComplaint}
+        onRetryProcessing={handleRetryProcessing}
       />
 
       {/* Status Update Modal */}

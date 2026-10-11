@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, AlertTriangle, ShieldAlert, Cpu, Sparkles, MapPin, Clock,
-  User, CheckCircle2, Building, Tag, ExternalLink, Edit3
+  User, CheckCircle2, Building, Tag, ExternalLink, Edit3, RefreshCw
 } from 'lucide-react';
 import ComplaintMap from '../ComplaintMap';
 
@@ -23,9 +23,11 @@ export default function ComplaintDrawer({
   complaint,
   isOpen,
   onClose,
-  onOpenStatusModal
+  onOpenStatusModal,
+  onRetryProcessing
 }) {
   const [activeTab, setActiveTab] = useState('triage');
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -77,6 +79,13 @@ export default function ComplaintDrawer({
               <span className={`admin-badge admin-badge-status-${statusSlug}`}>
                 {complaint.status}
               </span>
+              <span className={`admin-badge ${
+                complaint.processingStatus === 'PROCESSED' ? 'admin-badge-success' :
+                complaint.processingStatus === 'PROCESSING' ? 'admin-badge-warning' :
+                complaint.processingStatus === 'FAILED' ? 'admin-badge-critical' : 'admin-badge-info'
+              }`} style={{ fontSize: '0.72rem' }}>
+                AI: {complaint.processingStatus || 'PENDING'}
+              </span>
               {isSlaBreached && (
                 <span className="admin-badge admin-badge-critical" style={{ fontSize: '0.7rem' }}>
                   <AlertTriangle size={12} /> SLA Breach ({hoursPending.toFixed(1)}h)
@@ -98,6 +107,64 @@ export default function ComplaintDrawer({
             <X size={18} />
           </button>
         </div>
+
+        {/* AI Processing Failure Alert */}
+        {complaint.processingStatus === 'FAILED' && (
+          <div style={{
+            margin: '0.75rem 1.5rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '8px',
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+              <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#991b1b' }}>
+                  AI Background Processing Failed
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#b91c1c', marginTop: '1px' }}>
+                  {complaint.processingError || 'Stage execution failed. Triage was preserved where available.'}
+                </div>
+              </div>
+            </div>
+            {onRetryProcessing && (
+              <button
+                type="button"
+                disabled={retrying}
+                onClick={async () => {
+                  setRetrying(true);
+                  try {
+                    await onRetryProcessing(complaint._id);
+                  } finally {
+                    setRetrying(false);
+                  }
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  background: '#dc2626',
+                  color: '#ffffff',
+                  border: 'none',
+                  cursor: retrying ? 'not-allowed' : 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                <RefreshCw size={12} className={retrying ? 'spin' : ''} />
+                {retrying ? 'Retrying...' : 'Retry AI'}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Tab Switcher inside Drawer */}
         <div style={{ display: 'flex', borderBottom: '1px solid var(--admin-border)', background: '#f8fafc', padding: '0 1.5rem' }}>

@@ -13,30 +13,136 @@ const { generateEmbedding } = require('../services/embeddingService');
 const { predictIssueLabels } = require('../services/mlService');
 const { findBestDuplicate, DUPLICATE_CONFIG } = require('../services/duplicateDetectionService');
 const { processCivicIssueGrouping } = require('../services/civicIssueService');
+const { resolveRecommendedDepartments } = require('../utils/departmentResolver');
+
+/**
+ * Resiliently updates a complaint in Supabase, dropping missing schema columns if needed.
+ */
+async function safeDbUpdate(complaintId, payload) {
+  let currentPayload = { ...payload };
+  let attempts = 0;
+  while (attempts < 10) {
+    attempts++;
+    const { error } = await supabase.from('complaints').update(currentPayload).eq('id', complaintId);
+    if (!error) return true;
+
+    let badCol = null;
+    if (error.message) {
+      if (error.message.includes('does not exist')) {
+        const match = error.message.match(/column "(.*?)" of relation/);
+        if (match) badCol = match[1];
+      } else if (error.message.includes('Could not find the')) {
+        const match = error.message.match(/find the '(.*?)' column/);
+        if (match) badCol = match[1];
+      }
+    }
+
+    if (badCol) {
+      if (['ml_labels', 'ml_probabilities', 'ml_departments'].includes(badCol)) {
+        console.error(`[Worker] ⚠️ Column '${badCol}' missing from 'complaints' table. Omitting.`);
+      } else {
+        console.warn(`[Worker] Schema mismatch: Dropping column '${badCol}' from update.`);
+      }
+      delete currentPayload[badCol];
+      continue;
+    }
+
+    console.error(`[Worker] DB Update Error on complaint ${complaintId}: ${error.message}`);
+    throw new Error(`Database update failed: ${error.message}`);
+  }
+  throw new Error('Failed to update complaint after schema fallback attempts.');
+}
+
+/**
+ * Records an explicit failure outcome without setting ai_processed to true.
+ */
+async function recordProcessingFailure(complaintId, errorMessage) {
+  try {
+    const sanitizedError = String(errorMessage || 'Unknown processing error').slice(0, 500);
+    await safeDbUpdate(complaintId, {
+      processing_status: 'FAILED',
+      processing_error: sanitizedError,
+      ai_processed: false
+    });
+  } catch (err) {
+    console.error(`[Worker] Failed to record failure state for complaint ${complaintId}:`, err.message);
+  }
+}
 
 async function processComplaintLogic(jobData) {
   const { complaintId, text, imageBase64, mimeType } = jobData;
   
-  // 1. Mark as processing
-  const { error: procErr } = await supabase.from('complaints').update({ processing_status: 'PROCESSING' }).eq('id', complaintId);
-  if (procErr) throw new Error(`Failed to mark PROCESSING: ${procErr.message}`);
+  // ── Stage 1: Record initial processing state ───────────────────────────────
+  try {
+    await safeDbUpdate(complaintId, {
+      processing_status: 'PROCESSING',
+      processing_error: null
+    });
+  } catch (initErr) {
+    console.error(`[Worker] Failed to mark complaint ${complaintId} as PROCESSING:`, initErr.message);
+    await recordProcessingFailure(complaintId, `Initial status update failed: ${initErr.message}`);
+    throw initErr;
+  }
+
   console.log(`[Worker] Started processing complaint ${complaintId}`);
 
   try {
-    // 2. Fetch complaint data to get created_at, lat, lng
+    // Fetch complaint record
     const { data: complaintData, error: fetchErr } = await supabase.from('complaints').select('*').eq('id', complaintId).single();
-    if (fetchErr || !complaintData) throw new Error('Complaint not found in DB');
+    if (fetchErr || !complaintData) {
+      throw new Error('Complaint not found in DB');
+    }
 
-    const aiResult = await analyzeComplaint(text, imageBase64, mimeType);
-    
+    // ── Stage 2: AI Triage (Gemini) ──────────────────────────────────────────
+    let aiResult;
+    try {
+      aiResult = await analyzeComplaint(text, imageBase64, mimeType);
+    } catch (aiErr) {
+      throw new Error(`AI Triage failed: ${aiErr.message}`);
+    }
+
+    // Validate and sanitize AI triage results
+    const validatedCategory = aiResult.category || 'Other';
+    const validatedPriority = ['Critical', 'High', 'Medium', 'Low'].includes(aiResult.priority) ? aiResult.priority : 'Medium';
+    const parsedSeverity = parseInt(aiResult.severityScore, 10);
+    const validatedSeverity = (!isNaN(parsedSeverity) && parsedSeverity >= 1 && parsedSeverity <= 10) ? parsedSeverity : 5;
+    const validatedSafetyHazards = Array.isArray(aiResult.safetyHazards) ? aiResult.safetyHazards : [];
+    const validatedSuggestedAction = aiResult.suggestedAction || 'Field inspection required';
+    const validatedKeywords = Array.isArray(aiResult.keywords) ? aiResult.keywords : [];
+
+    // Derive deterministic initial department recommendation from validated AI category
+    const initialDepts = resolveRecommendedDepartments({
+      category: validatedCategory,
+      aiRecommendedDepartment: aiResult.recommendedDepartment
+    });
+
+    // Persist Stage 2 AI Triage results immediately so they are never lost
+    await safeDbUpdate(complaintId, {
+      category: validatedCategory,
+      priority: validatedPriority,
+      severity_score: validatedSeverity,
+      safety_hazards: validatedSafetyHazards,
+      suggested_action: validatedSuggestedAction,
+      keywords: validatedKeywords,
+      ml_departments: initialDepts,
+      processing_status: 'PROCESSING',
+      processing_error: null
+    });
+    console.log(`[Worker] Stage 2 AI triage persisted for complaint ${complaintId} (Category: ${validatedCategory}, Priority: ${validatedPriority})`);
+
+    // ── Stage 3: Embedding Generation & Validation ───────────────────────────
     let embeddingVector = [];
     try {
       embeddingVector = await generateEmbedding(text);
+      if (!Array.isArray(embeddingVector) || embeddingVector.length !== 384) {
+        throw new Error(`Expected 384-dimensional embedding, received ${Array.isArray(embeddingVector) ? embeddingVector.length : 'non-array'}`);
+      }
     } catch (embedErr) {
       console.error('[Worker] Embedding generation failed:', embedErr.message);
       throw new Error(`Embedding generation failed: ${embedErr.message}`);
     }
 
+    // ── Stage 4: Multi-Label ML Classification ───────────────────────────────
     let mlPrediction = { labels: [], issueTypes: [], probabilities: {}, departments: [], serviceAvailable: false };
     try {
       mlPrediction = await predictIssueLabels(embeddingVector, text);
@@ -45,18 +151,27 @@ async function processComplaintLogic(jobData) {
       throw new Error(`ML Issue Classification failed: ${mlErr.message}`);
     }
 
-    const primaryCategory = mlPrediction.issueTypes && mlPrediction.issueTypes.length > 0 
-      ? mlPrediction.issueTypes[0] 
-      : aiResult.category;
+    // Determine primary category: prioritize ML classification if flags triggered, else retain AI triage category
+    const primaryCategory = (mlPrediction.issueTypes && mlPrediction.issueTypes.length > 0)
+      ? mlPrediction.issueTypes[0]
+      : validatedCategory;
 
-    const candidateIssueTypes = mlPrediction.issueTypes && mlPrediction.issueTypes.length > 0
+    const candidateIssueTypes = (mlPrediction.issueTypes && mlPrediction.issueTypes.length > 0)
       ? mlPrediction.issueTypes
-      : [aiResult.category];
+      : [validatedCategory];
 
-    const candidateMlLabels = mlPrediction.labels && mlPrediction.labels.length > 0
+    const candidateMlLabels = (mlPrediction.labels && mlPrediction.labels.length > 0)
       ? mlPrediction.labels
       : [];
 
+    // Combine ML departments and AI departments using deterministic resolver
+    const resolvedDepartments = resolveRecommendedDepartments({
+      mlDepartments: mlPrediction.departments,
+      category: primaryCategory,
+      aiRecommendedDepartment: aiResult.recommendedDepartment
+    });
+
+    // ── Stage 5: Duplicate Detection & Relationship Analysis ─────────────────
     let similarGroupId = complaintData.id;
     let isDuplicate = false;
     let duplicateScore = 0;
@@ -107,7 +222,7 @@ async function processComplaintLogic(jobData) {
           created_at: complaintData.created_at,
         };
 
-        const { bestMatch, allScores } = findBestDuplicate(newComplaintForScoring, candidates);
+        const { bestMatch } = findBestDuplicate(newComplaintForScoring, candidates);
 
         if (bestMatch) {
           isDuplicate = true;
@@ -129,16 +244,16 @@ async function processComplaintLogic(jobData) {
       console.error('[Worker] Phase 2 duplicate detection failed:', dupErr.message);
     }
 
-    const updatePayload = {
+    // Persist Stage 4 & 5 outputs (embeddings, ML classifications, and duplicate features)
+    const stage5Payload = {
       category: primaryCategory,
-      priority: aiResult.priority,
-      keywords: aiResult.keywords,
-      severity_score: aiResult.severityScore,
-      safety_hazards: aiResult.safetyHazards,
-      suggested_action: aiResult.suggestedAction,
+      priority: validatedPriority,
+      keywords: validatedKeywords,
+      severity_score: validatedSeverity,
+      safety_hazards: validatedSafetyHazards,
+      suggested_action: validatedSuggestedAction,
       similar_group_id: similarGroupId,
       ai_duplicate_flag: isDuplicate,
-      ai_processed: true,
       duplicate_score: duplicateScore,
       duplicate_candidate_id: duplicateCandidateId,
       duplicate_semantic_score: dupSemanticScore,
@@ -146,58 +261,17 @@ async function processComplaintLogic(jobData) {
       duplicate_temporal_score: dupTemporalScore,
       ml_labels: mlPrediction.labels,
       ml_probabilities: mlPrediction.probabilities,
-      ml_departments: mlPrediction.departments,
+      ml_departments: resolvedDepartments,
       processing_status: 'PROCESSING'
     };
 
-    if (Array.isArray(embeddingVector) && embeddingVector.length > 0) {
-      updatePayload.embedding_vector = embeddingVector;
+    if (Array.isArray(embeddingVector) && embeddingVector.length === 384) {
+      stage5Payload.embedding_vector = embeddingVector;
     }
 
-    let currentPayload = { ...updatePayload };
-    let updateSuccess = false;
-    let attempts = 0;
-    
-    while (!updateSuccess && attempts < 10) {
-      attempts++;
-      const { error: updateErr } = await supabase.from('complaints').update(currentPayload).eq('id', complaintData.id);
-      
-      if (!updateErr) {
-        updateSuccess = true;
-        break;
-      }
-      
-      let badCol = null;
-      if (updateErr.message) {
-        if (updateErr.message.includes('does not exist')) {
-          const match = updateErr.message.match(/column "(.*?)" of relation/);
-          if (match) badCol = match[1];
-        } else if (updateErr.message.includes('Could not find the')) {
-          const match = updateErr.message.match(/find the '(.*?)' column/);
-          if (match) badCol = match[1];
-        }
-      }
-      
-      if (badCol) {
-        if (['ml_labels', 'ml_probabilities', 'ml_departments'].includes(badCol)) {
-          console.error(`[Worker] ⚠️ ML METADATA DISCARDED: Column '${badCol}' is missing from 'complaints' table. Apply migration 'docs/database/phase10_ml_multilabel.sql' to persist ML inference results.`);
-        } else {
-          console.warn(`[Worker] Schema mismatch: Dropping missing column '${badCol}' from update payload.`);
-        }
-        delete currentPayload[badCol];
-        continue;
-      }
-      
-      // If it's a real database error (connection, constraint, syntax), don't swallow it.
-      console.error(`[Worker] Critical DB Update Error: ${updateErr.message}`);
-      throw new Error(`Database update failed: ${updateErr.message}`);
-    }
-    
-    if (!updateSuccess) {
-      throw new Error('Failed to update complaint with processed data after multiple attempts (schema fallback exhausted).');
-    }
-    
-    // Phase 4: Civic Issue Grouping & Routing
+    await safeDbUpdate(complaintData.id, stage5Payload);
+
+    // ── Stage 6: Civic Issue Grouping & Routing ──────────────────────────────
     try {
       const newComplaintObj = {
         id: complaintData.id,
@@ -213,19 +287,23 @@ async function processComplaintLogic(jobData) {
       
       await processCivicIssueGrouping(newComplaintObj, candidateComplaints);
       console.log(`[Worker] Complaint ${complaintData.id} Civic Issue grouping complete.`);
-      
-      // Finally mark as PROCESSED after all orchestration completes successfully
-      const { error: processedErr } = await supabase.from('complaints').update({ processing_status: 'PROCESSED' }).eq('id', complaintData.id);
-      if (processedErr) throw new Error(`Failed to mark PROCESSED: ${processedErr.message}`);
-      
     } catch (grpErr) {
-      console.error('[Worker] Phase 4 Civic Issue Grouping failed:', grpErr.message);
+      console.error('[Worker] Civic Issue Grouping failed:', grpErr.message);
       throw new Error(`Civic Issue Grouping failed: ${grpErr.message}`);
     }
-    
+
+    // ── Stage 7: Mark Successful Completion ──────────────────────────────────
+    // Only marked PROCESSED and ai_processed=true after all mandatory stages pass
+    await safeDbUpdate(complaintData.id, {
+      ai_processed: true,
+      processing_status: 'PROCESSED',
+      processing_error: null
+    });
+    console.log(`[Worker] Complaint ${complaintData.id} processing successfully completed.`);
+
   } catch (err) {
-    console.error(`[Worker] Failed processing ${complaintId}:`, err);
-    await supabase.from('complaints').update({ processing_status: 'FAILED', processing_error: err.message }).eq('id', complaintId);
+    console.error(`[Worker] Failed processing ${complaintId}:`, err.message);
+    await recordProcessingFailure(complaintId, err.message);
     throw err;
   }
 }

@@ -15,6 +15,7 @@ const {
   upvoteComplaint,
   calculateSimilarity,
   classifyRelationship,
+  retryComplaintProcessing,
 } = require('../controllers/complaintController');
 
 // Phase 1: Semantic similarity test endpoint
@@ -35,6 +36,7 @@ router.get('/:id/similar',    getSimilarComplaints);
 router.post('/',              upload.single('image'), validate(complaintSchema), createComplaint);
 router.get('/',               getComplaints);
 router.patch('/:id/status',   restrictTo('admin'), updateStatus);
+router.post('/:id/retry',     restrictTo('admin'), retryComplaintProcessing);
 router.post('/:id/upvote',    upvoteComplaint);
 
 module.exports = router;

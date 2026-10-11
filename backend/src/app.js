@@ -56,13 +56,17 @@ function createApp() {
 
   // ── Health Check ───────────────────────────────────────────────────────────
   app.get('/api/health', async (_req, res) => {
+    const { checkEmbeddingHealth } = require('./services/embeddingService');
+    const embeddingHealth = checkEmbeddingHealth();
+
     const health = {
       status: 'ok',
       database: 'disconnected',
       environment: process.env.APP_ENV || process.env.NODE_ENV || 'development',
       services: {
         ai: 'hybrid', // Gemini + Local Transformers
-        embedding: 'configured',
+        embedding: embeddingHealth.status,
+        embeddingProvider: embeddingHealth.provider,
         relationshipModel: 'unavailable',
         mlInference: 'unavailable',
         mlSupervisor: require('./services/mlSupervisor').getStatus()

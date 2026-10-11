@@ -1,0 +1,75 @@
+File Path,Component Layer,Disposition,Review Notes
+backend/src/app.js,Backend Architecture,Reviewed; issue found,CORS configuration strictly blocks production origins in staging but defaults to empty origins if env unconfigured
+backend/src/server.js,Backend Runtime,Reviewed; issue found,Embedded supervisor spawn and recovery present; in-memory recovery unthrottled on restart
+backend/src/config/queue.js,Infrastructure Queue,Executed or dynamically validated,BullMQ queue with ioredis failover and in-memory fallback
+backend/src/config/supabase.js,Database Client,Reviewed; no finding,Initializes Supabase client with service_role priority and placeholder safety in test/dev
+backend/src/controllers/authController.js,Authentication,Executed or dynamically validated,Standard email/password login/register and Google OAuth linking tested
+backend/src/controllers/civicIssueController.js,Workflow Controller,Executed or dynamically validated,Handles grouping, routing, dependencies, task state transitions
+backend/src/controllers/complaintController.js,Complaint Controller,Executed or dynamically validated,Handles submission, file uploads, sanitized public feeds, and background dispatch
+backend/src/controllers/dashboardController.js,Admin Analytics,Executed or dynamically validated,KPI calculations, SLA aggregations, similar group querying
+backend/src/middleware/auth.js,Security Middleware,Executed or dynamically validated,JWT verification, citizen protection, and role-based access control (restrictTo)
+backend/src/middleware/upload.js,File Handling,Reviewed; no finding,Multer disk storage with MIME and extension filtering
+backend/src/middleware/validate.js,Input Validation,Executed or dynamically validated,Zod schema enforcement on requests
+backend/src/routes/authRoutes.js,API Routing,Executed or dynamically validated,Exposes register, login, google, and me endpoints
+backend/src/routes/civicIssueRoutes.js,API Routing,Executed or dynamically validated,Exposes grouping, routing, dependencies, and task progress endpoints
+backend/src/routes/complaintRoutes.js,API Routing,Executed or dynamically validated,Exposes complaint submission, retrieval, and status endpoints
+backend/src/routes/dashboardRoutes.js,API Routing,Executed or dynamically validated,Exposes admin summary and cluster inspection endpoints
+backend/src/routes/taskRoutes.js,API Routing,Executed or dynamically validated,Exposes task status updates and transactional RPC transitions
+backend/src/services/aiService.js,AI Triage Service,Executed or dynamically validated,Gemini provider integration with bounded retry, gemini-3.5-flash-lite fallback, and safe mock fallback
+backend/src/services/civicIssueService.js,Civic Intelligence,Executed or dynamically validated,Connected component clustering, title synthesis, priority aggregation
+backend/src/services/complaintGraphService.js,Graph Algorithm,Executed or dynamically validated,DFS connected components algorithm on Duplicate and Related relationship edges
+backend/src/services/duplicateDetectionService.js,Deduplication Engine,Executed or dynamically validated,Semantic (0.50), spatial Haversine (0.30), and temporal (0.20) weighted scoring
+backend/src/services/embeddingService.js,Embedding Engine,Executed or dynamically validated,384-dimensional MiniLM embeddings via Xenova/Transformers with memory bounds
+backend/src/services/mlService.js,ML Client,Executed or dynamically validated,Communicates with Python inference microservice for multi-label predictions
+backend/src/services/mlSupervisor.js,Process Supervisor,Executed or dynamically validated,Spawns and manages embedded Python service with bounded backoff and graceful termination
+backend/src/services/relationshipService.js,Relationship Classification,Executed or dynamically validated,20-feature extraction and Python Random Forest model bridge
+backend/src/services/routingService.js,Routing Engine,Executed or dynamically validated,Deterministic mapping from 9 ML issue types to municipal departments
+backend/src/services/shutdownManager.js,Reliability Lifecycle,Executed or dynamically validated,Coordinated shutdown of HTTP server, worker, supervisor, and queues
+backend/src/services/taskDependencyService.js,Workflow DAG Engine,Executed or dynamically validated,Kahn's topological sorting algorithm and cycle detection
+backend/src/services/taskExecutionService.js,Task Workflow,Executed or dynamically validated,Transactional task progression and database state synchronization
+backend/src/utils/relationshipFeatures.js,Feature Engineering,Executed or dynamically validated,Extracts 20 normalized numerical features for Random Forest classifier
+backend/src/workers/complaintWorker.js,Background Worker,Executed or dynamically validated,BullMQ complaint worker pipeline with schema fallbacks and error logging
+backend/ml/inference/grievanceiq_inference.py,Python ML Inference,Executed or dynamically validated,Flask HTTP service serving 9 Logistic Regression models and Random Forest classifier
+backend/ml/inference/ci_smoke_test.py,ML CI Automation,Executed or dynamically validated,Automated deterministic all-zero vector smoke test for ML service
+backend/ml/inference/test_inference.py,ML Test Runner,Executed or dynamically validated,Validates artifact types, dimensions, thresholds, and inference outputs
+backend/ml/models/issue_labels.json,ML Artifact,Executed or dynamically validated,Authoritative list of 9 issue category flag identifiers
+backend/ml/models/multilabel_classifier.joblib,ML Artifact,Executed or dynamically validated,Joblib dictionary of 9 binary Logistic Regression scikit-learn models
+backend/ml/models/multilabel_thresholds.csv,ML Artifact,Executed or dynamically validated,Optimal F1 decision thresholds per label
+backend/ml/models/relationship_corrected_rf_10tree.joblib,ML Artifact,Executed or dynamically validated,10-tree scikit-learn Random Forest model predicting 4 relationship classes
+backend/ml/models/relationship_model_manifest.json,ML Documentation,Executed or dynamically validated,Complete model provenance, hyperparameters, evaluation split metrics
+backend/scripts/run_comprehensive_audit.js,QA Automation,Reviewed; issue found,Fixed loadModel import error, fixed regex matching PostgREST query syntax
+backend/scripts/audit_all_models.py,QA Automation,Executed or dynamically validated,Dynamically tested all 9 LR models and RF relationship model latency and edge cases
+backend/scripts/audit_algorithms.js,QA Automation,Executed or dynamically validated,Dynamically validated MiniLM embeddings, duplicate logic, DFS, routing, and Kahn's DAG
+backend/scripts/run_10_staging_cases.js,QA Automation,Executed or dynamically validated,Executed 10 synthetic complaint scenarios through real AI/ML and routing pipeline
+frontend/src/App.jsx,Frontend Architecture,Reviewed; no finding,Routing layout, provider wiring, PWA prompt integration
+frontend/src/main.jsx,Frontend Entrypoint,Reviewed; no finding,React 19 root bootstrap and Toast provider
+frontend/src/services/api.js,Frontend API Client,Reviewed; no finding,Axios instance with JWT interceptor, global 401 handling, and 45s Render cold-start tolerance
+frontend/src/context/AuthContext.jsx,State Management,Executed or dynamically validated,User authentication context, token persistence, role state
+frontend/src/pages/Landing.jsx,User Flow,Executed or dynamically validated,Hero showcase, feature pillars, CTA navigation, responsive layouts
+frontend/src/pages/SubmitComplaint.jsx,User Flow,Executed or dynamically validated,Multi-step submission form, geolocation capture, camera stream, validation, polling
+frontend/src/pages/AdminDashboard.jsx,Admin Flow,Executed or dynamically validated,KPI cards, SLA cockpits, filters, table pagination, drawer trigger
+frontend/src/pages/AdminLogin.jsx,Admin Flow,Executed or dynamically validated,Admin credential validation, Google OAuth, role enforcement
+frontend/src/pages/ComplaintDetail.jsx,User Flow,Executed or dynamically validated,Detailed complaint inspector, status timeline, map coordinate display
+frontend/src/pages/MyComplaints.jsx,User Flow,Reviewed; no finding,Citizen personal complaint history and status tracking
+frontend/src/pages/PublicFeed.jsx,User Flow,Executed or dynamically validated,Public feed with anonymized coordinates, upvoting, search
+frontend/src/pages/Login.jsx,Auth Flow,Executed or dynamically validated,Citizen authentication form with validation
+frontend/src/pages/Register.jsx,Auth Flow,Executed or dynamically validated,Citizen registration form with input validation
+frontend/src/components/ComplaintMap.jsx,UI Component,Reviewed; no finding,Leaflet interactive map with custom category markers
+frontend/src/components/Navbar.jsx,Navigation,Executed or dynamically validated,Responsive navigation header with role-sensitive links and mobile drawer
+frontend/src/components/PWAInstallPrompt.jsx,PWA Component,Reviewed; issue found,Fixed-bottom install prompt partially occludes mobile action buttons
+frontend/src/components/admin/AdminHeader.jsx,Admin UI,Reviewed; no finding,Admin operations topbar with search and quick actions
+frontend/src/components/admin/AdminNav.jsx,Admin Navigation,Executed or dynamically validated,Sidebar navigation for operations command center
+frontend/src/components/admin/AiSafetyIntelligence.jsx,Admin UI,Reviewed; no finding,AI hazard indicators and severity radar display
+frontend/src/components/admin/AnalyticsCharts.jsx,Admin UI,Reviewed; no finding,Recharts visual breakdown of category and SLA trends
+frontend/src/components/admin/CivicIssuesManager.jsx,Admin UI,Reviewed; no finding,Clustered civic issues inspector and dependency viewer
+frontend/src/components/admin/ComplaintDrawer.jsx,Admin UI,Executed or dynamically validated,Slide-over drawer for complaint triage, AI probabilities, and actions
+frontend/src/components/admin/ComplaintsTable.jsx,Admin UI,Executed or dynamically validated,Interactive complaint table with status badges and SLA timers
+frontend/src/components/admin/IncidentMapSection.jsx,Admin UI,Reviewed; no finding,Administrative geographical map of pending incidents
+frontend/src/components/admin/KpiCard.jsx,Admin UI,Executed or dynamically validated,High-impact metric display card
+frontend/src/components/admin/SlaCockpit.jsx,Admin UI,Executed or dynamically validated,SLA compliance breakdown and escalation countdowns
+frontend/src/components/admin/StatusUpdateModal.jsx,Admin UI,Executed or dynamically validated,Modal dialog for transitioning complaint states
+vercel.json,Deployment Config,Reviewed; issue found,Hardcodes production backend URL /api rewrite, preventing isolated preview/staging deployments
+frontend/vercel.json,Deployment Config,Reviewed; issue found,Duplicate hardcoded rewrite to production backend
+render.yaml,Deployment Config,Reviewed; no finding,Declares Render web service and worker service deployment manifests
+docs/database/00_initial_schema.sql,Database Migration,Executed or dynamically validated,Initial baseline schema for complaints, users, and civic entities
+docs/database/ALL_MIGRATIONS.sql,Database Migration,Executed or dynamically validated,Consolidated reproducible database schema verified in PGlite

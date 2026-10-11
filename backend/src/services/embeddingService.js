@@ -62,6 +62,53 @@ async function getExtractor() {
 }
 
 /**
+ * Default official Hugging Face Router endpoint for feature extraction
+ */
+const DEFAULT_HF_ROUTER_URL = 'https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction';
+
+/**
+ * Validates and normalizes an embedding vector.
+ * Enforces 384 dimensions and finite numbers.
+ */
+function validateAndNormalizeEmbedding(vector) {
+  let target = vector;
+  // If wrapped in batch dimension [[...]], extract first item
+  if (Array.isArray(target) && target.length === 1 && Array.isArray(target[0])) {
+    target = target[0];
+  }
+
+  if (!Array.isArray(target)) {
+    throw new Error('Invalid embedding response: Expected array representation.');
+  }
+
+  if (target.length !== 384) {
+    throw new Error(`Invalid embedding dimensions: Expected 384-dimensional representation, received ${target.length}.`);
+  }
+
+  const normalized = new Array(384);
+  let normSq = 0;
+  for (let i = 0; i < 384; i++) {
+    const val = Number(target[i]);
+    if (!Number.isFinite(val)) {
+      throw new Error('Invalid embedding values: Vector contains non-finite or NaN numbers.');
+    }
+    normalized[i] = val;
+    normSq += val * val;
+  }
+
+  if (normSq > 0) {
+    const norm = Math.sqrt(normSq);
+    if (Math.abs(norm - 1.0) > 1e-4) {
+      for (let i = 0; i < 384; i++) {
+        normalized[i] = normalized[i] / norm;
+      }
+    }
+  }
+
+  return normalized;
+}
+
+/**
  * Generates a 384-dimensional dense semantic embedding vector for the given text.
  * Uses mean pooling and L2 normalization.
  * 
@@ -73,37 +120,74 @@ async function generateEmbedding(text) {
     return [];
   }
 
-  // Use HuggingFace Inference API directly in production to prevent 512MB RAM OOM crashes on Render
-  if (process.env.NODE_ENV === 'production') {
-    try {
-      const fetch = require('node-fetch') || global.fetch;
-      const response = await fetch(
-        'https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2',
-        {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const hfToken = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || process.env.HF_API_KEY;
+  const allowLocal = process.env.ALLOW_LOCAL_EMBEDDING === 'true';
+
+  // Use HuggingFace Inference API in production or when HF_TOKEN is explicitly configured
+  if (isProduction || (hfToken && !process.env.USE_REAL_MODEL && process.env.NODE_ENV !== 'test')) {
+    if (!hfToken && !allowLocal) {
+      throw new Error('Missing embedding API credentials: HF_TOKEN is required for Hugging Face inference.');
+    }
+
+    if (hfToken) {
+      const endpoint = process.env.HF_EMBEDDING_URL || DEFAULT_HF_ROUTER_URL;
+      const timeoutMs = parseInt(process.env.HF_TIMEOUT_MS || '10000', 10);
+      const fetchFn = global.fetch || require('node-fetch');
+
+      let response;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        response = await fetchFn(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(process.env.HF_TOKEN && { 'Authorization': `Bearer ${process.env.HF_TOKEN}` })
+            'Authorization': `Bearer ${hfToken}`
           },
-          body: JSON.stringify({ inputs: text.trim() })
+          body: JSON.stringify({ inputs: text.trim() }),
+          signal: controller.signal
+        });
+      } catch (netErr) {
+        if (netErr.name === 'AbortError') {
+          throw new Error(`Embedding service request timed out after ${timeoutMs}ms.`);
         }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        // HF returns 1D array for single string input
-        if (Array.isArray(data) && data.length === 384 && typeof data[0] === 'number') {
-           return data;
-        }
+        throw new Error(`Embedding service network error: ${netErr.message}`);
+      } finally {
+        clearTimeout(timeoutId);
       }
-    } catch (e) {
-      console.warn('HuggingFace API failed in production. Using fallback embeddings to prevent OOM.', e.message);
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error(`Hugging Face authentication failed (HTTP ${response.status}): Invalid or expired HF_TOKEN credentials.`);
+        }
+        if (response.status === 429) {
+          throw new Error('Hugging Face rate limit exceeded (HTTP 429). Please retry shortly.');
+        }
+        if (response.status >= 500) {
+          throw new Error(`Hugging Face inference service error (HTTP ${response.status}). Service temporarily unavailable.`);
+        }
+        throw new Error(`Hugging Face embedding request failed with HTTP ${response.status}.`);
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseErr) {
+        throw new Error(`Embedding service response parsing error: ${parseErr.message}`);
+      }
+
+      return validateAndNormalizeEmbedding(data);
     }
-    
-    // In production, NEVER use Xenova if we are on a 512MB RAM free tier instance.
-    // If HF API fails, do NOT return a silent dummy embedding. Throw an error so the job fails safely and retries.
-    throw new Error('HuggingFace API embedding generation failed. No fallback embedding generated.');
+
+    // In production without HF_TOKEN, if ALLOW_LOCAL_EMBEDDING is not set, fail safely to prevent OOM
+    if (!allowLocal) {
+      throw new Error('Missing embedding API credentials: HF_TOKEN is required in production environment.');
+    }
   }
 
+  // Local / Development / Test embedding extraction using @xenova/transformers
   try {
     const extractor = await getExtractor();
     const output = await extractor(text.trim(), {
@@ -115,15 +199,13 @@ async function generateEmbedding(text) {
       throw new Error('Pipeline output is missing tensor data');
     }
 
-    // Extract data explicitly to avoid Jest cross-VM prototype errors like
-    // "A float32 tensor's data must be type of Float32Array"
     const data = output.data;
     const length = data.length;
     const array = new Array(length);
     for (let i = 0; i < length; i++) {
       array[i] = Number(data[i]);
     }
-    return array;
+    return validateAndNormalizeEmbedding(array);
   } catch (error) {
     console.error('Error generating embedding with Xenova/all-MiniLM-L6-v2:', error.message);
     throw error;
@@ -179,6 +261,31 @@ function cosineSimilarity(vectorA, vectorB) {
   return Math.max(-1, Math.min(1, similarity));
 }
 
+/**
+ * Validates required production configuration and reports embedding readiness.
+ */
+function checkEmbeddingHealth() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const hfToken = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || process.env.HF_API_KEY;
+  const allowLocal = process.env.ALLOW_LOCAL_EMBEDDING === 'true';
+
+  if (isProduction) {
+    if (hfToken) {
+      return { status: 'ready', provider: 'huggingface' };
+    }
+    if (allowLocal) {
+      return { status: 'ready', provider: 'local' };
+    }
+    return {
+      status: 'unavailable',
+      provider: 'none',
+      reason: 'HF_TOKEN is missing in production and local embeddings are disabled to prevent OOM.'
+    };
+  }
+
+  return { status: 'ready', provider: 'local' };
+}
+
 async function disposeExtractor() {
   if (extractorPromise) {
     try {
@@ -197,5 +304,8 @@ module.exports = {
   generateEmbedding,
   cosineSimilarity,
   getExtractor,
-  disposeExtractor
+  disposeExtractor,
+  checkEmbeddingHealth,
+  validateAndNormalizeEmbedding,
+  DEFAULT_HF_ROUTER_URL
 };

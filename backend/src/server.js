@@ -69,49 +69,70 @@ const server = app.listen(PORT, async () => {
     timeoutMs: 10000
   });
 
-  // Recovery Mechanism: Find PENDING or stale PROCESSING complaints and requeue
-  try {
-    const { complaintQueue } = require('./config/queue');
-    const { data: staleComplaints, error } = await supabase
-      .from('complaints')
-      .select('id, description, image_base64') // image processing might be lost on restart if not in db, but we have text
-      .in('processing_status', ['PROCESSING', 'PENDING']);
-      
-    if (error) throw error;
-
-    if (staleComplaints && staleComplaints.length > 0) {
-      console.log(`🔄 Recovering ${staleComplaints.length} stale complaints...`);
-      const queueConfig = require('./config/queue');
-      const { processComplaintLogic } = require('./workers/complaintWorker');
-      
-      for (const complaint of staleComplaints) {
-        if (queueConfig.connection && queueConfig.connection.status === 'ready') {
-          // Enqueue them safely again
-          await complaintQueue.add('process-complaint', {
-            complaintId: complaint.id,
-            text: complaint.description,
-            imageBase64: complaint.image_base64 || '', // Usually images are deleted after upload, but might be base64 in db
-            mimeType: '' // Best effort recovery
-          }, {
-            jobId: `recovery-${complaint.id}`, // Idempotent queuing
-            attempts: 3,
-            backoff: { type: 'exponential', delay: 5000 }
-          });
-        } else {
-          // Free Tier / Redis Disconnected Fallback
-          console.warn(`⚠️ Redis not ready. Recovering complaint ${complaint.id} in-memory.`);
-          setTimeout(() => {
-            processComplaintLogic({
-              complaintId: complaint.id,
-              text: complaint.description,
-              imageBase64: complaint.image_base64 || '',
-              mimeType: ''
-            }).catch(err => console.error('In-memory recovery failed:', err));
-          }, 100);
-        }
+  // ── Recovery Mechanism ───────────────────────────────────────────────────────
+  // Recover pending/stale complaints with bounded concurrency & service readiness
+  (async () => {
+    try {
+      const { isMLServiceAvailable } = require('./services/mlService');
+      // Grace period: allow ML supervisor up to 4 seconds to report ready
+      for (let i = 0; i < 4; i++) {
+        const mlReady = await isMLServiceAvailable();
+        if (mlReady) break;
+        await new Promise(r => setTimeout(r, 1000));
       }
+
+      const { complaintQueue } = require('./config/queue');
+      const { data: staleComplaints, error } = await supabase
+        .from('complaints')
+        .select('id, description, image_base64')
+        .in('processing_status', ['PROCESSING', 'PENDING'])
+        .order('created_at', { ascending: true })
+        .limit(20);
+
+      if (error) throw error;
+
+      if (staleComplaints && staleComplaints.length > 0) {
+        console.log(`🔄 Found ${staleComplaints.length} pending/stale complaints. Starting bounded recovery...`);
+        const queueConfig = require('./config/queue');
+        const { processComplaintLogic } = require('./workers/complaintWorker');
+
+        for (const complaint of staleComplaints) {
+          if (queueConfig.connection && queueConfig.connection.status === 'ready') {
+            try {
+              await complaintQueue.add('process-complaint', {
+                complaintId: complaint.id,
+                text: complaint.description,
+                imageBase64: complaint.image_base64 || '',
+                mimeType: ''
+              }, {
+                jobId: `recovery-${complaint.id}`,
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 5000 }
+              });
+            } catch (qErr) {
+              console.warn(`[Queue] Failed to enqueue recovery for ${complaint.id}:`, qErr.message);
+            }
+          } else {
+            // Free Tier / Redis Disconnected Fallback: Controlled sequential in-memory recovery
+            console.log(`[Recovery] Processing complaint ${complaint.id} in-memory...`);
+            try {
+              await processComplaintLogic({
+                complaintId: complaint.id,
+                text: complaint.description,
+                imageBase64: complaint.image_base64 || '',
+                mimeType: ''
+              });
+            } catch (procErr) {
+              console.error(`[Recovery] In-memory recovery failed for ${complaint.id}:`, procErr.message);
+            }
+            // Bounded pause between recovered complaints to protect memory/CPU
+            await new Promise(r => setTimeout(r, 250));
+          }
+        }
+        console.log(`✅ Completed recovery batch of ${staleComplaints.length} complaints.`);
+      }
+    } catch (recErr) {
+      console.error('Failed to run recovery mechanism:', recErr.message);
     }
-  } catch (recErr) {
-    console.error('Failed to run recovery mechanism:', recErr.message);
-  }
+  })();
 });

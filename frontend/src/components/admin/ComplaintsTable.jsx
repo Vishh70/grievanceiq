@@ -1,6 +1,6 @@
 // src/components/admin/ComplaintsTable.jsx
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, AlertTriangle, Eye, Edit3, X, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Search, Filter, AlertTriangle, Eye, Edit3, X, ChevronLeft, ChevronRight, CheckCircle2, Clock, RotateCcw, Loader, AlertCircle } from 'lucide-react';
 
 export default function ComplaintsTable({
   complaints = [],
@@ -16,6 +16,7 @@ export default function ComplaintsTable({
   onPageChange,
   onOpenDrawer,
   onOpenStatusModal,
+  onRetryProcessing,
   loading = false
 }) {
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
@@ -161,7 +162,8 @@ export default function ComplaintsTable({
               <th>Category</th>
               <th>Priority & Severity</th>
               <th>Department</th>
-              <th>Status & SLA</th>
+              <th>Workflow Status</th>
+              <th>AI Processing</th>
               <th>Reported</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
@@ -169,14 +171,14 @@ export default function ComplaintsTable({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--admin-text-muted)' }}>
+                <td colSpan="9" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--admin-text-muted)' }}>
                   <div className="spinner" style={{ margin: '0 auto 0.75rem', width: 24, height: 24 }} />
                   <span>Loading complaint intelligence...</span>
                 </td>
               </tr>
             ) : complaints.length === 0 ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
+                <td colSpan="9" style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
                   <div style={{ color: 'var(--admin-text-muted)', fontSize: '0.95rem', fontWeight: 600 }}>
                     {hasActiveFilters ? 'No complaints match the specified filter criteria.' : 'No citizen complaints recorded yet.'}
                   </div>
@@ -320,13 +322,80 @@ export default function ComplaintsTable({
                     </td>
 
                     <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        {c.processingStatus === 'PROCESSED' ? (
+                          <span
+                            className="admin-badge admin-badge-resolved"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', width: 'fit-content' }}
+                            title="AI and ML pipeline stages successfully verified and persisted"
+                          >
+                            <CheckCircle2 size={11} /> Processed
+                          </span>
+                        ) : c.processingStatus === 'PROCESSING' ? (
+                          <span
+                            className="admin-badge admin-badge-inreview"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', width: 'fit-content' }}
+                            title="Background inference job is currently in progress"
+                          >
+                            <Loader size={11} className="spinner-icon" /> Processing...
+                          </span>
+                        ) : c.processingStatus === 'FAILED' ? (
+                          <span
+                            className="admin-badge admin-badge-critical"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', width: 'fit-content' }}
+                            title={c.processingError ? `Processing Failure: ${c.processingError}` : 'AI inference failed'}
+                          >
+                            <AlertTriangle size={11} /> Failed
+                          </span>
+                        ) : (
+                          <span
+                            className="admin-badge admin-badge-pending"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', width: 'fit-content' }}
+                            title="Awaiting worker inference execution"
+                          >
+                            <Clock size={11} /> Pending AI
+                          </span>
+                        )}
+
+                        {c.processingError && c.processingStatus === 'FAILED' && (
+                          <span
+                            style={{
+                              fontSize: '0.67rem',
+                              color: '#b91c1c',
+                              maxWidth: '140px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                            title={c.processingError}
+                          >
+                            {c.processingError}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    <td>
                       <span style={{ fontSize: '0.8125rem', color: 'var(--admin-text-muted)' }}>
                         {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'N/A'}
                       </span>
                     </td>
 
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'inline-flex', gap: '0.4rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {c.processingStatus === 'FAILED' && typeof onRetryProcessing === 'function' && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => onRetryProcessing(c)}
+                            style={{ padding: '0.35rem 0.6rem', color: '#b91c1c', borderColor: '#fecaca' }}
+                            title="Reprocess complaint through AI/ML pipeline"
+                          >
+                            <RotateCcw size={13} />
+                            <span>Retry</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           className="btn btn-secondary btn-sm"
