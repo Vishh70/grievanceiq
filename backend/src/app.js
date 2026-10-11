@@ -61,6 +61,7 @@ function createApp() {
 
     const health = {
       status: 'ok',
+      version: '1.0.2-google-oauth-live',
       database: 'disconnected',
       environment: process.env.APP_ENV || process.env.NODE_ENV || 'development',
       services: {

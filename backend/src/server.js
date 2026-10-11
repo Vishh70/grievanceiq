@@ -16,7 +16,13 @@ const app = createApp();
 (async () => {
   try {
     const adminEmail = 'system@grievanceiq.com';
-    const { data: existingAdmin, error: fetchErr } = await supabase.from('users').select('id').eq('email', adminEmail).single();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@GrievanceIQ2026!';
+    const bcrypt = require('bcryptjs');
+
+    const checkAdminQuery = supabase.from('users').select('id, password_hash').eq('email', adminEmail);
+    const { data: existingAdmin, error: fetchErr } = typeof checkAdminQuery.maybeSingle === 'function'
+      ? await checkAdminQuery.maybeSingle()
+      : await checkAdminQuery.single();
     
     if (fetchErr && fetchErr.code !== 'PGRST116') { // PGRST116 is 'not found'
       console.error('Failed to check admin:', fetchErr);
@@ -24,22 +30,20 @@ const app = createApp();
     }
 
     if (!existingAdmin) {
-      if (!process.env.ADMIN_PASSWORD) {
-        console.warn('⚠️ No ADMIN_PASSWORD provided. Default admin not created. Set ADMIN_PASSWORD env var to seed admin.');
-      } else {
-        const bcrypt = require('bcryptjs');
-        const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
-        
-        const { error: insertErr } = await supabase.from('users').insert([{
-          name: 'System Admin',
-          email: adminEmail,
-          password_hash: passwordHash,
-          role: 'admin'
-        }]);
-        
-        if (insertErr) throw insertErr;
-        console.log('✅ Default Admin created in Supabase: system@grievanceiq.com');
-      }
+      const passwordHash = await bcrypt.hash(adminPassword, 12);
+      const { error: insertErr } = await supabase.from('users').insert([{
+        name: 'System Admin',
+        email: adminEmail,
+        password_hash: passwordHash,
+        role: 'admin'
+      }]);
+      
+      if (insertErr) throw insertErr;
+      console.log('✅ Default Admin created in Supabase: system@grievanceiq.com (Password: Admin@GrievanceIQ2026!)');
+    } else if (!existingAdmin.password_hash) {
+      const passwordHash = await bcrypt.hash(adminPassword, 12);
+      await supabase.from('users').update({ password_hash: passwordHash }).eq('id', existingAdmin.id);
+      console.log('✅ Default Admin password updated in Supabase: system@grievanceiq.com');
     }
   } catch (err) {
     console.error('Failed to seed admin:', err.message);
