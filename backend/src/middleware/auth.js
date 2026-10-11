@@ -1,6 +1,7 @@
-// src/middleware/auth.js
 const jwt = require('jsonwebtoken');
 const supabase = require('../config/supabase');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'grievanceiq_super_secret_jwt_fallback_key_2026_production';
 
 /**
  * Protect route — requires a valid Bearer JWT
@@ -13,7 +14,7 @@ exports.protect = async (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     
     const { data: user, error } = await supabase.from('users').select('*').eq('id', decoded.id).single();
     if (error || !user) return res.status(401).json({ error: 'User not found' });
@@ -38,7 +39,7 @@ exports.optionalAuth = async (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     const { data: user } = await supabase.from('users').select('*').eq('id', decoded.id).single();
     if (user) {
       delete user.password_hash;

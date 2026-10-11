@@ -101,14 +101,16 @@ describe('Auth Controller', () => {
         getPayload: () => ({ email_verified: true, email: 'existing@test.com', name: 'Existing User' })
       });
 
+      const singleUserMock = jest.fn().mockResolvedValue({
+        data: { id: 'exist-1', email: 'existing@test.com', role: 'admin', password_hash: 'hashed' }
+      });
       supabase.from.mockImplementation((table) => {
         if (table === 'users') {
           return {
             select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-              data: { id: 'exist-1', email: 'existing@test.com', role: 'admin', password_hash: 'hashed' }
-            }),
+            single: singleUserMock,
+            maybeSingle: singleUserMock,
             update: jest.fn().mockReturnThis()
           };
         }
@@ -130,22 +132,26 @@ describe('Auth Controller', () => {
       });
 
       let insertedData = null;
+      const findUserMock = jest.fn().mockImplementation(() => {
+        if (insertedData) {
+          return Promise.resolve({ data: { id: 'new-1', ...insertedData } });
+        }
+        return Promise.resolve({ data: null });
+      });
       supabase.from.mockImplementation((table) => {
         if (table === 'users') {
           return {
             select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockImplementation(() => {
-              if (insertedData) {
-                return Promise.resolve({ data: { id: 'new-1', ...insertedData } });
-              }
-              return Promise.resolve({ data: null });
-            }),
+            single: findUserMock,
+            maybeSingle: findUserMock,
             insert: jest.fn().mockImplementation((data) => {
               insertedData = data[0];
+              const insertResultMock = jest.fn().mockResolvedValue({ data: { id: 'new-1', ...insertedData } });
               return {
                 select: jest.fn().mockReturnThis(),
-                single: jest.fn().mockResolvedValue({ data: { id: 'new-1', ...insertedData } })
+                single: insertResultMock,
+                maybeSingle: insertResultMock
               };
             })
           };

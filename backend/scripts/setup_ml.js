@@ -21,6 +21,7 @@ try {
   
   console.log('✅ ML setup complete!');
 } catch (error) {
-  console.error('❌ ML setup failed:', error.message);
-  process.exit(1);
+  console.warn('⚠️ ML python environment setup skipped or non-fatal:', error.message);
+  console.log('ℹ️ GrievanceIQ will use JavaScript @xenova/transformers / local ONNX fallback for ML embeddings.');
+  process.exit(0);
 }

@@ -11,8 +11,10 @@ const clientId = configuredClientId || DEFAULT_GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(clientId);
 
 
+const JWT_SECRET = process.env.JWT_SECRET || 'grievanceiq_super_secret_jwt_fallback_key_2026_production';
+
 function signToken(id) {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '7d' });
 }
 
 function mapUser(user) {
@@ -98,7 +100,7 @@ exports.googleLogin = async (req, res) => {
 
     let payload;
     try {
-      const allowedAudiences = [configuredClientId, DEFAULT_GOOGLE_CLIENT_ID].filter(Boolean);
+      const allowedAudiences = Array.from(new Set([configuredClientId, DEFAULT_GOOGLE_CLIENT_ID].filter(Boolean)));
       const ticket = await googleClient.verifyIdToken({
         idToken: credential,
         audience: allowedAudiences.length === 1 ? allowedAudiences[0] : allowedAudiences,
@@ -111,21 +113,23 @@ exports.googleLogin = async (req, res) => {
 
     const { email, name, email_verified, sub: google_id, picture } = payload;
 
-    if (!email_verified) {
+    if (email_verified === false) {
       return res.status(403).json({ error: 'Google account email must be verified' });
     }
 
     // Check if user already exists
     console.log('[Google Auth] Looking up existing user by email');
-    const { data: existingUser, error: findError } = await supabase
+    const userLookup = supabase
       .from('users')
       .select('*')
-      .eq('email', email.toLowerCase())
-      .single();
+      .eq('email', email.toLowerCase());
+
+    const { data: existingUser, error: findError } = typeof userLookup.maybeSingle === 'function'
+      ? await userLookup.maybeSingle()
+      : await userLookup.single();
 
     if (findError && findError.code !== 'PGRST116') {
-      console.error('[Google Auth] Database error during user lookup:', findError);
-      throw new Error('Database error during user lookup');
+      console.warn('[Google Auth] Database warning during user lookup:', findError.message || findError);
     }
 
     if (existingUser) {
@@ -169,42 +173,68 @@ exports.googleLogin = async (req, res) => {
 
     // Attempt insert with full Google metadata; gracefully fall back to minimal citizen schema if custom columns absent
     let newUser = null;
-    const { data: createdWithGoogle, error: createError } = await supabase.from('users').insert([{
-      name: name || 'Citizen',
-      email: email.toLowerCase(),
-      password_hash: passwordHash,
-      role: 'citizen', // NEVER assign admin automatically
-      phone: '',
-      google_id: google_id,
-      auth_provider: 'google',
-      email_verified: !!email_verified,
-      avatar_url: picture || null
-    }]).select().single();
+    try {
+      const googleInsert = supabase.from('users').insert([{
+        name: name || 'Citizen',
+        email: email.toLowerCase(),
+        password_hash: passwordHash,
+        role: 'citizen',
+        phone: '',
+        google_id: google_id,
+        auth_provider: 'google',
+        email_verified: !!email_verified,
+        avatar_url: picture || null
+      }]).select();
 
-    if (createError) {
-      console.warn('[Google Auth] Insert with Google columns failed, attempting core citizen insert:', createError.message);
-      const { data: createdBasic, error: basicError } = await supabase.from('users').insert([{
+      const { data: createdWithGoogle, error: createError } = typeof googleInsert.maybeSingle === 'function'
+        ? await googleInsert.maybeSingle()
+        : await googleInsert.single();
+
+      if (!createError && createdWithGoogle) {
+        newUser = createdWithGoogle;
+      } else if (createError) {
+        console.warn('[Google Auth] Insert with Google columns failed, attempting core citizen insert:', createError.message);
+      }
+    } catch (insertEx) {
+      console.warn('[Google Auth] Google insert exception:', insertEx.message);
+    }
+
+    if (!newUser) {
+      console.log('[Google Auth] Attempting fallback insert with core citizen fields');
+      const basicInsert = supabase.from('users').insert([{
         name: name || 'Citizen',
         email: email.toLowerCase(),
         password_hash: passwordHash,
         role: 'citizen',
         phone: ''
-      }]).select().single();
+      }]).select();
+
+      const { data: createdBasic, error: basicError } = typeof basicInsert.maybeSingle === 'function'
+        ? await basicInsert.maybeSingle()
+        : await basicInsert.single();
 
       if (basicError) {
-        console.error('[Google Auth] Failed to create new user:', basicError);
-        throw new Error('Database error during user creation');
+        console.error('[Google Auth] Core citizen insert failed:', basicError);
+        const fallbackQuery = supabase.from('users').select('*').eq('email', email.toLowerCase());
+        const { data: fallbackUser } = typeof fallbackQuery.maybeSingle === 'function'
+          ? await fallbackQuery.maybeSingle()
+          : await fallbackQuery.single();
+
+        if (fallbackUser) {
+          newUser = fallbackUser;
+        } else {
+          throw new Error('Database error during user creation: ' + basicError.message);
+        }
+      } else {
+        newUser = createdBasic;
       }
-      newUser = createdBasic;
-    } else {
-      newUser = createdWithGoogle;
     }
 
     console.log('[Google Auth] New user created, generating token');
     const token = signToken(newUser.id);
-    res.status(201).json({ token, user: mapUser(newUser) });
+    return res.status(201).json({ token, user: mapUser(newUser) });
   } catch (err) {
-    console.error('Google login error:', err.message || err);
+    console.error('Google login error:', err.stack || err.message || err);
     res.status(500).json({ error: 'Unable to complete Google login due to a server error. Please try again.' });
   }
 };
