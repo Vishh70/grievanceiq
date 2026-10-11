@@ -119,6 +119,17 @@ export default function Login() {
               <a href="#" className="text-sm" onClick={(e) => { e.preventDefault(); toast("Forgot password flow is disabled.", { icon: "ℹ️" }) }}>Forgot password?</a>
             </div>
 
+            <div style={{ marginBottom: '1.25rem', padding: '0.65rem 0.85rem', background: 'rgba(99, 102, 241, 0.08)', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Demo Citizen: <strong>citizen@grievanceiq.com</strong></span>
+              <button
+                type="button"
+                onClick={() => setForm({ email: 'citizen@grievanceiq.com', password: 'Password123!' })}
+                style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', padding: '0.25rem 0.55rem', fontSize: '0.72rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Auto-fill
+              </button>
+            </div>
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

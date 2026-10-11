@@ -47,6 +47,11 @@ function AnimatedRoutes() {
           <ProtectedRoute><PageTransition><Navbar /><ComplaintDetail /></PageTransition></ProtectedRoute>
         } />
 
+        {/* Intuitive Navigation Aliases */}
+        <Route path="/submit"  element={<Navigate to="/complaints/new" replace />} />
+        <Route path="/report"  element={<Navigate to="/complaints/new" replace />} />
+        <Route path="/track"   element={<Navigate to="/complaints" replace />} />
+
         {/* Admin routes */}
         <Route path="/admin/login" element={<PageTransition><AdminLogin /></PageTransition>} />
         <Route path="/admin" element={
