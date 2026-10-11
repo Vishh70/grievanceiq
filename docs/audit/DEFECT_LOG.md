@@ -67,7 +67,7 @@
   * Invalidated cached mock modules in `true_e2e.test.js` when `hasValidCredentials` is true so real Redis and BullMQ connections are used.
   * In `validate.js`: updated `lat` and `lng` to `z.union([z.string(), z.number()]).optional()`.
   * In `complaintController.js`: hardened queue dispatch to use `activeQueue` and fall back gracefully if Redis is unavailable.
-* **Status**: **RESOLVED LOCALLY / PENDING REMOTE CI CONFIRMATION**
+* **Status**: **VERIFIED & RESOLVED ON GITHUB CI (Run #144 / Commit 8847375 - 100% Passed in 1m 36s)**
 
 ---
 

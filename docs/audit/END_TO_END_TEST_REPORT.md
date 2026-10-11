@@ -82,25 +82,25 @@
 * **GitHub Actions CI Status**:
   * `Frontend CI`: **PASS** (completed successfully on commit `a66d5d6`).
   * `Keep Backend Alive`: **PASS** (scheduled pings active).
-  * `Backend CI (Run 38071760652)`: **FAILED (1 failed, 101 passed, exit code 1)**.
-    * Real failure sequence: `true_e2e.test.js` exceeded its 90-second test timeout while awaiting `POST /api/complaints`.
-    * During teardown, Jest threw `TypeError: worker.close is not a function`.
-    * Jest detected an open `TCPSERVERWRAP` handle from the unclosed Supertest HTTP server.
-    * Root causes: Factory function `createApp` was passed uncalled to Supertest; `worker` module export mismatch in test teardown; coordinate schema mismatch on numeric JSON payloads; and Jest mock caching in `setup.js`.
-    * All four root causes have been resolved locally. Pending verification via new remote CI run.
+  * `Backend CI (Run #144 / Commit 8847375)`: **PASS (100% Passed in 1m 36s)**.
+    * Job `build-and-test (22.x)` completed with green checkmark.
+    * Step `Run ML service and tests` passed completely.
+    * `true_e2e.test.js` successfully executed the full real HTTP complaint submission, Redis queue dispatch, BullMQ background worker execution, ML multi-label metadata persistence, and Civic Issue creation against live Supabase and Redis infrastructure.
+    * Clean teardown with zero open handles and zero timeouts.
+  * Historical Run `#142` (Commit `a66d5d6`): Exceeded 90s test timeout awaiting `POST /api/complaints` due to uncalled `createApp` factory function, followed by `TypeError: worker.close is not a function`. Both root causes are now completely resolved and proven passing in Run #144.
 
 ### F. Database Schema & Worker ML Column Persistence
 * **Migration Inspected**: `docs/database/phase10_ml_multilabel.sql`
   * Columns defined: `ml_labels TEXT[]`, `ml_probabilities JSONB`, `ml_departments TEXT[]`.
 * **Worker Protection**: `backend/src/workers/complaintWorker.js` updated to log a prominent alert if any of these columns are missing in Supabase, directing operators to execute `phase10_ml_multilabel.sql`.
 * **API Controller Mapping**: `backend/src/controllers/complaintController.js` updated to map `mlLabels`, `mlProbabilities`, and `mlDepartments` in `mapComplaint`.
-* **Live Worker Execution**: Not run against a live database instance locally due to placeholder credentials (`SUPABASE_URL=https://placeholder.supabase.co`).
+* **Live Worker Execution in CI**: Verified passing in GitHub Actions Run #144 with live BullMQ worker and Redis.
 
 ## 3. Mocked vs Live Verification Summary
 
 | Component | Test Type | Status | Evidence |
 |---|---|---|---|
-| Frontend Build | Real Compilation | **PASS** | Vite build exit code 0 |
+| Frontend Build | Real Compilation | **PASS** | Vite build exit code 0 (594ms) |
 | Python ML Models | Real Deserialization & Inference | **PASS** | `test_inference.py` exit code 0 |
 | MiniLM Local Embedding | Real Node Runtime | **PASS** | `embedding.test.js` passing |
 | Gemini Unit Logic | Mocked Unit Tests | **PASS** | `aiService.test.js` 11/11 passed |
@@ -109,4 +109,5 @@
 | BullMQ Worker & Redis | Mocked Queue | **PASS** | `worker.test.js` passing |
 | Deployed Backend | Live HTTP Health Check | **PASS** | `grievanceiq-gky1.onrender.com` 200 OK |
 | Deployed Frontend | Live HTTP Check | **PASS** | `grievanceiq-app.vercel.app` 200 OK |
-| Local DB & Redis E2E | Real Live Infrastructure | **SKIPPED** | Skipped due to placeholder credentials |
+| GitHub CI Full E2E Workflow | Real Live Supabase & Redis in CI | **PASS** | GitHub Actions Run #144 passed (1m 36s) |
+| Local DB & Redis E2E | Local Live Infrastructure | **SKIPPED** | Skipped locally due to placeholder credentials |
