@@ -1,7 +1,7 @@
-// src/components/PWAInstallPrompt.jsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Smartphone, Download, X, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -62,9 +62,7 @@ export default function PWAInstallPrompt() {
     }
     
     if (!deferredPrompt) {
-      import('react-hot-toast').then(({ default: toast }) => {
-        toast('Open your browser menu (⋮) and select "Install App"', { icon: '📱', duration: 4000 });
-      });
+      toast('Open your browser menu (⋮) and select "Install App"', { icon: '📱', duration: 4000 });
       handleDismiss();
       return;
     }
