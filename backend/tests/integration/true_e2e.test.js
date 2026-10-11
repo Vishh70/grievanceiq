@@ -69,6 +69,36 @@ describe('True E2E Asynchronous Flow', () => {
   beforeAll(async () => {
     testRunId = crypto.randomUUID();
     userId = crypto.randomUUID();
+
+    // Ensure Redis connection and worker are ready before running real queue jobs
+    if (connection) {
+      if (typeof connection.ping === 'function') {
+        try {
+          await connection.ping();
+          console.log('[E2E Test] Real Redis connection verified: PONG');
+        } catch (e) {
+          console.warn('[E2E Test] Redis connection ping:', e.message);
+        }
+      }
+      if (connection.status !== 'ready' && typeof connection.once === 'function') {
+        await new Promise(r => {
+          const t = setTimeout(r, 2000);
+          connection.once('ready', () => { clearTimeout(t); r(); });
+        });
+      }
+    }
+    if (worker && typeof worker.waitUntilReady === 'function') {
+      try {
+        await worker.waitUntilReady();
+        console.log('[E2E Test] BullMQ Worker verified ready');
+      } catch (e) {}
+    }
+    if (complaintQueue && typeof complaintQueue.waitUntilReady === 'function') {
+      try {
+        await complaintQueue.waitUntilReady();
+        console.log('[E2E Test] BullMQ Queue verified ready');
+      } catch (e) {}
+    }
     
     // Create a mock user in staging database
     await supabase.from('users').insert({
@@ -166,9 +196,13 @@ describe('True E2E Asynchronous Flow', () => {
     
     expect(status).toBe('PROCESSED');
     
-    // 3. Prove ML Execution output
+    // 3. Prove ML Execution output & All 3 Persisted ML Metadata Fields
     expect(finalComplaint.ml_labels).toBeDefined();
     expect(finalComplaint.ml_labels.length).toBeGreaterThan(0);
+    expect(finalComplaint.ml_probabilities).toBeDefined();
+    expect(typeof finalComplaint.ml_probabilities).toBe('object');
+    expect(finalComplaint.ml_departments).toBeDefined();
+    expect(Array.isArray(finalComplaint.ml_departments)).toBe(true);
     expect(finalComplaint.civic_issue_id).not.toBeNull();
     expect(finalComplaint.priority).toBeDefined();
     
@@ -176,8 +210,18 @@ describe('True E2E Asynchronous Flow', () => {
     const { data: civicIssue } = await supabase.from('civic_issues').select('*').eq('id', finalComplaint.civic_issue_id).single();
     expect(civicIssue).toBeDefined();
     expect(['Open', 'PENDING']).toContain(civicIssue.status);
+
+    // 5. Prove HTTP API returns mapped ML metadata on retrieval
+    const getRes = await request(app)
+      .get(`/api/complaints/${complaintId}`)
+      .set('Authorization', `Bearer ${userToken}`);
+    expect(getRes.status).toBe(200);
+    expect(getRes.body.complaint.mlLabels).toBeDefined();
+    expect(getRes.body.complaint.mlLabels.length).toBeGreaterThan(0);
+    expect(getRes.body.complaint.mlProbabilities).toBeDefined();
+    expect(getRes.body.complaint.mlDepartments).toBeDefined();
     
-    // 5. Submit second complaint to trigger duplicate/relationship logic
+    // 6. Submit second complaint to trigger duplicate/relationship logic
     const res2 = await request(app)
       .post('/api/complaints')
       .set('Authorization', `Bearer ${userToken}`)
@@ -210,6 +254,8 @@ describe('True E2E Asynchronous Flow', () => {
     
     expect(status2).toBe('PROCESSED');
     expect(finalComplaint2.ml_labels).toBeDefined();
+    expect(finalComplaint2.ml_probabilities).toBeDefined();
+    expect(finalComplaint2.ml_departments).toBeDefined();
     
     // Check relationship or similar_group_id was evaluated by the relationship logic
     expect(finalComplaint2.similar_group_id).toBeDefined();

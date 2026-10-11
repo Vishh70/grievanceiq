@@ -1,4 +1,10 @@
-const { Worker } = require('bullmq');
+const getBullMQ = () => {
+  if (process.env.NODE_ENV === 'test' && process.env.MOCK_REDIS !== 'false') {
+    return require('../../__mocks__/bullmq');
+  }
+  return typeof jest !== 'undefined' ? jest.requireActual('bullmq') : require('bullmq');
+};
+const { Worker } = getBullMQ();
 const { createConnection } = require('../config/queue');
 const supabase = require('../config/supabase');
 

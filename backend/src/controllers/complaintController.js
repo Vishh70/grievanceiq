@@ -108,7 +108,7 @@ exports.createComplaint = async (req, res) => {
     const activeQueue = queueConfig.complaintQueue || complaintQueue;
     let enqueued = false;
 
-    if (queueConfig.connection && (queueConfig.connection.status === 'ready' || queueConfig.connection.status === 'connect')) {
+    if (queueConfig.connection && (queueConfig.connection.status === 'ready' || queueConfig.connection.status === 'connect' || queueConfig.connection.status === 'connecting')) {
       try {
         await activeQueue.add('process-complaint', {
           complaintId: complaintData.id,

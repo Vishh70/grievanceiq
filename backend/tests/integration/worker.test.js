@@ -8,7 +8,10 @@ describe('Worker Integration Test', () => {
   });
 
   afterAll(async () => {
-    if (connection) await connection.quit();
+    try {
+      if (complaintQueue && typeof complaintQueue.close === 'function') await complaintQueue.close();
+      if (connection && typeof connection.disconnect === 'function') connection.disconnect();
+    } catch (e) {}
   });
 
   test('Queue is defined', () => {

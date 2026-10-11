@@ -8,9 +8,9 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles --forceExit",
-    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/integration/ --runInBand --forceExit",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.js --runInBand --detectOpenHandles --forceExit",
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.integration.config.js --runInBand --detectOpenHandles --forceExit",
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/endToEnd.test.js --forceExit",
     "demo": "node scripts/seedDemoData.js",
     "demo:reset": "node scripts/seedDemoData.js --reset",

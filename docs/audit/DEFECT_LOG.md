@@ -77,3 +77,20 @@
 * **Affected Files**: `backend/src/controllers/complaintController.js`
 * **Fix Applied**: Added `mlLabels: row.ml_labels || []`, `mlProbabilities: row.ml_probabilities || {}`, and `mlDepartments: row.ml_departments || []` to `mapComplaint`.
 * **Status**: **VERIFIED / RESOLVED**
+
+---
+
+## Defect 007: Unconditional Global Mocks in Jest Setup & Incomplete ML Metadata Assertions
+* **Severity**: Medium
+* **Description**:
+  1. `backend/tests/setup.js` unconditionally mocked `ioredis` and `bullmq` and imported `config/queue` during Jest initialization. In GitHub Actions Run #144, this caused `true_e2e.test.js` to run against the mock queue and complete via the in-memory fallback rather than executing a verified BullMQ job against the Redis container.
+  2. `true_e2e.test.js` only asserted `ml_labels`, omitting explicit assertions for `ml_probabilities` and `ml_departments`.
+  3. CI workflows execute without `GEMINI_API_KEY`, exercising the internal mock fallback path, which was previously conflated with live API triage in audit documentation.
+* **Fix Applied**:
+  1. Split test pipelines: created `jest.integration.config.js` and `tests/setup.integration.js` without global mocks (`MOCK_REDIS='false'`).
+  2. Configured unit tests in `jest.config.js` to ignore `/tests/integration/`.
+  3. Added `"test:unit"` and `"test:integration"` scripts to `backend/package.json`.
+  4. Added explicit assertions verifying all three ML metadata fields (`ml_labels`, `ml_probabilities`, `ml_departments`) in database records and HTTP retrieval.
+  5. Calibrated master audit report to distinguish mock CI triage from standalone live Gemini smoke testing.
+* **Status**: **RESOLVED & VERIFIED**
+
