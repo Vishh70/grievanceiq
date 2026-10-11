@@ -5,12 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, Users } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Register() {
   const [form, setForm]       = useState({ name: '', email: '', password: '', phone: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { register }          = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate              = useNavigate();
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -28,6 +29,24 @@ export default function Register() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    const loadingToast = toast.loading('Creating account with Google...');
+    try {
+      const user = await loginWithGoogle(credentialResponse.credential);
+      toast.success('Welcome to GrievanceIQ!', { id: loadingToast });
+      navigate(user.role === 'admin' ? '/admin' : '/complaints');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Google sign-up failed. Please try again.', { id: loadingToast });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Google sign-up was not completed. Please try again.');
   };
 
   const handleMockSocial = (provider) => {
@@ -127,14 +146,19 @@ export default function Register() {
             </motion.button>
           </form>
 
-          <div className="divider">OR</div>
-
-          <div className="flex gap-1 mb-2">
-            <button type="button" className="social-btn" onClick={() => handleMockSocial('Google')}>
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" height="20" /> Google
-            </button>
-            <button type="button" className="social-btn" onClick={() => handleMockSocial('GitHub')}>
-              <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" width="20" height="20" /> GitHub
+          <div className="flex flex-col items-center gap-2 mb-2 w-full">
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                shape="rectangular"
+                text="signup_with"
+              />
+            </div>
+            <button type="button" className="social-btn w-full mt-1" onClick={() => handleMockSocial('GitHub')}>
+              <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" width="20" height="20" /> Continue with GitHub
             </button>
           </div>
 

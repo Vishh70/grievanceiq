@@ -82,14 +82,25 @@ const server = app.listen(PORT, async () => {
       }
 
       const { complaintQueue } = require('./config/queue');
-      const { data: staleComplaints, error } = await supabase
-        .from('complaints')
-        .select('id, description, image_base64')
-        .in('processing_status', ['PROCESSING', 'PENDING'])
-        .order('created_at', { ascending: true })
-        .limit(20);
-
-      if (error) throw error;
+      let staleComplaints = [];
+      try {
+        const { data, error } = await supabase
+          .from('complaints')
+          .select('id, description, image_base64')
+          .or('processing_status.in.(PROCESSING,PENDING,FAILED),department.is.null,department.eq.Unassigned')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (!error && data) staleComplaints = data;
+      } catch (queryErr) {
+        try {
+          const { data } = await supabase
+            .from('complaints')
+            .select('id, description, image_base64')
+            .in('processing_status', ['PROCESSING', 'PENDING'])
+            .limit(20);
+          if (data) staleComplaints = data;
+        } catch { /* ignore fallback error */ }
+      }
 
       if (staleComplaints && staleComplaints.length > 0) {
         console.log(`🔄 Found ${staleComplaints.length} pending/stale complaints. Starting bounded recovery...`);

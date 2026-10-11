@@ -5,8 +5,11 @@ const crypto = require('crypto');
 const supabase = require('../config/supabase');
 const { OAuth2Client } = require('google-auth-library');
 
-const clientId = (process.env.GOOGLE_CLIENT_ID || '').replace(/[\s"]/g, '');
+const DEFAULT_GOOGLE_CLIENT_ID = '195200639587-v8d2ram47i72psddft6blqrdeieteuu1.apps.googleusercontent.com';
+const configuredClientId = (process.env.GOOGLE_CLIENT_ID || '').replace(/[\s"]/g, '');
+const clientId = configuredClientId || DEFAULT_GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(clientId);
+
 
 function signToken(id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -95,9 +98,10 @@ exports.googleLogin = async (req, res) => {
 
     let payload;
     try {
+      const allowedAudiences = [configuredClientId, DEFAULT_GOOGLE_CLIENT_ID].filter(Boolean);
       const ticket = await googleClient.verifyIdToken({
         idToken: credential,
-        audience: clientId,
+        audience: allowedAudiences.length === 1 ? allowedAudiences[0] : allowedAudiences,
       });
       payload = ticket.getPayload();
     } catch (err) {
@@ -127,28 +131,31 @@ exports.googleLogin = async (req, res) => {
     if (existingUser) {
       console.log('[Google Auth] Existing user found. Checking for Google linking');
       // User exists (either via previous Google login or Email/Password login)
-      // Explicitly link the Google identity if it's not already linked
+      // Attempt to link Google identity if not already linked
       if (!existingUser.google_id) {
         console.log('[Google Auth] Linking Google identity to existing account');
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ 
-            google_id: google_id,
-            auth_provider: 'google',
-            email_verified: !!email_verified,
-            avatar_url: picture || null
-          })
-          .eq('id', existingUser.id);
-        
-        if (updateError) {
-          console.error('[Google Auth] Failed to link Google identity:', updateError);
-          throw new Error('Failed to link Google identity to existing account');
+        try {
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ 
+              google_id: google_id,
+              auth_provider: 'google',
+              email_verified: !!email_verified,
+              avatar_url: picture || null
+            })
+            .eq('id', existingUser.id);
+          
+          if (!updateError) {
+            existingUser.google_id = google_id;
+            existingUser.auth_provider = 'google';
+            existingUser.email_verified = !!email_verified;
+            existingUser.avatar_url = picture || null;
+          } else {
+            console.warn('[Google Auth] Non-fatal: column update failed or columns not present:', updateError.message);
+          }
+        } catch (linkErr) {
+          console.warn('[Google Auth] Non-fatal link error:', linkErr.message);
         }
-        
-        existingUser.google_id = google_id;
-        existingUser.auth_provider = 'google';
-        existingUser.email_verified = !!email_verified;
-        existingUser.avatar_url = picture || null;
       }
       
       console.log('[Google Auth] Generating token for existing user');
@@ -157,12 +164,12 @@ exports.googleLogin = async (req, res) => {
     }
 
     console.log('[Google Auth] User does not exist, creating new citizen account');
-    // User does not exist, create a new citizen account
-    // Generate a random, unusable password hash for safety
     const randomPassword = crypto.randomBytes(32).toString('hex');
     const passwordHash = await bcrypt.hash(randomPassword, 12);
 
-    const { data: newUser, error: createError } = await supabase.from('users').insert([{
+    // Attempt insert with full Google metadata; gracefully fall back to minimal citizen schema if custom columns absent
+    let newUser = null;
+    const { data: createdWithGoogle, error: createError } = await supabase.from('users').insert([{
       name: name || 'Citizen',
       email: email.toLowerCase(),
       password_hash: passwordHash,
@@ -175,8 +182,22 @@ exports.googleLogin = async (req, res) => {
     }]).select().single();
 
     if (createError) {
-      console.error('[Google Auth] Failed to create new user:', createError);
-      throw new Error('Database error during user creation');
+      console.warn('[Google Auth] Insert with Google columns failed, attempting core citizen insert:', createError.message);
+      const { data: createdBasic, error: basicError } = await supabase.from('users').insert([{
+        name: name || 'Citizen',
+        email: email.toLowerCase(),
+        password_hash: passwordHash,
+        role: 'citizen',
+        phone: ''
+      }]).select().single();
+
+      if (basicError) {
+        console.error('[Google Auth] Failed to create new user:', basicError);
+        throw new Error('Database error during user creation');
+      }
+      newUser = createdBasic;
+    } else {
+      newUser = createdWithGoogle;
     }
 
     console.log('[Google Auth] New user created, generating token');

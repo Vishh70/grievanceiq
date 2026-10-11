@@ -46,7 +46,7 @@ export default function Login() {
   };
 
   const handleGoogleError = () => {
-    toast.error('Google authentication failed. Please try again.');
+    toast.error('Google sign-in was not completed. Please try again.');
   };
 
   const handleMockSocial = (provider) => {
@@ -128,16 +128,18 @@ export default function Login() {
 
           <div className="divider">OR</div>
 
-          <div className="flex flex-col gap-2 mb-2">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              useOneTap
-              theme="outline"
-              size="large"
-              width="100%"
-            />
-            <button type="button" className="social-btn w-full mt-2" onClick={() => handleMockSocial('GitHub')}>
+          <div className="flex flex-col items-center gap-2 mb-2 w-full">
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                shape="rectangular"
+                text="signin_with"
+              />
+            </div>
+            <button type="button" className="social-btn w-full mt-1" onClick={() => handleMockSocial('GitHub')}>
               <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" width="20" height="20" /> Continue with GitHub
             </button>
           </div>

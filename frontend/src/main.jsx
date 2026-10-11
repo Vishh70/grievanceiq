@@ -11,9 +11,11 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 // Explicitly register the service worker for PWA to satisfy browser installation criteria
 registerSW({ immediate: true });
 
+const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '195200639587-v8d2ram47i72psddft6blqrdeieteuu1.apps.googleusercontent.com').trim();
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy_client_id'}>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <App />
     </GoogleOAuthProvider>
   </StrictMode>,
