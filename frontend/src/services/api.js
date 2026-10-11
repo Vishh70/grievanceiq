@@ -2,8 +2,21 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+export function resolveBaseUrl() {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return '/api';
+
+  // Handle any multi-line or whitespace formatted strings from deployment environments
+  const cleaned = envUrl
+    .split(/[\r\n,\s]+/)
+    .map((s) => s.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, ''))
+    .find((s) => /^https?:\/\//i.test(s));
+
+  return cleaned || '/api';
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: resolveBaseUrl(),
   timeout: 45000, // 45 seconds to allow for Render free-tier cold starts
 });
 
@@ -22,10 +35,13 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('giq_token');
       localStorage.removeItem('giq_user');
-      
-      const isLoginPath = window.location.pathname === '/login' || window.location.pathname === '/admin/login';
-      
-      if (!isLoginPath) {
+
+      const isAuthPath =
+        window.location.pathname === '/login' ||
+        window.location.pathname === '/admin/login' ||
+        window.location.pathname === '/register';
+
+      if (!isAuthPath) {
         if (window.location.pathname.startsWith('/admin')) {
           window.location.href = '/admin/login';
         } else {
@@ -33,13 +49,18 @@ api.interceptors.response.use(
         }
       }
     }
-    
+
     // Handle Render Cold Start / Timeout / Bad Gateway
-    const isColdStartError = err.response?.status === 502 || err.response?.status === 503 || err.response?.status === 504;
+    const isColdStartError =
+      err.response?.status === 502 ||
+      err.response?.status === 503 ||
+      err.response?.status === 504;
     if (err.code === 'ECONNABORTED' || err.message === 'Network Error' || isColdStartError) {
-      toast.error('The backend server is waking up or unreachable. Please wait 30 seconds and try again.', { id: 'network-error' });
+      toast.error('The backend server is waking up or unreachable. Please wait 30 seconds and try again.', {
+        id: 'network-error',
+      });
     }
-    
+
     return Promise.reject(err);
   }
 );

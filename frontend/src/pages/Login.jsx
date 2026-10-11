@@ -25,7 +25,8 @@ export default function Login() {
       toast.success('Welcome back!', { id: loadingToast });
       navigate(user.role === 'admin' ? '/admin' : '/complaints');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Invalid credentials. Please try again.', { id: loadingToast });
+      const msg = err.response?.data?.error || err.message || 'Invalid credentials. Please try again.';
+      toast.error(msg, { id: loadingToast });
     } finally {
       setLoading(false);
     }
@@ -40,7 +41,7 @@ export default function Login() {
       navigate(user.role === 'admin' ? '/admin' : '/complaints');
     } catch (err) {
       console.error('Google login backend verification failed:', err);
-      const msg = err.response?.data?.error || 'Google login failed on backend. Please try again.';
+      const msg = err.response?.data?.error || err.message || 'Google login failed on backend. Please try again.';
       toast.error(msg, { id: loadingToast });
     } finally {
       setLoading(false);

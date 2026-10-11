@@ -25,7 +25,12 @@ export default function Register() {
       toast.success('Registration successful!', { id: loadingToast });
       navigate(user.role === 'admin' ? '/admin' : '/complaints');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Registration failed. Please try again.', { id: loadingToast });
+      const backendError = err.response?.data?.error;
+      let displayError = backendError || err.message || 'Registration failed. Please try again.';
+      if (backendError === 'Email already registered') {
+        displayError = 'This email is already registered. Please sign in below or continue with Google.';
+      }
+      toast.error(displayError, { id: loadingToast });
     } finally {
       setLoading(false);
     }
@@ -40,7 +45,7 @@ export default function Register() {
       navigate(user.role === 'admin' ? '/admin' : '/complaints');
     } catch (err) {
       console.error('Google register backend verification failed:', err);
-      const msg = err.response?.data?.error || 'Google sign-up failed on backend. Please try again.';
+      const msg = err.response?.data?.error || err.message || 'Google sign-up failed on backend. Please try again.';
       toast.error(msg, { id: loadingToast });
     } finally {
       setLoading(false);

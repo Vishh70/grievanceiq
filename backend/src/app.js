@@ -54,14 +54,21 @@ function createApp() {
   app.use('/api/civic-issues', require('./routes/civicIssueRoutes'));
   app.use('/api/tasks',        require('./routes/taskRoutes'));
 
+  // Also mirror routes directly without /api prefix for reverse-proxy compatibility
+  app.use('/auth',             require('./routes/authRoutes'));
+  app.use('/complaints',       require('./routes/complaintRoutes'));
+  app.use('/dashboard',        require('./routes/dashboardRoutes'));
+  app.use('/civic-issues',     require('./routes/civicIssueRoutes'));
+  app.use('/tasks',            require('./routes/taskRoutes'));
+
   // ── Health Check ───────────────────────────────────────────────────────────
-  app.get('/api/health', async (_req, res) => {
+  app.get(['/api/health', '/health'], async (_req, res) => {
     const { checkEmbeddingHealth } = require('./services/embeddingService');
     const embeddingHealth = checkEmbeddingHealth();
 
     const health = {
       status: 'ok',
-      version: '1.0.2-google-oauth-live',
+      version: '1.0.3-unified-auth-production',
       database: 'disconnected',
       environment: process.env.APP_ENV || process.env.NODE_ENV || 'development',
       services: {

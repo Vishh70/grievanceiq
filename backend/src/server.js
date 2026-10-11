@@ -12,7 +12,7 @@ const supabase = require('./config/supabase');
 const app = createApp();
 
 // ── Database ──────────────────────────────────────────────────────────────────
-// Automatically seed default admin user into Supabase if not exists
+// Automatically seed default admin user into Supabase if not exists, or ensure password is correct
 (async () => {
   try {
     const adminEmail = 'system@grievanceiq.com';
@@ -30,6 +30,7 @@ const app = createApp();
     }
 
     if (!existingAdmin) {
+      // Create new admin account
       const passwordHash = await bcrypt.hash(adminPassword, 12);
       const { error: insertErr } = await supabase.from('users').insert([{
         name: 'System Admin',
@@ -39,11 +40,17 @@ const app = createApp();
       }]);
       
       if (insertErr) throw insertErr;
-      console.log('✅ Default Admin created in Supabase: system@grievanceiq.com (Password: Admin@GrievanceIQ2026!)');
-    } else if (!existingAdmin.password_hash) {
-      const passwordHash = await bcrypt.hash(adminPassword, 12);
-      await supabase.from('users').update({ password_hash: passwordHash }).eq('id', existingAdmin.id);
-      console.log('✅ Default Admin password updated in Supabase: system@grievanceiq.com');
+      console.log('✅ Default Admin created: system@grievanceiq.com');
+    } else {
+      // Always ensure the admin password matches the configured value
+      const needsUpdate = !existingAdmin.password_hash || !(await bcrypt.compare(adminPassword, existingAdmin.password_hash));
+      if (needsUpdate) {
+        const passwordHash = await bcrypt.hash(adminPassword, 12);
+        await supabase.from('users').update({ password_hash: passwordHash }).eq('id', existingAdmin.id);
+        console.log('✅ Admin password synchronized on startup: system@grievanceiq.com');
+      } else {
+        console.log('✅ Admin account verified: system@grievanceiq.com');
+      }
     }
   } catch (err) {
     console.error('Failed to seed admin:', err.message);

@@ -15,7 +15,8 @@ registerSW({
   }
 });
 
-const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '195200639587-v8d2ram47i72psddft6blqrdeieteuu1.apps.googleusercontent.com').trim();
+const rawClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '195200639587-v8d2ram47i72psddft6blqrdeieteuu1.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = (rawClientId.split(/[\r\n,\s]+/).map(s => s.trim().replace(/^["']|["']$/g, '')).find(s => s.includes('.apps.googleusercontent.com')) || rawClientId.trim());
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

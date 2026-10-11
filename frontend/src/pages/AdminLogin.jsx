@@ -32,7 +32,8 @@ export default function AdminLogin() {
       toast.success('Admin authentication successful.', { id: loadingToast });
       navigate('/admin');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Invalid credentials. Please try again.', { id: loadingToast });
+      const msg = err.response?.data?.error || err.message || 'Invalid credentials. Please try again.';
+      toast.error(msg, { id: loadingToast });
     } finally {
       setLoading(false);
     }
