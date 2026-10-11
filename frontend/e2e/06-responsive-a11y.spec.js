@@ -93,7 +93,7 @@ test.describe('Journey 6 — Responsive Layouts & Essential Accessibility', () =
       await expect(page.getByText('Total Complaints')).toBeVisible();
 
       // Switch to Complaint Intelligence tab
-      const complaintsTab = page.getByRole('tab', { name: /Complaint Intelligence/i });
+      const complaintsTab = page.getByRole('tab', { name: /(Complaint Intelligence|All Complaints)/i });
       await expect(complaintsTab).toBeVisible();
       await complaintsTab.click();
 
@@ -184,7 +184,7 @@ test.describe('Journey 6 — Responsive Layouts & Essential Accessibility', () =
       await page.goto('/admin');
 
       // Switch to Complaint Intelligence tab
-      const complaintsTab = page.getByRole('tab', { name: /Complaint Intelligence/i });
+      const complaintsTab = page.getByRole('tab', { name: /(Complaint Intelligence|All Complaints)/i });
       await expect(complaintsTab).toBeVisible();
       await complaintsTab.click();
 

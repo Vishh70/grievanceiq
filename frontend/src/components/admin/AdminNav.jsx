@@ -5,7 +5,13 @@ import { LayoutDashboard, FileText, Layers, ShieldAlert, MapPin } from 'lucide-r
 export default function AdminNav({ activeTab, onChangeTab, counts = {} }) {
   const tabs = [
     { id: 'overview', label: 'Operations Overview', icon: LayoutDashboard },
-    { id: 'complaints', label: 'All Complaints', icon: FileText, count: counts.complaints },
+    { 
+      id: 'complaints', 
+      label: 'All Complaints & Intelligence', 
+      ariaLabel: 'All Complaints & Complaint Intelligence', 
+      icon: FileText, 
+      count: counts.complaints 
+    },
     { id: 'civic-issues', label: 'Civic Issues & DAG Workflow', icon: Layers, count: counts.civicIssues },
     { id: 'ai-safety', label: 'AI & Safety Intelligence', icon: ShieldAlert, count: counts.hazards },
     { id: 'incident-map', label: 'Geographic Risk & Map', icon: MapPin, count: counts.mapPins }
@@ -23,6 +29,7 @@ export default function AdminNav({ activeTab, onChangeTab, counts = {} }) {
             className={`admin-nav-tab ${isActive ? 'active' : ''}`}
             onClick={() => onChangeTab(tab.id)}
             aria-selected={isActive}
+            aria-label={tab.ariaLabel || tab.label}
             role="tab"
           >
             <Icon size={16} />

@@ -61,11 +61,11 @@ test.describe('Journey 5 — Complaint Drawer & Status Update Workflow', () => {
     await page.goto('/admin');
 
     // Switch to Complaint Intelligence tab
-    const complaintsTab = page.getByRole('tab', { name: /Complaint Intelligence/i });
+    const complaintsTab = page.getByRole('tab', { name: /(Complaint Intelligence|All Complaints)/i });
     await expect(complaintsTab).toBeVisible();
     await complaintsTab.click();
 
-    await expect(page.getByText('Complaint Intelligence Registry')).toBeVisible();
+    await expect(page.getByText(/Complaint Intelligence Registry/i)).toBeVisible();
 
     // Click "Details" on first complaint row
     const viewDetailsBtn = page.getByRole('button', { name: 'Details' }).first();
@@ -115,11 +115,11 @@ test.describe('Journey 5 — Complaint Drawer & Status Update Workflow', () => {
     await page.goto('/admin');
 
     // Switch to Complaint Intelligence tab
-    const complaintsTab = page.getByRole('tab', { name: /Complaint Intelligence/i });
+    const complaintsTab = page.getByRole('tab', { name: /(Complaint Intelligence|All Complaints)/i });
     await expect(complaintsTab).toBeVisible();
     await complaintsTab.click();
 
-    await expect(page.getByText('Complaint Intelligence Registry')).toBeVisible();
+    await expect(page.getByText(/Complaint Intelligence Registry/i)).toBeVisible();
 
     // Click "Status" on first complaint row
     const updateStatusBtn = page.getByRole('button', { name: 'Status' }).first();

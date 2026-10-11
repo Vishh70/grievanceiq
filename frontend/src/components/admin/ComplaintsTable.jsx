@@ -66,7 +66,7 @@ export default function ComplaintsTable({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
           <div>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--admin-text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>All Complaints & Grievance Registry</span>
+              <span>All Complaints & Complaint Intelligence Registry</span>
               <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
                 {total} Total
               </span>

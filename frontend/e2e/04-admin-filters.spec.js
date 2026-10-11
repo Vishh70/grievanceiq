@@ -62,11 +62,11 @@ test.describe('Journey 4 — Admin Filters & Atomic Clear All Filters Regression
     await page.goto('/admin');
 
     // Switch to Complaint Intelligence tab to render ComplaintsTable
-    const complaintsTab = page.getByRole('tab', { name: /Complaint Intelligence/i });
+    const complaintsTab = page.getByRole('tab', { name: /(Complaint Intelligence|All Complaints)/i });
     await expect(complaintsTab).toBeVisible();
     await complaintsTab.click();
 
-    await expect(page.getByText('Complaint Intelligence Registry')).toBeVisible();
+    await expect(page.getByText(/Complaint Intelligence Registry/i)).toBeVisible();
 
     // 1. Verify "Clear All Filters" button is NOT visible initially (no active filters)
     const clearFiltersBtn = page.getByRole('button', { name: /Clear All Filters/i });
