@@ -5,7 +5,7 @@ const getBullMQ = () => {
   return typeof jest !== 'undefined' ? jest.requireActual('bullmq') : require('bullmq');
 };
 const { Worker } = getBullMQ();
-const { createConnection } = require('../config/queue');
+const { getRedisConnectionOptions } = require('../config/queue');
 const supabase = require('../config/supabase');
 
 const { analyzeComplaint } = require('../services/aiService');
@@ -14,7 +14,6 @@ const { predictIssueLabels } = require('../services/mlService');
 const { findBestDuplicate, DUPLICATE_CONFIG } = require('../services/duplicateDetectionService');
 const { processCivicIssueGrouping } = require('../services/civicIssueService');
 
-const workerConnection = createConnection();
 async function processComplaintLogic(jobData) {
   const { complaintId, text, imageBase64, mimeType } = jobData;
   
@@ -234,9 +233,7 @@ async function processComplaintLogic(jobData) {
 const worker = new Worker('ComplaintProcessing', async job => {
   console.log(`[BullMQ Worker] Processing job ${job.id} for complaint ${job.data.complaintId}`);
   return processComplaintLogic(job.data);
-}, { connection: workerConnection });
-
-worker.workerConnection = workerConnection;
+}, { connection: getRedisConnectionOptions() });
 
 worker.on('failed', (job, err) => {
   console.log(`[Worker] Job ${job.id} has failed with ${err.message}`);

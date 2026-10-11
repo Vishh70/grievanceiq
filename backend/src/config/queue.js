@@ -23,6 +23,11 @@ const redisOptions = {
   }
 };
 
+const getRedisConnectionOptions = () => ({
+  url: process.env.REDIS_URL || 'redis://localhost:6379',
+  ...redisOptions
+});
+
 const createConnection = () => {
   const RedisClass = getRedisClass();
   const conn = new RedisClass(process.env.REDIS_URL || 'redis://localhost:6379', redisOptions);
@@ -35,10 +40,10 @@ const createConnection = () => {
 };
 
 const { Queue } = getBullMQ();
-const connection = createConnection(); // Keep for backward compatibility/generic ops
-const complaintQueue = new Queue('ComplaintProcessing', { connection: createConnection() });
+const connection = createConnection(); // Keep for application-level status checking & health probes
+const complaintQueue = new Queue('ComplaintProcessing', { connection: getRedisConnectionOptions() });
 if (complaintQueue && typeof complaintQueue.on === 'function') {
   complaintQueue.on('error', () => {});
 }
 
-module.exports = { complaintQueue, connection, createConnection };
+module.exports = { complaintQueue, connection, createConnection, getRedisConnectionOptions, redisOptions };

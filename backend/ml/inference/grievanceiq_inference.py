@@ -92,14 +92,18 @@ def check_auth():
 
 @app.route('/health', methods=['GET'])
 def health():
+    classifier_ready = classifier is not None and isinstance(classifier, dict) and len(classifier) == 9
+    rel_model_ready = relationship_classifier is not None
+
     return jsonify({
-        'status': 'ok',
+        'status': 'ok' if classifier_ready else 'degraded',
         'service': 'GrievanceIQ ML Inference',
         'labels': LABELS,
         'model': 'multilabel_classifier.joblib',
         'model_type': 'dict of 9 individual LogisticRegression models',
-        'model_loaded': True
-    })
+        'model_loaded': classifier_ready,
+        'relationship_model_loaded': rel_model_ready
+    }), (200 if classifier_ready else 503)
 
 @app.route('/predict', methods=['POST'])
 def predict():

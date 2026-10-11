@@ -20,13 +20,7 @@ function createApp() {
   console.log('[Startup] ✅ AI configuration: OK (Hybrid: Gemini + Local Transformers/Xenova)');
 
   // ── Middleware ──────────────────────────────────────────────────────────────
-  const allowedOrigins = [
-    'https://grievanceiq-app.vercel.app',
-    'https://grievanceiq-ten.vercel.app',
-    process.env.CLIENT_URL,
-    'http://localhost:5173',
-    'http://127.0.0.1:5173'
-  ].filter(Boolean);
+  const allowedOrigins = getAllowedOrigins(process.env);
 
   app.use(cors({
     origin: function (origin, callback) {
@@ -65,14 +59,35 @@ function createApp() {
     const health = {
       status: 'ok',
       database: 'disconnected',
-      environment: process.env.NODE_ENV || 'development',
+      environment: process.env.APP_ENV || process.env.NODE_ENV || 'development',
       services: {
         ai: 'hybrid', // Gemini + Local Transformers
-        embedding: 'configured', 
-        relationshipModel: 'configured'
+        embedding: 'configured',
+        relationshipModel: 'unavailable',
+        mlInference: 'unavailable',
+        mlSupervisor: require('./services/mlSupervisor').getStatus()
       },
       time: new Date()
     };
+
+    // Check ML Service probe
+    try {
+      const mlUrl = process.env.ML_SERVICE_URL;
+      if (mlUrl && mlUrl.startsWith('http')) {
+        const axios = require('axios');
+        const mlRes = await axios.get(`${mlUrl.replace(/\/$/, '')}/health`, { timeout: 1000 });
+        if (mlRes.status === 200 && mlRes.data?.status === 'ok' && mlRes.data?.model_loaded === true) {
+          health.services.mlInference = 'ready';
+          health.services.relationshipModel = mlRes.data?.relationship_model_loaded ? 'ready' : 'unavailable';
+        } else {
+          health.services.mlInference = 'degraded';
+          health.services.relationshipModel = 'degraded';
+        }
+      }
+    } catch (_mlErr) {
+      health.services.mlInference = 'unavailable';
+      health.services.relationshipModel = 'unavailable';
+    }
 
     // Check DB
     try {
@@ -111,5 +126,63 @@ function createApp() {
 
   return app;
 }
+
+const PRODUCTION_ORIGINS = [
+  'https://grievanceiq-app.vercel.app',
+  'https://grievanceiq-ten.vercel.app'
+];
+
+function getAllowedOrigins(env = process.env) {
+  const parseOrigins = (val) => (val || '')
+    .split(',')
+    .map(s => s.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+
+  const configuredOrigins = [
+    ...parseOrigins(env.CLIENT_URL),
+    ...parseOrigins(env.ALLOWED_ORIGINS)
+  ];
+
+  // Validation: Reject wildcards and malformed origins
+  for (const origin of configuredOrigins) {
+    if (origin.includes('*')) {
+      throw new Error(`[CORS Configuration Error] Wildcard origin pattern "${origin}" is not permitted.`);
+    }
+    if (!/^https?:\/\/[a-zA-Z0-9-.]+(:[0-9]+)?$/.test(origin)) {
+      throw new Error(`[CORS Configuration Error] Invalid origin format "${origin}". Expected full http(s) origin.`);
+    }
+  }
+
+  const appEnv = (env.APP_ENV || (env.NODE_ENV === 'production' ? 'production' : 'development')).toLowerCase();
+
+  if (appEnv === 'staging') {
+    // Fail-closed safeguard: Staging strictly forbids production frontend domains
+    for (const origin of configuredOrigins) {
+      if (PRODUCTION_ORIGINS.includes(origin)) {
+        throw new Error(`[CORS Configuration Error] Production origin "${origin}" is strictly forbidden in staging environment.`);
+      }
+    }
+    // Staging allows ONLY explicitly configured, validated staging frontend origins
+    return Array.from(new Set(configuredOrigins));
+  }
+
+  if (appEnv === 'production') {
+    // Production includes verified production domains + any validated configured origins
+    return Array.from(new Set([
+      ...PRODUCTION_ORIGINS,
+      ...configuredOrigins
+    ]));
+  }
+
+  // Development / Test defaults
+  return Array.from(new Set([
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    ...configuredOrigins
+  ]));
+}
+
+createApp.getAllowedOrigins = getAllowedOrigins;
+createApp.PRODUCTION_ORIGINS = PRODUCTION_ORIGINS;
 
 module.exports = createApp;
