@@ -5,7 +5,7 @@ import { LayoutDashboard, FileText, Layers, ShieldAlert, MapPin } from 'lucide-r
 export default function AdminNav({ activeTab, onChangeTab, counts = {} }) {
   const tabs = [
     { id: 'overview', label: 'Operations Overview', icon: LayoutDashboard },
-    { id: 'complaints', label: 'Complaint Intelligence', icon: FileText, count: counts.complaints },
+    { id: 'complaints', label: 'All Complaints', icon: FileText, count: counts.complaints },
     { id: 'civic-issues', label: 'Civic Issues & DAG Workflow', icon: Layers, count: counts.civicIssues },
     { id: 'ai-safety', label: 'AI & Safety Intelligence', icon: ShieldAlert, count: counts.hazards },
     { id: 'incident-map', label: 'Geographic Risk & Map', icon: MapPin, count: counts.mapPins }

@@ -24,9 +24,14 @@ export default function Navbar() {
           {user && (
             <div className="nav-links desktop-nav-links">
               {user.role === 'admin' ? (
-                <Link to="/admin" className="btn btn-secondary btn-sm">
-                  <LayoutDashboard size={15} /> <span>Dashboard</span>
-                </Link>
+                <>
+                  <Link to="/admin" className="btn btn-secondary btn-sm">
+                    <LayoutDashboard size={15} /> <span>Dashboard</span>
+                  </Link>
+                  <Link to="/admin?tab=complaints" className="btn btn-secondary btn-sm" style={{ background: 'rgba(99, 102, 241, 0.1)', borderColor: 'rgba(99, 102, 241, 0.3)', color: '#a5b4fc' }}>
+                    <FileText size={15} /> <span>All Complaints</span>
+                  </Link>
+                </>
               ) : (
                 <>
                   <Link to="/feed" className="btn btn-secondary btn-sm" style={{ background: 'var(--accent-glow)', color: 'var(--accent-dark)', borderColor: 'var(--accent-light)' }}>
@@ -56,9 +61,13 @@ export default function Navbar() {
         <div className="mobile-bottom-nav">
           {user.role === 'admin' ? (
             <>
-              <Link to="/admin" className={`mobile-nav-item ${location.pathname === '/admin' ? 'active' : ''}`}>
+              <Link to="/admin" className={`mobile-nav-item ${location.pathname === '/admin' && !location.search.includes('tab=complaints') ? 'active' : ''}`}>
                 <LayoutDashboard size={20} />
                 <span>Dashboard</span>
+              </Link>
+              <Link to="/admin?tab=complaints" className={`mobile-nav-item ${location.search.includes('tab=complaints') ? 'active' : ''}`}>
+                <FileText size={20} />
+                <span>Complaints</span>
               </Link>
               <button className="mobile-nav-item" onClick={handleLogout} style={{ background: 'none', border: 'none', color: 'var(--text-muted)' }}>
                 <LogOut size={20} />

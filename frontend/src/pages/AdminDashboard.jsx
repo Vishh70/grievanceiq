@@ -1,5 +1,5 @@
-// src/pages/AdminDashboard.jsx — Municipal Operations & AI Intelligence Dashboard
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import Skeleton from '../components/Skeleton';
@@ -19,7 +19,25 @@ import AiSafetyIntelligence from '../components/admin/AiSafetyIntelligence';
 import IncidentMapSection from '../components/admin/IncidentMapSection';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ['overview', 'complaints', 'civic-issues', 'ai-safety', 'incident-map'];
+  const requestedTab = searchParams.get('tab');
+  const initialTab = validTabs.includes(requestedTab) ? requestedTab : 'overview';
+
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Synchronize state if URL query param changes
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && validTabs.includes(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    setSearchParams(newTab === 'overview' ? {} : { tab: newTab });
+  };
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -321,16 +339,19 @@ export default function AdminDashboard() {
           lastRefreshed={lastRefreshed}
           onRefresh={handleRefresh}
           onExportCsv={handleExportCsv}
+          onViewComplaints={() => handleTabChange('complaints')}
           isRefreshing={isRefreshing}
           isExporting={isExporting}
           civicIssueCount={civicIssues.length}
           activeBreaches={analytics.activeSlaBreaches || 0}
+          totalComplaints={complaintsData.total}
+          activeTab={activeTab}
         />
 
         {/* Navigation Tabs */}
         <AdminNav
           activeTab={activeTab}
-          onChangeTab={setActiveTab}
+          onChangeTab={handleTabChange}
           counts={{
             complaints: complaintsData.total,
             civicIssues: civicIssues.length,
@@ -347,11 +368,13 @@ export default function AdminDashboard() {
               <KpiCard
                 title="Total Complaints"
                 value={s.total}
-                subtitle="All ingested grievances"
+                subtitle="All ingested grievances — Click to View"
                 icon={Layers}
                 iconBg="rgba(79, 70, 229, 0.12)"
                 iconColor="var(--admin-primary)"
-                onClick={() => setActiveTab('complaints')}
+                badgeText="View All →"
+                badgeType="primary"
+                onClick={() => handleTabChange('complaints')}
               />
 
               <KpiCard
@@ -363,7 +386,7 @@ export default function AdminDashboard() {
                 iconColor="var(--admin-warning)"
                 onClick={() => {
                   handleFilterChange('status', 'Pending');
-                  setActiveTab('complaints');
+                  handleTabChange('complaints');
                 }}
               />
 
@@ -378,7 +401,7 @@ export default function AdminDashboard() {
                 badgeType="danger"
                 onClick={() => {
                   handleFilterChange('priority', 'Critical');
-                  setActiveTab('complaints');
+                  handleTabChange('complaints');
                 }}
               />
 
@@ -391,7 +414,7 @@ export default function AdminDashboard() {
                 iconColor="var(--admin-success)"
                 onClick={() => {
                   handleFilterChange('status', 'Resolved');
-                  setActiveTab('complaints');
+                  handleTabChange('complaints');
                 }}
               />
 
@@ -413,7 +436,7 @@ export default function AdminDashboard() {
                 icon={GitBranch}
                 iconBg="rgba(2, 132, 199, 0.12)"
                 iconColor="var(--admin-info)"
-                onClick={() => setActiveTab('civic-issues')}
+                onClick={() => handleTabChange('civic-issues')}
               />
             </div>
 

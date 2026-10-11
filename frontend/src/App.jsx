@@ -57,6 +57,9 @@ function AnimatedRoutes() {
         <Route path="/admin" element={
           <ProtectedRoute adminOnly><PageTransition><Navbar /><AdminDashboard /></PageTransition></ProtectedRoute>
         } />
+        <Route path="/admin/complaints"     element={<Navigate to="/admin?tab=complaints" replace />} />
+        <Route path="/admin/all-complaints" element={<Navigate to="/admin?tab=complaints" replace />} />
+        <Route path="/admin/issues"         element={<Navigate to="/admin?tab=civic-issues" replace />} />
 
         {/* Default redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />

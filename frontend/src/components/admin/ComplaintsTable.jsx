@@ -65,11 +65,14 @@ export default function ComplaintsTable({
       <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--admin-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--admin-text-main)' }}>
-              Complaint Intelligence Registry
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--admin-text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>All Complaints & Grievance Registry</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+                {total} Total
+              </span>
             </h3>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--admin-text-muted)', margin: '0.2rem 0 0' }}>
-              Real-time citizen grievances with AI classification, severity scoring, and SLA tracking
+            <p style={{ fontSize: '0.825rem', color: 'var(--admin-text-muted)', margin: '0.25rem 0 0' }}>
+              Comprehensive database of all citizen grievances, real-time AI triage classifications, priority scores, and municipal SLA statuses
             </p>
           </div>
 

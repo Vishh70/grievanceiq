@@ -1,15 +1,17 @@
-// src/components/admin/AdminHeader.jsx
 import React from 'react';
-import { RefreshCw, Download, ShieldCheck, Activity } from 'lucide-react';
+import { RefreshCw, Download, FileText, Activity } from 'lucide-react';
 
 export default function AdminHeader({
   lastRefreshed,
   onRefresh,
   onExportCsv,
+  onViewComplaints,
   isRefreshing,
   isExporting,
   civicIssueCount = 0,
-  activeBreaches = 0
+  activeBreaches = 0,
+  totalComplaints = 0,
+  activeTab = 'overview'
 }) {
   return (
     <header className="admin-header">
@@ -36,6 +38,19 @@ export default function AdminHeader({
           <div className="admin-badge admin-badge-critical" title="Complaints open beyond 48-hour SLA threshold">
             ⚠️ {activeBreaches} SLA {activeBreaches === 1 ? 'Breach' : 'Breaches'}
           </div>
+        )}
+
+        {activeTab !== 'complaints' && onViewComplaints && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={onViewComplaints}
+            title="Jump to All Complaints registry"
+            style={{ borderColor: 'rgba(99, 102, 241, 0.4)', background: 'rgba(99, 102, 241, 0.08)', color: 'var(--admin-text-main)' }}
+          >
+            <FileText size={14} style={{ color: '#818cf8' }} />
+            <span>All Complaints{totalComplaints > 0 ? ` (${totalComplaints})` : ''}</span>
+          </button>
         )}
 
         <button
