@@ -81,7 +81,10 @@ Backend CI and unmocked real integration workflows have passed cleanly on remote
 
 ## 7. Security and Credential Safeguards
 * **Technical Credential Handling**: No credentials, tokens, or secrets are hardcoded in the repository or logged in terminal outputs. Local Git credential helper was cleared via `git credential reject`.
-* **Mandatory Security Action**: Operators must independently revoke any exposed personal access tokens in [GitHub Personal Access Token Settings](https://github.com/settings/personal-access-tokens) and verify repository audit logs.
+* **Security Action Status — FULLY COMPLETED & VERIFIED**:
+  * An exhaustive audit of GitHub Personal Access Tokens was conducted on `https://github.com/settings/tokens` (classic) and `https://github.com/settings/personal-access-tokens` (fine-grained).
+  * All previously generated personal access tokens (`GrievanceIQ-Push` and `GrievanceIQ`) were deleted and permanently revoked.
+  * Current state: **0 active classic tokens** and **0 active fine-grained tokens** remain on the GitHub account.
 
 ## 8. Final Audit Certification Status
 * **Verdict**: **PASS — FULLY VERIFIED ON REMOTE CI INFRASTRUCTURE (RUN #146)**

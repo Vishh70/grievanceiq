@@ -122,3 +122,4 @@
 | Deployed Backend | Live HTTP Health Check | **PASS** | `grievanceiq-gky1.onrender.com` 200 OK |
 | Deployed Frontend | Live HTTP Check | **PASS** | `grievanceiq-app.vercel.app` 200 OK |
 | GitHub CI Full E2E Workflow | Remote GitHub Actions | **PASS (RUN #146)** | Run #146 passed (113/113 tests passed, 15/15 suites passed in 1m 31s on commit `c99ca86`) [Run #146](https://github.com/Vishh70/grievanceiq/actions/runs/38117823915) |
+| GitHub Access Token Revocation | Security Action Audit | **PASS (VERIFIED)** | All tokens deleted on GitHub (`settings/tokens` & `settings/personal-access-tokens`); 0 active tokens remain |
