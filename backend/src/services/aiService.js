@@ -2,15 +2,84 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
-const model = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' });
+const FALLBACK_RESPONSE = {
+  category: 'Other',
+  priority: 'Medium',
+  recommendedDepartment: 'General Admin',
+  keywords: [],
+  severityScore: 5,
+  safetyHazards: [],
+  suggestedAction: 'Field inspection and municipal assessment required'
+};
+
+const getModel = (overrideModel = null) => {
+  const apiKey = process.env.GEMINI_API_KEY || 'dummy_key';
+  const modelId = overrideModel || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const genAI = new GoogleGenerativeAI(apiKey);
+  return genAI.getGenerativeModel({ model: modelId });
+};
+
+/**
+ * Checks if an error is a transient Google Gemini error (503 Service Unavailable / 429 Rate Limit / demand spikes).
+ */
+const isTransientError = (err) => {
+  if (!err) return false;
+  const msg = (err.message || '').toLowerCase();
+  const status = err.status || '';
+  return msg.includes('503') || msg.includes('high demand') || msg.includes('temporarily') || msg.includes('rate limit') || msg.includes('429') || status === 503 || status === 429;
+};
+
+/**
+ * Executes content generation with bounded retries on transient errors and automatic fallback to an alternative model.
+ */
+async function generateWithRetryAndFallback(contentPayload) {
+  const primaryId = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const fallbackId = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash-lite';
+  const maxRetries = parseInt(process.env.GEMINI_MAX_RETRIES || '1', 10);
+
+  let primaryErr = null;
+
+  // 1. Attempt primary model with bounded retry for transient errors
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const model = getModel(primaryId);
+      const result = await model.generateContent(contentPayload);
+      return { result, modelUsed: primaryId };
+    } catch (err) {
+      primaryErr = err;
+      if (isTransientError(err) && attempt < maxRetries) {
+        const delayMs = (attempt + 1) * 1000;
+        console.warn(`[Gemini] Transient error on ${primaryId} (attempt ${attempt + 1}/${maxRetries + 1}). Retrying in ${delayMs}ms...`);
+        await new Promise(r => setTimeout(r, delayMs));
+        continue;
+      }
+      break;
+    }
+  }
+
+  // 2. If primary encountered a transient error (e.g. 503 high demand spike), attempt fallback model
+  if (fallbackId && fallbackId !== primaryId && isTransientError(primaryErr)) {
+    try {
+      console.warn(`[Gemini] Primary model ${primaryId} unavailable (${primaryErr.message}). Attempting fallback to ${fallbackId}...`);
+      const fallbackModel = getModel(fallbackId);
+      const result = await fallbackModel.generateContent(contentPayload);
+      console.log(`[Gemini] Successfully recovered triage generation using fallback model: ${fallbackId}`);
+      return { result, modelUsed: fallbackId };
+    } catch (fbErr) {
+      console.error(`[Gemini] Fallback model ${fallbackId} also failed: ${fbErr.message}`);
+      throw fbErr;
+    }
+  }
+
+  throw primaryErr;
+}
 
 /**
  * Extracts JSON from a markdown string (handles ```json ... ``` blocks).
  */
 const extractJson = (text) => {
   try {
-    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const jsonStr = text.replace(/```json/gi, '').replace(/```/g, '').trim();
     return JSON.parse(jsonStr);
   } catch (e) {
     throw new Error('Failed to parse Gemini response as JSON.');
@@ -24,15 +93,7 @@ const extractJson = (text) => {
 async function analyzeComplaint(text, imageBase64 = null, mimeType = null) {
   if (!process.env.GEMINI_API_KEY) {
     console.warn('⚠️ GEMINI_API_KEY is not set. Using fallback mock analysis.');
-    return {
-      category: 'Other',
-      priority: 'Medium',
-      recommendedDepartment: 'General Admin',
-      keywords: [],
-      severityScore: 5,
-      safetyHazards: [],
-      suggestedAction: 'Field inspection and municipal assessment required'
-    };
+    return { ...FALLBACK_RESPONSE };
   }
 
   const prompt = `
@@ -70,7 +131,7 @@ Complaint Text: "${text}"
 `;
 
   try {
-    let result;
+    let contentPayload;
     if (imageBase64 && mimeType) {
       const imagePart = {
         inlineData: {
@@ -78,10 +139,12 @@ Complaint Text: "${text}"
           mimeType: mimeType
         }
       };
-      result = await model.generateContent([prompt, imagePart]);
+      contentPayload = [prompt, imagePart];
     } else {
-      result = await model.generateContent(prompt);
+      contentPayload = prompt;
     }
+
+    const { result } = await generateWithRetryAndFallback(contentPayload);
 
     const responseText = result.response.text();
     const json = extractJson(responseText);
@@ -99,17 +162,16 @@ Complaint Text: "${text}"
     };
   } catch (err) {
     console.error('Gemini Analysis Error:', err.message);
-    return {
-      category: 'Other',
-      priority: 'Medium',
-      recommendedDepartment: 'General Admin',
-      keywords: [],
-      severityScore: 5,
-      safetyHazards: [],
-      suggestedAction: 'Field inspection and municipal assessment required'
-    };
+    return { ...FALLBACK_RESPONSE };
   }
 }
 
-module.exports = { analyzeComplaint };
+module.exports = {
+  analyzeComplaint,
+  extractJson,
+  getModel,
+  generateWithRetryAndFallback,
+  isTransientError,
+  FALLBACK_RESPONSE
+};
 

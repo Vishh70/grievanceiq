@@ -174,7 +174,11 @@ async function processComplaintLogic(jobData) {
       }
       
       if (badCol) {
-        console.warn(`[Worker] Schema mismatch: Dropping missing column '${badCol}' from update payload.`);
+        if (['ml_labels', 'ml_probabilities', 'ml_departments'].includes(badCol)) {
+          console.error(`[Worker] ⚠️ ML METADATA DISCARDED: Column '${badCol}' is missing from 'complaints' table. Apply migration 'docs/database/phase10_ml_multilabel.sql' to persist ML inference results.`);
+        } else {
+          console.warn(`[Worker] Schema mismatch: Dropping missing column '${badCol}' from update payload.`);
+        }
         delete currentPayload[badCol];
         continue;
       }

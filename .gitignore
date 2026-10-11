@@ -7,10 +7,13 @@ uploads/
 .vercel
 
 # Python inference service
+.venv/
+backend/.venv/
 backend/ml/.venv/
 backend/ml/venv/
 backend/ml/__pycache__/
 backend/ml/inference/__pycache__/
+ci_log.txt
 **/*.pyc
 **/*.pyo
 

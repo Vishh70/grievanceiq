@@ -32,6 +32,9 @@ const mapComplaint = (row, includeEmbedding = false) => {
     suggestedAction: row.suggested_action || '',
     similarGroupId: row.similar_group_id || null,
     keywords: row.keywords || [],
+    mlLabels: row.ml_labels || [],
+    mlProbabilities: row.ml_probabilities || {},
+    mlDepartments: row.ml_departments || [],
     isDuplicate: row.ai_duplicate_flag || false,
     duplicateScore: row.duplicate_score || 0,
     aiProcessed: row.ai_processed || false,
@@ -102,20 +105,30 @@ exports.createComplaint = async (req, res) => {
 
     // 2. Determine if Redis is available. If not, run in-process background execution
     const queueConfig = require('../config/queue');
-    if (queueConfig.connection && queueConfig.connection.status === 'ready') {
-      await complaintQueue.add('process-complaint', {
-        complaintId: complaintData.id,
-        text,
-        imageBase64,
-        mimeType
-      }, {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 5000
-        }
-      });
-    } else {
+    const activeQueue = queueConfig.complaintQueue || complaintQueue;
+    let enqueued = false;
+
+    if (queueConfig.connection && (queueConfig.connection.status === 'ready' || queueConfig.connection.status === 'connect')) {
+      try {
+        await activeQueue.add('process-complaint', {
+          complaintId: complaintData.id,
+          text,
+          imageBase64,
+          mimeType
+        }, {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 5000
+          }
+        });
+        enqueued = true;
+      } catch (queueErr) {
+        console.warn('⚠️ BullMQ enqueue failed, falling back to in-memory processing:', queueErr.message);
+      }
+    }
+
+    if (!enqueued) {
       // Free Tier / Redis Disconnected Fallback
       console.warn('⚠️ Redis is not ready. Processing complaint in-memory to prevent hangs!');
       const { processComplaintLogic } = require('../workers/complaintWorker');

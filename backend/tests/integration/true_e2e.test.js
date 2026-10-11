@@ -1,5 +1,4 @@
 const request = require('supertest');
-const app = require('../../src/app');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const supabase = require('../../src/config/supabase');
@@ -10,32 +9,54 @@ const hasValidCredentials = supabaseUrl && supabaseKey && !supabaseUrl.includes(
 let worker = null;
 let connection = null;
 let complaintQueue = null;
+let app = null;
 
 if (hasValidCredentials) {
   process.env.MOCK_REDIS = 'false';
   jest.unmock('bullmq');
   jest.unmock('ioredis');
-  worker = require('../../src/workers/complaintWorker'); // Ensures worker is running during the test
+
+  // Clear module cache to guarantee unmocked Redis and BullMQ instances are loaded
+  try {
+    delete require.cache[require.resolve('../../src/config/queue')];
+    delete require.cache[require.resolve('../../src/workers/complaintWorker')];
+    delete require.cache[require.resolve('../../src/controllers/complaintController')];
+    delete require.cache[require.resolve('../../src/routes/complaintRoutes')];
+    delete require.cache[require.resolve('../../src/app')];
+  } catch (e) {}
+
+  const workerModule = require('../../src/workers/complaintWorker');
+  worker = workerModule.worker;
   const queueConfig = require('../../src/config/queue');
   connection = queueConfig.connection;
   complaintQueue = queueConfig.complaintQueue;
+  const createApp = require('../../src/app');
+  app = createApp();
+} else {
+  const createApp = require('../../src/app');
+  app = createApp();
 }
 
 describe('True E2E Asynchronous Flow', () => {
   if (!hasValidCredentials) {
     it.skip('SKIPPED — integration environment not configured', () => {});
     
-    // We must register an afterAll to clean up the globally required worker
+    // Clean up connections if instantiated
     afterAll(async () => {
       if (worker) {
-        await worker.close(true); // Force close
-        if (worker.workerConnection) worker.workerConnection.disconnect();
+        if (typeof worker.close === 'function') await worker.close(true);
+        if (worker.workerConnection && typeof worker.workerConnection.disconnect === 'function') {
+          worker.workerConnection.disconnect();
+        }
       }
       if (complaintQueue) {
-        await complaintQueue.close();
-        if (complaintQueue.client) await complaintQueue.client.then(c => c.disconnect());
+        if (typeof complaintQueue.close === 'function') await complaintQueue.close();
+        if (complaintQueue.client && typeof complaintQueue.client.then === 'function') {
+          await complaintQueue.client.then(c => c && typeof c.disconnect === 'function' && c.disconnect());
+        }
       }
-      if (connection) connection.disconnect();
+      if (connection && typeof connection.disconnect === 'function') connection.disconnect();
+      delete process.env.MOCK_REDIS;
     });
     return;
   }
@@ -91,14 +112,18 @@ describe('True E2E Asynchronous Flow', () => {
     
     // Disconnect worker and redis to allow Jest to exit gracefully
     if (worker) {
-      await worker.close(true);
-      if (worker.workerConnection) worker.workerConnection.disconnect();
+      if (typeof worker.close === 'function') await worker.close(true);
+      if (worker.workerConnection && typeof worker.workerConnection.disconnect === 'function') {
+        worker.workerConnection.disconnect();
+      }
     }
     if (complaintQueue) {
-      await complaintQueue.close();
-      if (complaintQueue.client) await complaintQueue.client.then(c => c.disconnect());
+      if (typeof complaintQueue.close === 'function') await complaintQueue.close();
+      if (complaintQueue.client && typeof complaintQueue.client.then === 'function') {
+        await complaintQueue.client.then(c => c && typeof c.disconnect === 'function' && c.disconnect());
+      }
     }
-    if (connection) connection.disconnect();
+    if (connection && typeof connection.disconnect === 'function') connection.disconnect();
     
     delete process.env.MOCK_REDIS;
   });
@@ -133,6 +158,9 @@ describe('True E2E Asynchronous Flow', () => {
       if (data) {
         status = data.processing_status;
         finalComplaint = data;
+        if (status === 'FAILED') {
+          console.error('[E2E Test Complaint 1] Processing failed:', data.processing_error);
+        }
       }
     }
     
@@ -174,6 +202,9 @@ describe('True E2E Asynchronous Flow', () => {
       if (data) {
         status2 = data.processing_status;
         finalComplaint2 = data;
+        if (status2 === 'FAILED') {
+          console.error('[E2E Test Complaint 2] Processing failed:', data.processing_error);
+        }
       }
     }
     

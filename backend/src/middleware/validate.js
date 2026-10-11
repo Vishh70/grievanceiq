@@ -21,8 +21,8 @@ const complaintSchema = z.object({
   body: z.object({
     text: z.string().min(10, 'Complaint description must be at least 10 characters'),
     address: z.string().optional(),
-    lat: z.string().optional(),
-    lng: z.string().optional(),
+    lat: z.union([z.string(), z.number()]).optional(),
+    lng: z.union([z.string(), z.number()]).optional(),
   })
 });
 
