@@ -6,6 +6,7 @@ import { Upload, MapPin, Send, Loader2, Navigation, Camera, X, Image as ImageIco
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { createPinIcon } from '../utils/mapIcons';
 
@@ -78,6 +79,7 @@ export default function SubmitComplaint() {
   const [loading, setLoading]   = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const videoRef = useRef(null);
+  const streamRef = useRef(null);
   const [polling, setPolling]   = useState(false);
   const [pollStatus, setPollStatus] = useState('');
   const navigate                = useNavigate();
@@ -123,6 +125,10 @@ export default function SubmitComplaint() {
   // ── Camera Functions ──
   const startCamera = async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error('Camera not supported by your browser.');
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
       });
@@ -131,11 +137,20 @@ export default function SubmitComplaint() {
       // Wait for next render so videoRef is mounted
       setTimeout(() => {
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
+          try {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play().catch(err => console.error('Video play error:', err));
+          } catch (srcErr) {
+            console.warn('Video srcObject assignment skipped:', srcErr.message);
+          }
         }
       }, 100);
     } catch (err) {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      setCameraActive(false);
       toast.error('Camera access denied. Please allow camera permission.');
       console.error('Camera error:', err);
     }
@@ -174,6 +189,7 @@ export default function SubmitComplaint() {
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
     };
   }, []);
