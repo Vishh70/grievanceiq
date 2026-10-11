@@ -39,14 +39,17 @@ export default function Login() {
       toast.success('Welcome back!', { id: loadingToast });
       navigate(user.role === 'admin' ? '/admin' : '/complaints');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Google authentication failed. Please try again.', { id: loadingToast });
+      console.error('Google login backend verification failed:', err);
+      const msg = err.response?.data?.error || 'Google login failed on backend. Please try again.';
+      toast.error(msg, { id: loadingToast });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleError = () => {
-    toast.error('Google sign-in was not completed. Please try again.');
+  const handleGoogleError = (error) => {
+    console.error('Google Sign-in prompt failed:', error);
+    toast.error('Google popup closed or domain unauthorized. Ensure https://grievanceiq-app.vercel.app is in Google Cloud Console.');
   };
 
   const handleMockSocial = (provider) => {

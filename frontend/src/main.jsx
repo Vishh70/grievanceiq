@@ -8,8 +8,12 @@ import App from './App.jsx'
 import { registerSW } from 'virtual:pwa-register'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 
-// Explicitly register the service worker for PWA to satisfy browser installation criteria
-registerSW({ immediate: true });
+registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    window.location.reload();
+  }
+});
 
 const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '195200639587-v8d2ram47i72psddft6blqrdeieteuu1.apps.googleusercontent.com').trim();
 
