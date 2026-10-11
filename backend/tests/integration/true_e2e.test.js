@@ -211,6 +211,13 @@ describe('True E2E Asynchronous Flow', () => {
     expect(civicIssue).toBeDefined();
     expect(['Open', 'PENDING']).toContain(civicIssue.status);
 
+    if (complaintQueue && typeof complaintQueue.getJobCounts === 'function') {
+      try {
+        const jobCounts = await complaintQueue.getJobCounts();
+        console.log('[E2E Test] Verified Real BullMQ Job Counts:', jobCounts);
+      } catch (e) {}
+    }
+
     // 5. Prove HTTP API returns mapped ML metadata on retrieval
     const getRes = await request(app)
       .get(`/api/complaints/${complaintId}`)

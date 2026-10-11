@@ -123,6 +123,7 @@ exports.createComplaint = async (req, res) => {
           }
         });
         enqueued = true;
+        console.log(`[Queue] Successfully enqueued complaint ${complaintData.id} to BullMQ queue`);
       } catch (queueErr) {
         console.warn('⚠️ BullMQ enqueue failed, falling back to in-memory processing:', queueErr.message);
       }

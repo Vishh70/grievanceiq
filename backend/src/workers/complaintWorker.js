@@ -232,6 +232,7 @@ async function processComplaintLogic(jobData) {
 }
 
 const worker = new Worker('ComplaintProcessing', async job => {
+  console.log(`[BullMQ Worker] Processing job ${job.id} for complaint ${job.data.complaintId}`);
   return processComplaintLogic(job.data);
 }, { connection: workerConnection });
 
