@@ -3,8 +3,13 @@ require('dotenv').config();
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 async function run() {
-  const { data: issues } = await supabase.from('civic_issues').select('*').order('created_at', { ascending: false }).limit(2);
+  const { data: issues, error } = await supabase.from('civic_issues').select('*').order('created_at', { ascending: false }).limit(2);
+  if (error) {
+    console.error("Supabase Error:", error);
+    return;
+  }
   console.log("Recent Civic Issues:", issues.map(i => ({ id: i.id, title: i.title, root_complaint: i.root_complaint_id, depts: i.departments, types: i.issue_types })));
+
   
   if (issues && issues.length > 0) {
     const issue = issues[0];

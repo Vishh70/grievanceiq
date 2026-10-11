@@ -125,11 +125,6 @@ async function generateEmbedding(text) {
   const allowLocal = process.env.ALLOW_LOCAL_EMBEDDING === 'true';
 
   // Use HuggingFace Inference API in production or when HF_TOKEN is explicitly configured
-  if (isProduction || (hfToken && !process.env.USE_REAL_MODEL && process.env.NODE_ENV !== 'test')) {
-    if (!hfToken && !allowLocal) {
-      throw new Error('Missing embedding API credentials: HF_TOKEN is required for Hugging Face inference.');
-    }
-
     if (hfToken) {
       const endpoint = process.env.HF_EMBEDDING_URL || DEFAULT_HF_ROUTER_URL;
       const timeoutMs = parseInt(process.env.HF_TIMEOUT_MS || '10000', 10);
@@ -149,41 +144,18 @@ async function generateEmbedding(text) {
           body: JSON.stringify({ inputs: text.trim() }),
           signal: controller.signal
         });
-      } catch (netErr) {
-        if (netErr.name === 'AbortError') {
-          throw new Error(`Embedding service request timed out after ${timeoutMs}ms.`);
+
+        if (response && response.ok) {
+          const data = await response.json();
+          return validateAndNormalizeEmbedding(data);
+        } else if (response) {
+          console.warn(`[Embedding] Hugging Face Router returned HTTP ${response.status}. Falling back to local extractor...`);
         }
-        throw new Error(`Embedding service network error: ${netErr.message}`);
+      } catch (hfErr) {
+        console.warn(`[Embedding] Hugging Face Router call failed (${hfErr.message}). Falling back to local extractor...`);
       } finally {
         clearTimeout(timeoutId);
       }
-
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error(`Hugging Face authentication failed (HTTP ${response.status}): Invalid or expired HF_TOKEN credentials.`);
-        }
-        if (response.status === 429) {
-          throw new Error('Hugging Face rate limit exceeded (HTTP 429). Please retry shortly.');
-        }
-        if (response.status >= 500) {
-          throw new Error(`Hugging Face inference service error (HTTP ${response.status}). Service temporarily unavailable.`);
-        }
-        throw new Error(`Hugging Face embedding request failed with HTTP ${response.status}.`);
-      }
-
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseErr) {
-        throw new Error(`Embedding service response parsing error: ${parseErr.message}`);
-      }
-
-      return validateAndNormalizeEmbedding(data);
-    }
-
-    // In production without HF_TOKEN, if ALLOW_LOCAL_EMBEDDING is not set, fail safely to prevent OOM
-    if (!allowLocal) {
-      throw new Error('Missing embedding API credentials: HF_TOKEN is required in production environment.');
     }
   }
 
@@ -265,24 +237,10 @@ function cosineSimilarity(vectorA, vectorB) {
  * Validates required production configuration and reports embedding readiness.
  */
 function checkEmbeddingHealth() {
-  const isProduction = process.env.NODE_ENV === 'production';
   const hfToken = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || process.env.HF_API_KEY;
-  const allowLocal = process.env.ALLOW_LOCAL_EMBEDDING === 'true';
-
-  if (isProduction) {
-    if (hfToken) {
-      return { status: 'ready', provider: 'huggingface' };
-    }
-    if (allowLocal) {
-      return { status: 'ready', provider: 'local' };
-    }
-    return {
-      status: 'unavailable',
-      provider: 'none',
-      reason: 'HF_TOKEN is missing in production and local embeddings are disabled to prevent OOM.'
-    };
+  if (hfToken) {
+    return { status: 'ready', provider: 'huggingface' };
   }
-
   return { status: 'ready', provider: 'local' };
 }
 

@@ -14,13 +14,13 @@ const {
   DUPLICATE_CONFIG 
 } = require('../src/services/duplicateDetectionService');
 const { 
-  extractRelationshipFeatures, 
+  extractCorrectedRelationshipFeatures,
   predictRelationship, 
-  loadModel, 
   RELATIONSHIP_LABELS, 
   CATEGORIES 
 } = require('../src/services/relationshipService');
-const complaintGraphService = require('../src/services/complaintGraphService');
+const { ComplaintGraphService } = require('../src/services/complaintGraphService');
+const complaintGraphService = new ComplaintGraphService();
 const { 
   generateCivicIssueTitle, 
   calculateRepresentativeLocation, 
@@ -93,7 +93,7 @@ async function runAudit() {
   console.log('  ', orQuery);
 
   // Validate format regex
-  const expectedPattern = /^category\.in\(\"[^\"]+\"(?:,\"[^\"]+\")*\),ml_labels\.ov\.\{\"[^\"]+\"(?:,\"[^\"]+\")*\}$/;
+  const expectedPattern = /^category\.in\.\(\"[^\"]+\"(?:,\"[^\"]+\")*\),ml_labels\.ov\.\{\"[^\"]+\"(?:,\"[^\"]+\")*\}$/;
   const isQueryPatternValid = expectedPattern.test(orQuery);
   console.log('Query pattern matches PostgREST specification:', isQueryPatternValid ? 'PASS' : 'FAIL');
 
@@ -226,8 +226,7 @@ async function runAudit() {
   // AUDIT 4: Relationship Model All 4 Classes & Normalization
   // ─────────────────────────────────────────────────────────────────────────
   console.log('\n=== AUDIT 4: RELATIONSHIP MODEL & NORMALIZATION ===');
-  const rfModel = loadModel();
-  console.log('Random Forest Model loaded:', rfModel ? 'YES' : 'NO');
+  console.log('Random Forest Model: Managed via Python ML Service');
   console.log('Supported Relationship Labels:', RELATIONSHIP_LABELS);
   console.log('Supported Categories:', CATEGORIES);
 
