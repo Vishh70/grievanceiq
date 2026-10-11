@@ -116,34 +116,36 @@ exports.createComplaint = async (req, res) => {
     const activeQueue = queueConfig.complaintQueue || complaintQueue;
     let enqueued = false;
 
-    if (queueConfig.connection && (queueConfig.connection.status === 'ready' || queueConfig.connection.status === 'connect' || queueConfig.connection.status === 'connecting')) {
+    // Strict check: Only attempt BullMQ if Redis connection is explicitly 'ready'
+    if (queueConfig.connection && queueConfig.connection.status === 'ready') {
       try {
-        await activeQueue.add('process-complaint', {
-          complaintId: complaintData.id,
-          text,
-          imageBase64,
-          mimeType
-        }, {
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 5000
-          }
-        });
+        await Promise.race([
+          activeQueue.add('process-complaint', {
+            complaintId: complaintData.id,
+            text,
+            imageBase64,
+            mimeType
+          }, {
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 5000
+            }
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Queue enqueue timeout')), 1500))
+        ]);
         enqueued = true;
         console.log(`[Queue] Successfully enqueued complaint ${complaintData.id} to BullMQ queue`);
       } catch (queueErr) {
-        console.warn('⚠️ BullMQ enqueue failed, falling back to in-memory processing:', queueErr.message);
+        console.warn('⚠️ BullMQ enqueue failed or timed out, falling back to in-memory processing:', queueErr.message);
       }
     }
 
     if (!enqueued) {
-      // Free Tier / Redis Disconnected Fallback
-      console.warn('⚠️ Redis is not ready. Processing complaint in-memory to prevent hangs!');
+      // Free Tier / Redis Disconnected Fallback — process asynchronously without blocking the HTTP response
       const { processComplaintLogic } = require('../workers/complaintWorker');
       
-      // Fire and forget (process asynchronously without blocking the HTTP response)
-      setTimeout(() => {
+      setImmediate(() => {
         processComplaintLogic({
           complaintId: complaintData.id,
           text,
@@ -152,7 +154,7 @@ exports.createComplaint = async (req, res) => {
         }).catch(err => {
           console.error('In-memory processing failed:', err);
         });
-      }, 100);
+      });
     }
 
     res.status(201).json({ message: 'Complaint submitted', complaint: mapComplaint(complaintData) });

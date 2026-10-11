@@ -248,40 +248,52 @@ export default function SubmitComplaint() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      const newComplaintId = data.complaint.id;
+      const newComplaintId = data.complaint?.id || data.complaint?._id;
       setPolling(true);
       setPollStatus('Processing complaint with AI (generating embeddings, duplicate detection)...');
       toast.success('Complaint submitted! AI is processing it now...', { id: loadingToast });
 
       let attempts = 0;
-      const pollInterval = setInterval(async () => {
+      let isDone = false;
+
+      const checkStatus = async () => {
+        if (isDone) return;
         attempts++;
         try {
           const statusRes = await api.get(`/complaints/${newComplaintId}/status`);
           const currentStatus = statusRes.data.status;
           
           if (currentStatus === 'COMPLETED' || currentStatus === 'PROCESSED') {
+            isDone = true;
             clearInterval(pollInterval);
             setPolling(false);
             toast.success('AI processing complete!');
             navigate('/complaints');
+            return;
           } else if (currentStatus === 'FAILED') {
+            isDone = true;
             clearInterval(pollInterval);
             setPolling(false);
             toast.error('AI processing failed. It will be reviewed manually.');
             navigate('/complaints');
+            return;
           }
         } catch (pollErr) {
           console.error('Polling error', pollErr);
         }
-        
-        if (attempts >= 12) { // 1 minute max polling
+
+        if (attempts >= 20) { // ~25 seconds max polling fallback
+          isDone = true;
           clearInterval(pollInterval);
           setPolling(false);
-          toast.success('Processing is taking longer than usual. You can check back later.');
+          toast.success('Complaint received! AI processing is finalizing.');
           navigate('/complaints');
         }
-      }, 5000); // poll every 5 seconds
+      };
+
+      // Check quickly after 600ms, then every 1200ms
+      setTimeout(checkStatus, 600);
+      const pollInterval = setInterval(checkStatus, 1200);
 
     } catch (err) {
       toast.error(err.response?.data?.error || 'Submission failed. Please try again.', { id: loadingToast });
