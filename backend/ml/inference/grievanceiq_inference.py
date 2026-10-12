@@ -33,7 +33,7 @@ LABELS_PATH     = os.path.join(MODELS_DIR, 'issue_labels.json')
 THRESHOLD_PATH  = os.path.join(MODELS_DIR, 'multilabel_thresholds.csv')
 RELATIONSHIP_MODEL_PATH = os.path.join(MODELS_DIR, 'relationship_corrected_rf_10tree.joblib')
 
-PORT = int(os.environ.get('ML_SERVICE_PORT', 5001))
+PORT = int(os.environ.get('PORT') or os.environ.get('ML_SERVICE_PORT') or 5001)
 
 # ── Load Artifacts ────────────────────────────────────────────────────────────
 

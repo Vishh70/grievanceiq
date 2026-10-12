@@ -14,23 +14,32 @@ export default function ComplaintDetail() {
   const [complaint, setComplaint] = useState(null);
   const [similar, setSimilar] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState(null);
   const [lightbox, setLightbox] = useState(false);
 
-  useEffect(() => {
-    const fetchDetail = async () => {
-      try {
-        const { data } = await api.get(`/complaints/${id}`);
-        setComplaint(data.complaint);
-        if (data.complaint.similarGroupId) {
+  const fetchDetail = async () => {
+    setLoading(true);
+    setErrorStatus(null);
+    try {
+      const { data } = await api.get(`/complaints/${id}`);
+      setComplaint(data.complaint);
+      if (data.complaint.similarGroupId) {
+        try {
           const simRes = await api.get(`/complaints/${id}/similar`);
           setSimilar(simRes.data.complaints || []);
+        } catch (simErr) {
+          console.warn('Failed to load similar complaints:', simErr);
         }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error(err);
+      setErrorStatus(err.response?.status || 500);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDetail();
   }, [id]);
 
@@ -76,12 +85,21 @@ export default function ComplaintDetail() {
           <AlertTriangle size={32} />
         </div>
         <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
-          Complaint Not Found
+          {errorStatus === 404 ? 'Complaint Not Found' : errorStatus === 403 ? 'Access Restricted' : 'Unable to Load Complaint'}
         </h2>
         <p className="text-muted text-sm" style={{ marginBottom: '1.5rem', lineHeight: 1.6 }}>
-          The requested complaint ID does not exist or may have been removed. Explore the community feed to view active civic issues.
+          {errorStatus === 404 
+            ? 'The requested complaint ID does not exist or may have been removed. Explore the community feed to view active civic issues.'
+            : errorStatus === 403
+            ? 'You do not have permission to view internal details for this complaint.'
+            : 'Could not communicate with the GrievanceIQ backend server. Please try again.'}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          {errorStatus && errorStatus !== 404 && errorStatus !== 403 && (
+            <button onClick={fetchDetail} className="btn btn-primary" style={{ justifyContent: 'center', gap: '0.4rem', padding: '0.65rem' }}>
+              Retry Connection
+            </button>
+          )}
           <Link to="/feed" className="btn btn-primary" style={{ textDecoration: 'none', justifyContent: 'center', gap: '0.4rem', padding: '0.65rem' }}>
             <Globe size={16} /> Explore Public Civic Feed
           </Link>
@@ -106,10 +124,21 @@ export default function ComplaintDetail() {
     <div className="page">
       <div className="container">
         
-        {/* Navigation Breadcrumb */}
-        <Link to="/complaints" className="flex items-center gap-1 text-muted mb-2" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>
-          <ChevronLeft size={16} /> Back to My Complaints
-        </Link>
+        {/* Navigation Breadcrumbs */}
+        <div className="flex items-center gap-2 mb-2" style={{ fontSize: '0.88rem' }}>
+          <button 
+            type="button"
+            onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign('/feed')} 
+            className="flex items-center gap-1 text-muted"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit', color: 'var(--text-muted)' }}
+          >
+            <ChevronLeft size={16} /> Back
+          </button>
+          <span style={{ color: 'var(--border)' }}>•</span>
+          <Link to="/feed" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Civic Feed</Link>
+          <span style={{ color: 'var(--border)' }}>•</span>
+          <Link to="/complaints" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>My Complaints</Link>
+        </div>
 
         {/* Hero Banner (Light Theme) */}
         <motion.div 

@@ -15,10 +15,14 @@ const resolveDepartment = (row) => {
 };
 
 // Helper to map Supabase row back to frontend-expected Mongoose format
-const mapComplaint = (row, includeEmbedding = false) => {
+const mapComplaint = (row, includeEmbedding = false, isOwnerOrAdmin = true) => {
+  const citizenInfo = isOwnerOrAdmin
+    ? (row.users ? { _id: row.users.id, name: row.users.name, email: row.users.email } : row.citizen_id)
+    : { name: row.users?.name ? row.users.name.split(' ')[0] : 'Citizen' };
+
   const mapped = {
     _id: row.id,
-    citizenId: row.users ? { _id: row.users.id, name: row.users.name, email: row.users.email } : row.citizen_id,
+    citizenId: citizenInfo,
     title: row.title,
     text: row.description,
     category: row.category,
@@ -211,11 +215,9 @@ exports.getComplaintById = async (req, res) => {
 
     if (error || !complaint) return res.status(404).json({ error: 'Complaint not found' });
 
-    if (req.user.role !== 'admin' && complaint.citizen_id !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied: You do not have permission to view this complaint.' });
-    }
+    const isOwnerOrAdmin = Boolean(req.user && (req.user.role === 'admin' || complaint.citizen_id === req.user.id));
 
-    res.json({ complaint: mapComplaint(complaint) });
+    res.json({ complaint: mapComplaint(complaint, false, isOwnerOrAdmin) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -268,10 +270,6 @@ exports.getSimilarComplaints = async (req, res) => {
   try {
     const { data: complaint } = await supabase.from('complaints').select('similar_group_id, category, citizen_id').eq('id', req.params.id).single();
     if (!complaint || !complaint.similar_group_id) return res.json({ complaints: [] });
-
-    if (req.user.role !== 'admin' && complaint.citizen_id !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied: You do not have permission to view this complaint.' });
-    }
 
     const { data: similar } = await supabase.from('complaints')
       .select('id, title, description, category, priority, status, location_lat, location_lng, upvotes, created_at')

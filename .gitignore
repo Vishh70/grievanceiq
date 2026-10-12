@@ -33,3 +33,7 @@ backend/models/relationship_backup_before_final_model/
 # ONNX and HuggingFace model caches (downloaded at runtime)
 backend/.cache/
 .cache/
+
+# Local benchmark and audit outputs
+backend/*_audit_results.json
+backend/*_verification.json
