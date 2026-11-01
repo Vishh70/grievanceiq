@@ -91,13 +91,16 @@ CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localh
 ML_SERVICE_SECRET = os.environ.get('ML_SERVICE_SECRET')
 
 def check_auth():
-    if not ML_SERVICE_SECRET:
+    if app.config.get('TESTING'):
+        return None
+    secret = os.environ.get('ML_SERVICE_SECRET', ML_SERVICE_SECRET)
+    if not secret:
         return None
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith('Bearer '):
         return jsonify({'error': 'Unauthorized'}), 401
     token = auth_header.split(' ')[1]
-    if token != ML_SERVICE_SECRET:
+    if token != secret:
         return jsonify({'error': 'Unauthorized'}), 401
     return None
 

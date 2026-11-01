@@ -124,3 +124,19 @@ def test_predict_relationship_calibration(client):
     assert 0.0 <= cal_probs['Duplicate'] <= 1.0
     assert 0.0 <= cal_probs['Related'] <= 1.0
     assert data.get('calibration_version') == '1.0'
+
+def test_auth_protection_when_secret_set():
+    # Verify that if ML_SERVICE_SECRET is set and TESTING is False, unauthorized access returns 401
+    import os
+    os.environ['ML_SERVICE_SECRET'] = 'custom_secret'
+    app.config['TESTING'] = False
+    with app.test_client() as c:
+        # Without auth header
+        res = c.post('/predict', json={'embedding': [0.1] * 384})
+        assert res.status_code == 401
+        # With valid auth header
+        res_valid = c.post('/predict', json={'embedding': [0.1] * 384}, headers={'Authorization': 'Bearer custom_secret'})
+        assert res_valid.status_code == 200
+    # Clean up
+    app.config['TESTING'] = True
+    os.environ['ML_SERVICE_SECRET'] = ''
