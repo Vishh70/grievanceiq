@@ -45,7 +45,8 @@ async function acquireLease(complaintId, workerId) {
       p_lease_duration_seconds: LEASE_DURATION_SECONDS
     });
     if (!error) {
-      return data !== null;
+      if (Array.isArray(data)) return data.length > 0;
+      return data !== null && data !== false;
     }
     // RPC not available — fall through to manual approach
     if (!error.message.includes('function') && !error.message.includes('does not exist')) {
@@ -186,15 +187,24 @@ async function commitProcessing(complaintId, workerId, payload) {
   });
 
   let query = supabase.from('complaints').update(commitPayload).eq('id', complaintId);
-
-  // If lease columns are available, verify ownership
-  try {
-    query = query.eq('locked_by', workerId).eq('processing_status', 'PROCESSING');
-  } catch {
-    // Pre-migration: no locked_by column filter
+  if (workerId) {
+    query = query.eq('locked_by', workerId);
   }
+  query = query.eq('processing_status', 'PROCESSING');
 
   const { error } = await query;
+  if (error && (error.message?.includes('locked_by') || error.message?.includes('lock_expires_at') || error.code === '42703')) {
+    // Pre-migration fallback: retry without lease columns
+    const legacyPayload = { ...commitPayload };
+    delete legacyPayload.locked_by;
+    delete legacyPayload.lock_expires_at;
+    const { error: legacyErr } = await supabase
+      .from('complaints')
+      .update(legacyPayload)
+      .eq('id', complaintId)
+      .eq('processing_status', 'PROCESSING');
+    return !legacyErr;
+  }
   return !error;
 }
 

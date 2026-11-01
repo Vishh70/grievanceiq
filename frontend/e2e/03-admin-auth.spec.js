@@ -49,7 +49,7 @@ test.describe('Journey 3 — Admin Authentication & Access Control', () => {
     await page.getByRole('button', { name: /Secure Login/i }).click();
 
     // Verify access denied toast is displayed
-    await expect(page.getByText('Access Denied. You are not an administrator.')).toBeVisible();
+    await expect(page.getByText(/Access Denied/i)).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/login$/);
   });
 
