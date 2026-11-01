@@ -3,6 +3,10 @@
 /**
  * Service to manage the Complaint Relationship Graph and find Connected Components
  * for grouping complaints into Civic Issues.
+ *
+ * FR05: Connected components only group verified Duplicate complaints into a
+ * shared Civic Issue identity. Related, Similar, and Independent relationships
+ * NEVER merge complaints into the same Civic Issue.
  */
 class ComplaintGraphService {
   constructor() {
@@ -24,17 +28,18 @@ class ComplaintGraphService {
   }
 
   /**
-   * Adds a meaningful relationship edge between two complaints.
-   * Only adds 'Duplicate' or 'Related' edges for grouping.
-   * 'Similar' edges are ignored here to prevent blind merging.
+   * Adds a relationship edge between two complaints for Civic Issue grouping.
+   * FR05: ONLY verified 'Duplicate' relationships determine incident identity.
+   * 'Related', 'Similar', and 'Independent' edges are ignored here to prevent
+   * distinct incidents from being merged.
    *
    * @param {string} sourceId 
    * @param {string} targetId 
    * @param {string} relationshipType - "Duplicate", "Related", "Similar", "Independent"
    */
   addRelationshipEdge(sourceId, targetId, relationshipType) {
-    // Only group by Duplicate and Related
-    if (relationshipType !== 'Duplicate' && relationshipType !== 'Related') {
+    // FR05: Only verified Duplicate edges merge complaints into a Civic Issue
+    if (!relationshipType || relationshipType.toLowerCase() !== 'duplicate') {
       return;
     }
 
@@ -43,8 +48,8 @@ class ComplaintGraphService {
     }
 
     // Add undirected edge
-    this.adjList.get(sourceId).push({ target: targetId, type: relationshipType });
-    this.adjList.get(targetId).push({ target: sourceId, type: relationshipType });
+    this.adjList.get(sourceId).push({ target: targetId, type: 'Duplicate' });
+    this.adjList.get(targetId).push({ target: sourceId, type: 'Duplicate' });
   }
 
   /**

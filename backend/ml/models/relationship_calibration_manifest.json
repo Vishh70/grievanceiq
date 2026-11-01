@@ -1,0 +1,40 @@
+{
+  "model_version": "1.0",
+  "calibration_version": "1.0",
+  "calibration_method": "Platt Scaling (Univariate Logistic Regression)",
+  "dataset_identifier": "relationship_features_3000",
+  "split_method": "canonical_issue_pair_disjoint",
+  "validation_sample_size": 262,
+  "test_sample_size": 251,
+  "calibration_labels": {
+    "Duplicate": {
+      "coef": 5.360233238048193,
+      "intercept": -2.073344457021815,
+      "raw_metrics": {
+        "brier_score": 0.04335,
+        "log_loss": 0.1631,
+        "ece": 0.03984
+      },
+      "calibrated_metrics": {
+        "brier_score": 0.04482,
+        "log_loss": 0.1719,
+        "ece": 0.07699
+      }
+    },
+    "Related": {
+      "coef": 3.9912605103885026,
+      "intercept": -3.383359844295006,
+      "raw_metrics": {
+        "brier_score": 0.03952,
+        "log_loss": 0.15328,
+        "ece": 0.0255
+      },
+      "calibrated_metrics": {
+        "brier_score": 0.0478,
+        "log_loss": 0.16675,
+        "ece": 0.07107
+      }
+    }
+  },
+  "disclaimer": "Calibrated probabilities derived from held-out empirical evaluation on synthetic and staging data. Uncalibrated predictions must be routed to human review."
+}

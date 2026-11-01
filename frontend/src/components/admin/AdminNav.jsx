@@ -1,6 +1,6 @@
 // src/components/admin/AdminNav.jsx
 import React from 'react';
-import { LayoutDashboard, FileText, Layers, ShieldAlert, MapPin } from 'lucide-react';
+import { LayoutDashboard, FileText, Layers, ShieldAlert, MapPin, Scale } from 'lucide-react';
 
 export default function AdminNav({ activeTab, onChangeTab, counts = {} }) {
   const tabs = [
@@ -13,6 +13,13 @@ export default function AdminNav({ activeTab, onChangeTab, counts = {} }) {
       count: counts.complaints 
     },
     { id: 'civic-issues', label: 'Civic Issues & DAG Workflow', icon: Layers, count: counts.civicIssues },
+    { 
+      id: 'wicr-reviews', 
+      label: 'WICR Review Queue', 
+      ariaLabel: 'WICR Review Queue', 
+      icon: Scale, 
+      count: counts.pendingReviews 
+    },
     { id: 'ai-safety', label: 'AI & Safety Intelligence', icon: ShieldAlert, count: counts.hazards },
     { id: 'incident-map', label: 'Geographic Risk & Map', icon: MapPin, count: counts.mapPins }
   ];

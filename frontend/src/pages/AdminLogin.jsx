@@ -22,14 +22,14 @@ export default function AdminLogin() {
     try {
       const user = await login(form.email, form.password);
       
-      // Strict Admin Check
-      if (user.role !== 'admin') {
+      // Strict Admin / Municipal Officer Authorization Check
+      if (user.role !== 'admin' && user.role !== 'officer') {
         logout(); // Force logout if a citizen tries to login here
-        toast.error('Access Denied. You are not an administrator.', { id: loadingToast });
+        toast.error('Access Denied. Authorized municipal personnel only.', { id: loadingToast });
         return;
       }
 
-      toast.success('Admin authentication successful.', { id: loadingToast });
+      toast.success('Authentication successful.', { id: loadingToast });
       navigate('/admin');
     } catch (err) {
       const msg = err.response?.data?.error || err.message || 'Invalid credentials. Please try again.';

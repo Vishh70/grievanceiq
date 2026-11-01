@@ -378,3 +378,1736 @@ CREATE INDEX IF NOT EXISTS idx_complaints_processing_status ON public.complaints
 
 COMMENT ON COLUMN public.complaints.processing_status IS 'Tracks async AI processing state: PENDING, PROCESSING, PROCESSED, or FAILED';
 COMMENT ON COLUMN public.complaints.processing_error IS 'Error message if AI processing failed, null otherwise';
+
+
+-- ============================================================================
+-- Step 12: Phase 14 Migration — Worker Lease Locking & Atomic Pipeline Commit
+-- ============================================================================
+
+ALTER TABLE public.complaints
+  ADD COLUMN IF NOT EXISTS locked_by TEXT,
+  ADD COLUMN IF NOT EXISTS lock_expires_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS retry_count INTEGER DEFAULT 0;
+
+CREATE INDEX IF NOT EXISTS idx_complaints_lock_expires ON public.complaints(lock_expires_at)
+  WHERE processing_status IN ('PROCESSING', 'PENDING', 'FAILED');
+
+COMMENT ON COLUMN public.complaints.locked_by IS 'Unique worker token that currently owns this complaint for processing';
+COMMENT ON COLUMN public.complaints.lock_expires_at IS 'Lease expiration time; expired leases can be reclaimed by other workers';
+COMMENT ON COLUMN public.complaints.retry_count IS 'Number of processing attempts for this complaint';
+
+CREATE OR REPLACE FUNCTION public.acquire_complaint_lease(
+  p_complaint_id UUID,
+  p_worker_id TEXT,
+  p_lease_duration_seconds INTEGER DEFAULT 300
+)
+RETURNS UUID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_acquired_id UUID;
+BEGIN
+  UPDATE public.complaints
+  SET
+    processing_status = 'PROCESSING',
+    locked_by = p_worker_id,
+    lock_expires_at = NOW() + (p_lease_duration_seconds || ' seconds')::INTERVAL,
+    retry_count = COALESCE(retry_count, 0) + 1,
+    processing_error = NULL,
+    updated_at = NOW()
+  WHERE id = p_complaint_id
+    AND (
+      processing_status IN ('PENDING', 'FAILED')
+      OR (processing_status = 'PROCESSING' AND lock_expires_at < NOW())
+    )
+    AND processing_status != 'PROCESSED'
+  RETURNING id INTO v_acquired_id;
+
+  RETURN v_acquired_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.renew_complaint_lease(
+  p_complaint_id UUID,
+  p_worker_id TEXT,
+  p_lease_duration_seconds INTEGER DEFAULT 300
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_rows INTEGER;
+BEGIN
+  UPDATE public.complaints
+  SET
+    lock_expires_at = NOW() + (p_lease_duration_seconds || ' seconds')::INTERVAL,
+    updated_at = NOW()
+  WHERE id = p_complaint_id
+    AND locked_by = p_worker_id
+    AND processing_status = 'PROCESSING';
+
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  RETURN v_rows > 0;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.commit_complaint_processing(
+  p_complaint_id UUID,
+  p_worker_id TEXT,
+  p_category TEXT DEFAULT NULL,
+  p_priority TEXT DEFAULT NULL,
+  p_severity_score NUMERIC DEFAULT NULL,
+  p_safety_hazards TEXT[] DEFAULT NULL,
+  p_suggested_action TEXT DEFAULT NULL,
+  p_keywords TEXT[] DEFAULT NULL,
+  p_embedding_vector FLOAT8[] DEFAULT NULL,
+  p_similar_group_id UUID DEFAULT NULL,
+  p_ai_duplicate_flag BOOLEAN DEFAULT FALSE,
+  p_duplicate_score NUMERIC DEFAULT 0,
+  p_duplicate_candidate_id UUID DEFAULT NULL,
+  p_duplicate_semantic_score NUMERIC DEFAULT 0,
+  p_duplicate_location_score NUMERIC DEFAULT 0,
+  p_duplicate_temporal_score NUMERIC DEFAULT 0,
+  p_ml_labels TEXT[] DEFAULT NULL,
+  p_ml_probabilities JSONB DEFAULT NULL,
+  p_ml_departments TEXT[] DEFAULT NULL,
+  p_civic_issue_id UUID DEFAULT NULL
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_rows INTEGER;
+BEGIN
+  UPDATE public.complaints
+  SET
+    category = COALESCE(p_category, category),
+    priority = COALESCE(p_priority, priority),
+    severity_score = COALESCE(p_severity_score, severity_score),
+    safety_hazards = COALESCE(p_safety_hazards, safety_hazards),
+    suggested_action = COALESCE(p_suggested_action, suggested_action),
+    keywords = COALESCE(p_keywords, keywords),
+    embedding_vector = COALESCE(p_embedding_vector, embedding_vector),
+    similar_group_id = COALESCE(p_similar_group_id, similar_group_id),
+    ai_duplicate_flag = p_ai_duplicate_flag,
+    duplicate_score = p_duplicate_score,
+    duplicate_candidate_id = p_duplicate_candidate_id,
+    duplicate_semantic_score = p_duplicate_semantic_score,
+    duplicate_location_score = p_duplicate_location_score,
+    duplicate_temporal_score = p_duplicate_temporal_score,
+    ml_labels = COALESCE(p_ml_labels, ml_labels),
+    ml_probabilities = COALESCE(p_ml_probabilities, ml_probabilities),
+    ml_departments = COALESCE(p_ml_departments, ml_departments),
+    civic_issue_id = COALESCE(p_civic_issue_id, civic_issue_id),
+    ai_processed = TRUE,
+    processing_status = 'PROCESSED',
+    processing_error = NULL,
+    locked_by = NULL,
+    lock_expires_at = NULL,
+    updated_at = NOW()
+  WHERE id = p_complaint_id
+    AND locked_by = p_worker_id
+    AND processing_status = 'PROCESSING';
+
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  RETURN v_rows > 0;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.record_complaint_failure(
+  p_complaint_id UUID,
+  p_worker_id TEXT,
+  p_error_message TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE public.complaints
+  SET
+    processing_status = 'FAILED',
+    processing_error = LEFT(COALESCE(p_error_message, 'Unknown error'), 500),
+    locked_by = NULL,
+    lock_expires_at = NULL,
+    ai_processed = FALSE,
+    updated_at = NOW()
+  WHERE id = p_complaint_id
+    AND (locked_by = p_worker_id OR locked_by IS NULL OR lock_expires_at < NOW());
+END;
+$$;
+
+-- 6. Comprehensive Atomic Pipeline Transaction Function
+CREATE OR REPLACE FUNCTION public.commit_complaint_pipeline_transaction(
+  p_complaint_id UUID,
+  p_worker_id TEXT,
+  p_complaint_updates JSONB,
+  p_civic_issue JSONB DEFAULT NULL,
+  p_relationships JSONB DEFAULT '[]'::jsonb,
+  p_tasks JSONB DEFAULT '[]'::jsonb
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_current_worker TEXT;
+  v_current_status TEXT;
+  v_lock_expires TIMESTAMPTZ;
+  v_civic_issue_id UUID;
+  v_rel JSONB;
+  v_task JSONB;
+  v_ws_id UUID;
+  v_src_id UUID;
+  v_tgt_id UUID;
+  v_temp UUID;
+  v_merged_id UUID;
+  v_complaint_ids UUID[];
+BEGIN
+  -- Row-level lock and verify worker lease ownership
+  SELECT locked_by, processing_status, lock_expires_at
+  INTO v_current_worker, v_current_status, v_lock_expires
+  FROM public.complaints
+  WHERE id = p_complaint_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Complaint % not found', p_complaint_id;
+  END IF;
+
+  IF v_current_status = 'PROCESSED' THEN
+    RAISE EXCEPTION 'Complaint % is already PROCESSED', p_complaint_id;
+  END IF;
+
+  IF v_current_worker IS DISTINCT FROM p_worker_id THEN
+    RAISE EXCEPTION 'Worker % lost lease ownership to % on complaint %', p_worker_id, v_current_worker, p_complaint_id;
+  END IF;
+
+  IF v_lock_expires IS NOT NULL AND v_lock_expires < NOW() THEN
+    RAISE EXCEPTION 'Lease expired for worker % on complaint %', p_worker_id, p_complaint_id;
+  END IF;
+
+  -- 1. Civic Issue handling
+  IF p_civic_issue IS NOT NULL AND p_civic_issue != 'null'::jsonb THEN
+    IF p_civic_issue->>'complaint_ids' IS NOT NULL THEN
+      SELECT ARRAY(SELECT jsonb_array_elements_text(p_civic_issue->'complaint_ids')::UUID)
+      INTO v_complaint_ids;
+    ELSE
+      v_complaint_ids := ARRAY[p_complaint_id];
+    END IF;
+
+    IF p_civic_issue->>'id' IS NOT NULL THEN
+      v_civic_issue_id := (p_civic_issue->>'id')::UUID;
+      UPDATE public.civic_issues
+      SET
+        title = COALESCE(p_civic_issue->>'title', title),
+        primary_category = COALESCE(p_civic_issue->>'primary_category', primary_category),
+        priority = COALESCE(p_civic_issue->>'priority', priority),
+        complaint_ids = v_complaint_ids,
+        updated_at = NOW()
+      WHERE id = v_civic_issue_id;
+    ELSE
+      INSERT INTO public.civic_issues (
+        title, primary_category, priority, location_lat, location_lng, complaint_ids
+      )
+      VALUES (
+        COALESCE(p_civic_issue->>'title', 'General Civic Issue'),
+        COALESCE(p_civic_issue->>'primary_category', 'Other'),
+        COALESCE(p_civic_issue->>'priority', 'Medium'),
+        (p_civic_issue->>'location_lat')::NUMERIC,
+        (p_civic_issue->>'location_lng')::NUMERIC,
+        v_complaint_ids
+      )
+      RETURNING id INTO v_civic_issue_id;
+    END IF;
+
+    -- Update all associated complaints to link to this civic issue
+    IF v_civic_issue_id IS NOT NULL AND array_length(v_complaint_ids, 1) > 0 THEN
+      UPDATE public.complaints
+      SET civic_issue_id = v_civic_issue_id
+      WHERE id = ANY(v_complaint_ids);
+    END IF;
+
+    -- Handle merged civic issues
+    IF p_civic_issue->'merged_issues' IS NOT NULL THEN
+      FOR v_merged_id IN SELECT jsonb_array_elements_text(p_civic_issue->'merged_issues')::UUID LOOP
+        UPDATE public.civic_issues
+        SET status = 'Merged', merged_into_id = v_civic_issue_id, updated_at = NOW()
+        WHERE id = v_merged_id;
+      END LOOP;
+    END IF;
+  END IF;
+
+  -- 2. Relationships handling
+  IF p_relationships IS NOT NULL AND jsonb_array_length(p_relationships) > 0 THEN
+    FOR v_rel IN SELECT * FROM jsonb_array_elements(p_relationships) LOOP
+      v_src_id := (v_rel->>'source_id')::UUID;
+      v_tgt_id := (v_rel->>'target_id')::UUID;
+
+      -- Enforce canonical edge ordering: source < target
+      IF v_src_id > v_tgt_id THEN
+        v_temp := v_src_id;
+        v_src_id := v_tgt_id;
+        v_tgt_id := v_temp;
+      END IF;
+
+      IF v_src_id != v_tgt_id THEN
+        INSERT INTO public.complaint_relationships (
+          source_complaint_id, target_complaint_id, relationship_type, confidence, reason
+        )
+        VALUES (
+          v_src_id, v_tgt_id, v_rel->>'type', (v_rel->>'confidence')::NUMERIC, v_rel->>'reason'
+        )
+        ON CONFLICT (source_complaint_id, target_complaint_id) DO UPDATE
+        SET relationship_type = EXCLUDED.relationship_type,
+            confidence = EXCLUDED.confidence,
+            reason = EXCLUDED.reason;
+      END IF;
+    END LOOP;
+  END IF;
+
+  -- 3. Workstreams & Tasks handling
+  IF p_tasks IS NOT NULL AND jsonb_array_length(p_tasks) > 0 AND v_civic_issue_id IS NOT NULL THEN
+    FOR v_task IN SELECT * FROM jsonb_array_elements(p_tasks) LOOP
+      -- Ensure workstream exists
+      INSERT INTO public.workstreams (civic_issue_id, department_id, status)
+      VALUES (v_civic_issue_id, v_task->>'department_id', 'PENDING')
+      ON CONFLICT (civic_issue_id, department_id) DO UPDATE
+      SET updated_at = NOW()
+      RETURNING id INTO v_ws_id;
+
+      -- Insert task
+      INSERT INTO public.tasks (
+        civic_issue_id, workstream_id, department_id, issue_type, title, description, priority, status
+      )
+      VALUES (
+        v_civic_issue_id,
+        v_ws_id,
+        v_task->>'department_id',
+        v_task->>'issue_type',
+        v_task->>'title',
+        v_task->>'description',
+        COALESCE(v_task->>'priority', 'Medium'),
+        'PENDING'
+      );
+    END LOOP;
+  END IF;
+
+  -- 4. Final Complaint update & lease release
+  UPDATE public.complaints
+  SET
+    category = COALESCE(p_complaint_updates->>'category', category),
+    priority = COALESCE(p_complaint_updates->>'priority', priority),
+    severity_score = COALESCE((p_complaint_updates->>'severity_score')::NUMERIC, severity_score),
+    suggested_action = COALESCE(p_complaint_updates->>'suggested_action', suggested_action),
+    similar_group_id = COALESCE((p_complaint_updates->>'similar_group_id')::UUID, similar_group_id),
+    ai_duplicate_flag = COALESCE((p_complaint_updates->>'ai_duplicate_flag')::BOOLEAN, ai_duplicate_flag),
+    duplicate_score = COALESCE((p_complaint_updates->>'duplicate_score')::NUMERIC, duplicate_score),
+    duplicate_candidate_id = COALESCE((p_complaint_updates->>'duplicate_candidate_id')::UUID, duplicate_candidate_id),
+    duplicate_semantic_score = COALESCE((p_complaint_updates->>'duplicate_semantic_score')::NUMERIC, duplicate_semantic_score),
+    duplicate_location_score = COALESCE((p_complaint_updates->>'duplicate_location_score')::NUMERIC, duplicate_location_score),
+    duplicate_temporal_score = COALESCE((p_complaint_updates->>'duplicate_temporal_score')::NUMERIC, duplicate_temporal_score),
+    civic_issue_id = COALESCE(v_civic_issue_id, (p_complaint_updates->>'civic_issue_id')::UUID, civic_issue_id),
+    keywords = CASE 
+      WHEN p_complaint_updates ? 'keywords' AND jsonb_typeof(p_complaint_updates->'keywords') = 'array'
+      THEN ARRAY(SELECT jsonb_array_elements_text(p_complaint_updates->'keywords'))
+      ELSE keywords
+    END,
+    safety_hazards = CASE 
+      WHEN p_complaint_updates ? 'safety_hazards' AND jsonb_typeof(p_complaint_updates->'safety_hazards') = 'array'
+      THEN ARRAY(SELECT jsonb_array_elements_text(p_complaint_updates->'safety_hazards'))
+      ELSE safety_hazards
+    END,
+    ml_labels = CASE 
+      WHEN p_complaint_updates ? 'ml_labels' AND jsonb_typeof(p_complaint_updates->'ml_labels') = 'array'
+      THEN ARRAY(SELECT jsonb_array_elements_text(p_complaint_updates->'ml_labels'))
+      ELSE ml_labels
+    END,
+    ml_departments = CASE 
+      WHEN p_complaint_updates ? 'ml_departments' AND jsonb_typeof(p_complaint_updates->'ml_departments') = 'array'
+      THEN ARRAY(SELECT jsonb_array_elements_text(p_complaint_updates->'ml_departments'))
+      ELSE ml_departments
+    END,
+    ml_probabilities = COALESCE(p_complaint_updates->'ml_probabilities', ml_probabilities),
+    embedding_vector = CASE 
+      WHEN p_complaint_updates ? 'embedding_vector' AND jsonb_typeof(p_complaint_updates->'embedding_vector') = 'array'
+      THEN ARRAY(SELECT (jsonb_array_elements_text(p_complaint_updates->'embedding_vector'))::FLOAT8)
+      ELSE embedding_vector
+    END,
+    ai_processed = TRUE,
+    processing_status = 'PROCESSED',
+    processing_error = NULL,
+    locked_by = NULL,
+    lock_expires_at = NULL,
+    updated_at = NOW()
+  WHERE id = p_complaint_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'complaint_id', p_complaint_id,
+    'civic_issue_id', v_civic_issue_id
+  );
+END;
+$$;
+
+-- ============================================================================
+-- Step 13: Phase 15 Migration — FR05 Duplicate-Only Incident Identity
+-- ============================================================================
+
+-- 1. View exposing cross-incident relationships between distinct Civic Issues
+CREATE OR REPLACE VIEW public.v_civic_issue_related_links AS
+SELECT
+  cr.id AS relationship_id,
+  c1.civic_issue_id AS source_civic_issue_id,
+  ci1.title AS source_civic_issue_title,
+  cr.source_complaint_id,
+  c2.civic_issue_id AS target_civic_issue_id,
+  ci2.title AS target_civic_issue_title,
+  cr.target_complaint_id,
+  cr.relationship_type,
+  cr.confidence,
+  cr.reason,
+  cr.created_at
+FROM public.complaint_relationships cr
+JOIN public.complaints c1 ON c1.id = cr.source_complaint_id
+JOIN public.complaints c2 ON c2.id = cr.target_complaint_id
+JOIN public.civic_issues ci1 ON ci1.id = c1.civic_issue_id
+JOIN public.civic_issues ci2 ON ci2.id = c2.civic_issue_id
+WHERE cr.relationship_type = 'Related'
+  AND c1.civic_issue_id IS NOT NULL
+  AND c2.civic_issue_id IS NOT NULL
+  AND c1.civic_issue_id != c2.civic_issue_id;
+
+COMMENT ON VIEW public.v_civic_issue_related_links IS 'Exposes cross-issue operational and causal relationships between distinct Civic Issues without merging them.';
+
+-- 2. Stored function to fetch all related Civic Issues for a given issue ID
+CREATE OR REPLACE FUNCTION public.get_related_civic_issues(p_civic_issue_id UUID)
+RETURNS TABLE (
+  related_civic_issue_id UUID,
+  related_issue_title TEXT,
+  source_complaint_id UUID,
+  target_complaint_id UUID,
+  relationship_type TEXT,
+  confidence NUMERIC,
+  reason TEXT
+)
+LANGUAGE sql STABLE AS $$
+  SELECT DISTINCT
+    CASE 
+      WHEN c1.civic_issue_id = p_civic_issue_id THEN c2.civic_issue_id 
+      ELSE c1.civic_issue_id 
+    END AS related_civic_issue_id,
+    ci.title AS related_issue_title,
+    cr.source_complaint_id,
+    cr.target_complaint_id,
+    cr.relationship_type,
+    cr.confidence,
+    cr.reason
+  FROM public.complaint_relationships cr
+  JOIN public.complaints c1 ON c1.id = cr.source_complaint_id
+  JOIN public.complaints c2 ON c2.id = cr.target_complaint_id
+  JOIN public.civic_issues ci ON ci.id = (
+    CASE 
+      WHEN c1.civic_issue_id = p_civic_issue_id THEN c2.civic_issue_id 
+      ELSE c1.civic_issue_id 
+    END
+  )
+  WHERE cr.relationship_type = 'Related'
+    AND (c1.civic_issue_id = p_civic_issue_id OR c2.civic_issue_id = p_civic_issue_id)
+    AND c1.civic_issue_id IS NOT NULL
+    AND c2.civic_issue_id IS NOT NULL
+    AND c1.civic_issue_id != c2.civic_issue_id;
+$$;
+
+COMMENT ON FUNCTION public.get_related_civic_issues IS 'Returns related Civic Issues linked via Related complaint relationships across incidents.';
+
+-- 3. Audit query function: Identifies Civic Issues incorrectly grouped using Related edges
+CREATE OR REPLACE FUNCTION public.check_improper_civic_issue_groupings()
+RETURNS TABLE (
+  civic_issue_id UUID,
+  title TEXT,
+  complaint_count INTEGER,
+  complaint_ids UUID[]
+)
+LANGUAGE plpgsql STABLE AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    ci.id AS civic_issue_id,
+    ci.title,
+    COALESCE(array_length(ci.complaint_ids, 1), 0) AS complaint_count,
+    ci.complaint_ids
+  FROM public.civic_issues ci
+  WHERE ci.status != 'Merged'
+    AND array_length(ci.complaint_ids, 1) > 1
+    AND NOT EXISTS (
+      SELECT 1 FROM public.complaint_relationships cr
+      WHERE cr.relationship_type = 'Duplicate'
+        AND cr.source_complaint_id = ANY(ci.complaint_ids)
+        AND cr.target_complaint_id = ANY(ci.complaint_ids)
+    );
+END;
+$$;
+
+COMMENT ON FUNCTION public.check_improper_civic_issue_groupings IS 'Flags multi-complaint Civic Issues that have zero Duplicate edges connecting their constituent complaints.';
+
+-- ============================================================================
+-- Step 14: Phase 16 Migration — FR04 Cross-Issue Task Dependencies & Atomic Cycle Prevention
+-- ============================================================================
+
+-- 1. Stored procedure for atomic dependency insertion with advisory lock & cycle prevention
+CREATE OR REPLACE FUNCTION public.add_task_dependency_transactional(
+  p_task_id UUID,
+  p_depends_on_task_id UUID
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_t1_id UUID;
+  v_t1_issue UUID;
+  v_t2_id UUID;
+  v_t2_issue UUID;
+  v_cycle_path TEXT[];
+  v_new_dep_id UUID;
+BEGIN
+  -- 1. Validate self-dependency
+  IF p_task_id = p_depends_on_task_id THEN
+    RAISE EXCEPTION 'Self dependency is not allowed.';
+  END IF;
+
+  -- 2. Validate existence of both tasks
+  SELECT id, civic_issue_id INTO v_t1_id, v_t1_issue FROM public.tasks WHERE id = p_task_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Task % not found', p_task_id;
+  END IF;
+
+  SELECT id, civic_issue_id INTO v_t2_id, v_t2_issue FROM public.tasks WHERE id = p_depends_on_task_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Prerequisite task % not found', p_depends_on_task_id;
+  END IF;
+
+  -- 3. Acquire transaction-level advisory lock to serialize graph updates across concurrent transactions
+  PERFORM pg_advisory_xact_lock(hashtext('task_dependencies_graph_lock'));
+
+  -- 4. Check if dependency already exists (idempotent)
+  SELECT id INTO v_new_dep_id
+  FROM public.task_dependencies
+  WHERE task_id = p_task_id AND depends_on_task_id = p_depends_on_task_id;
+
+  IF FOUND THEN
+    RETURN jsonb_build_object(
+      'success', true,
+      'status', 'ALREADY_EXISTS',
+      'dependency_id', v_new_dep_id,
+      'task_id', p_task_id,
+      'depends_on_task_id', p_depends_on_task_id
+    );
+  END IF;
+
+  -- 5. Recursive cycle check: can p_task_id already reach p_depends_on_task_id?
+  WITH RECURSIVE reachable AS (
+    SELECT task_id, ARRAY[p_task_id::TEXT, task_id::TEXT] AS path
+    FROM public.task_dependencies
+    WHERE depends_on_task_id = p_task_id
+
+    UNION ALL
+
+    SELECT td.task_id, r.path || td.task_id::TEXT
+    FROM public.task_dependencies td
+    JOIN reachable r ON td.depends_on_task_id = r.task_id
+    WHERE NOT (td.task_id::TEXT = ANY(r.path))
+  )
+  SELECT path INTO v_cycle_path
+  FROM reachable
+  WHERE task_id = p_depends_on_task_id
+  LIMIT 1;
+
+  IF FOUND THEN
+    RAISE EXCEPTION 'Adding this dependency would create a cycle: % -> %',
+      array_to_string(v_cycle_path, ' -> '), p_task_id;
+  END IF;
+
+  -- 6. Insert new dependency edge
+  INSERT INTO public.task_dependencies (task_id, depends_on_task_id)
+  VALUES (p_task_id, p_depends_on_task_id)
+  RETURNING id INTO v_new_dep_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'status', 'CREATED',
+    'dependency_id', v_new_dep_id,
+    'task_id', p_task_id,
+    'depends_on_task_id', p_depends_on_task_id,
+    'is_cross_issue', (v_t1_issue != v_t2_issue)
+  );
+END;
+$$;
+
+COMMENT ON FUNCTION public.add_task_dependency_transactional IS 'Atomically validates, checks cycles, and inserts a task dependency edge under an advisory lock.';
+
+-- 2. Trigger function to prevent cycle creation even on direct SQL inserts
+CREATE OR REPLACE FUNCTION public.check_task_cycle_trigger()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_cycle_path TEXT[];
+BEGIN
+  IF NEW.task_id = NEW.depends_on_task_id THEN
+    RAISE EXCEPTION 'Self dependency is not allowed.';
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtext('task_dependencies_graph_lock'));
+
+  WITH RECURSIVE reachable AS (
+    SELECT task_id, ARRAY[NEW.task_id::TEXT, task_id::TEXT] AS path
+    FROM public.task_dependencies
+    WHERE depends_on_task_id = NEW.task_id
+
+    UNION ALL
+
+    SELECT td.task_id, r.path || td.task_id::TEXT
+    FROM public.task_dependencies td
+    JOIN reachable r ON td.depends_on_task_id = r.task_id
+    WHERE NOT (td.task_id::TEXT = ANY(r.path))
+  )
+  SELECT path INTO v_cycle_path
+  FROM reachable
+  WHERE task_id = NEW.depends_on_task_id
+  LIMIT 1;
+
+  IF FOUND THEN
+    RAISE EXCEPTION 'Adding this dependency would create a cycle: % -> %',
+      array_to_string(v_cycle_path, ' -> '), NEW.task_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_prevent_task_dependency_cycles ON public.task_dependencies;
+CREATE TRIGGER trg_prevent_task_dependency_cycles
+  BEFORE INSERT ON public.task_dependencies
+  FOR EACH ROW
+  EXECUTE FUNCTION public.check_task_cycle_trigger();
+
+-- 3. Hardened transactional task status updater with database-level prerequisite enforcement
+CREATE OR REPLACE FUNCTION public.update_task_status_transactional(
+  p_task_id uuid,
+  p_new_status text,
+  p_user_email text,
+  p_reason text
+)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_civic_issue_id uuid;
+  v_workstream_id uuid;
+  v_current_status text;
+  
+  v_unmet_task_id uuid;
+  v_unmet_title text;
+  v_unmet_status text;
+
+  v_ws_all_cancelled boolean;
+  v_ws_all_finished boolean;
+  v_ws_none_started boolean;
+  v_ws_new_status text;
+  
+  v_issue_all_cancelled boolean;
+  v_issue_all_finished boolean;
+  v_issue_none_started boolean;
+  v_issue_new_status text;
+BEGIN
+  -- 1. Lock the task row
+  SELECT civic_issue_id, workstream_id, status 
+  INTO v_civic_issue_id, v_workstream_id, v_current_status
+  FROM public.tasks 
+  WHERE id = p_task_id 
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Task not found';
+  END IF;
+  
+  IF v_current_status = p_new_status THEN
+    RETURN; -- No change
+  END IF;
+
+  -- 2. Prerequisite enforcement when transitioning to IN_PROGRESS
+  IF p_new_status = 'IN_PROGRESS' THEN
+    SELECT t.id, t.title, t.status
+    INTO v_unmet_task_id, v_unmet_title, v_unmet_status
+    FROM public.task_dependencies td
+    JOIN public.tasks t ON t.id = td.depends_on_task_id
+    WHERE td.task_id = p_task_id
+      AND t.status != 'COMPLETED'
+    LIMIT 1;
+
+    IF FOUND THEN
+      RAISE EXCEPTION 'Cannot start task. Prerequisite task % ("%") is not COMPLETED (current status: %)',
+        v_unmet_task_id, v_unmet_title, v_unmet_status;
+    END IF;
+  END IF;
+
+  -- 3. Update Task
+  UPDATE public.tasks 
+  SET 
+    status = p_new_status, 
+    started_at = CASE WHEN p_new_status = 'IN_PROGRESS' AND v_current_status = 'PENDING' THEN now() ELSE started_at END,
+    completed_at = CASE WHEN p_new_status = 'COMPLETED' THEN now() ELSE completed_at END,
+    cancelled_at = CASE WHEN p_new_status = 'CANCELLED' THEN now() ELSE cancelled_at END,
+    updated_at = now() 
+  WHERE id = p_task_id;
+
+  -- 4. Audit Log
+  INSERT INTO public.task_status_history 
+    (task_id, previous_status, new_status, changed_by, reason)
+  VALUES 
+    (p_task_id, v_current_status, p_new_status, COALESCE(p_user_email, 'system'), COALESCE(p_reason, 'Transitioned to ' || p_new_status));
+
+  -- 5. Re-evaluate Workstream Status
+  SELECT 
+    bool_and(status = 'CANCELLED'),
+    bool_and(status IN ('COMPLETED', 'CANCELLED')),
+    bool_and(status = 'PENDING')
+  INTO v_ws_all_cancelled, v_ws_all_finished, v_ws_none_started
+  FROM public.tasks
+  WHERE workstream_id = v_workstream_id;
+  
+  IF v_ws_all_cancelled THEN v_ws_new_status := 'CANCELLED';
+  ELSIF v_ws_all_finished THEN v_ws_new_status := 'COMPLETED';
+  ELSIF NOT v_ws_none_started THEN v_ws_new_status := 'IN_PROGRESS';
+  ELSE v_ws_new_status := 'PENDING';
+  END IF;
+  
+  UPDATE public.workstreams 
+  SET status = v_ws_new_status, updated_at = now() 
+  WHERE id = v_workstream_id;
+
+  -- 6. Re-evaluate Civic Issue Status
+  SELECT 
+    bool_and(status = 'CANCELLED'),
+    bool_and(status IN ('COMPLETED', 'CANCELLED')),
+    bool_and(status = 'PENDING')
+  INTO v_issue_all_cancelled, v_issue_all_finished, v_issue_none_started
+  FROM public.tasks
+  WHERE civic_issue_id = v_civic_issue_id;
+
+  IF v_issue_all_cancelled THEN v_issue_new_status := 'CANCELLED';
+  ELSIF v_issue_all_finished THEN v_issue_new_status := 'COMPLETED';
+  ELSIF NOT v_issue_none_started THEN v_issue_new_status := 'IN_PROGRESS';
+  ELSE v_issue_new_status := 'PENDING';
+  END IF;
+
+  UPDATE public.civic_issues 
+  SET status = v_issue_new_status, updated_at = now() 
+  WHERE id = v_civic_issue_id;
+
+END;
+$$;
+
+COMMENT ON FUNCTION public.update_task_status_transactional IS 'Atomically updates task status, enforces prerequisite completion, updates workstream and civic issue status, and logs audit history.';
+
+
+
+-- ============================================================================
+-- Step 15: Phase 17 Migration — FR06 WICR Decisions & Human Review Queue
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.wicr_decisions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_complaint_id UUID NOT NULL REFERENCES public.complaints(id) ON DELETE CASCADE,
+  target_complaint_id UUID NOT NULL REFERENCES public.complaints(id) ON DELETE CASCADE,
+  relationship_type TEXT NOT NULL,
+  raw_probability NUMERIC(6, 4) NOT NULL,
+  calibrated_probability NUMERIC(6, 4),
+  is_calibrated BOOLEAN NOT NULL DEFAULT false,
+  loss_accept NUMERIC(10, 4) NOT NULL,
+  loss_reject NUMERIC(10, 4) NOT NULL,
+  loss_review NUMERIC(10, 4) NOT NULL,
+  cost_matrix JSONB NOT NULL DEFAULT '{"false_lock": 10.0, "missed_link": 5.0, "review": 1.0}'::jsonb,
+  selected_action TEXT NOT NULL CHECK (selected_action IN ('ACCEPT', 'REJECT', 'REVIEW')),
+  review_status TEXT NOT NULL DEFAULT 'PENDING' CHECK (review_status IN ('NOT_REQUIRED', 'PENDING', 'RESOLVED_ACCEPT', 'RESOLVED_REJECT')),
+  routed_reason TEXT,
+  model_version TEXT NOT NULL DEFAULT '1.0',
+  calibration_version TEXT DEFAULT '1.0',
+  policy_version TEXT NOT NULL DEFAULT '1.0',
+  reviewer_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  reviewer_notes TEXT,
+  reviewed_at TIMESTAMPTZ,
+  is_latest BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wicr_source_target ON public.wicr_decisions (source_complaint_id, target_complaint_id);
+CREATE INDEX IF NOT EXISTS idx_wicr_pending ON public.wicr_decisions (review_status) WHERE review_status = 'PENDING';
+CREATE INDEX IF NOT EXISTS idx_wicr_latest ON public.wicr_decisions (source_complaint_id, target_complaint_id, is_latest);
+
+DROP VIEW IF EXISTS public.v_pending_wicr_reviews CASCADE;
+CREATE VIEW public.v_pending_wicr_reviews AS
+SELECT 
+  d.id AS decision_id,
+  d.source_complaint_id,
+  c1.title AS source_title,
+  c1.category AS source_category,
+  c1.description AS source_description,
+  d.target_complaint_id,
+  c2.title AS target_title,
+  c2.category AS target_category,
+  c2.description AS target_description,
+  d.relationship_type,
+  d.raw_probability,
+  d.calibrated_probability,
+  d.is_calibrated,
+  d.loss_accept,
+  d.loss_reject,
+  d.loss_review,
+  d.cost_matrix,
+  d.selected_action,
+  d.review_status,
+  d.routed_reason,
+  d.model_version,
+  d.calibration_version,
+  d.policy_version,
+  d.created_at
+FROM public.wicr_decisions d
+JOIN public.complaints c1 ON c1.id = d.source_complaint_id
+JOIN public.complaints c2 ON c2.id = d.target_complaint_id
+WHERE d.review_status = 'PENDING' AND d.is_latest = true
+ORDER BY d.created_at DESC;
+
+CREATE OR REPLACE FUNCTION public.record_wicr_decision(
+  p_source_id UUID,
+  p_target_id UUID,
+  p_relationship_type TEXT,
+  p_raw_prob NUMERIC,
+  p_cal_prob NUMERIC,
+  p_is_calibrated BOOLEAN,
+  p_loss_accept NUMERIC,
+  p_loss_reject NUMERIC,
+  p_loss_review NUMERIC,
+  p_cost_matrix JSONB,
+  p_selected_action TEXT,
+  p_routed_reason TEXT,
+  p_model_version TEXT DEFAULT '1.0',
+  p_calibration_version TEXT DEFAULT '1.0',
+  p_policy_version TEXT DEFAULT '1.0'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_decision_id UUID;
+  v_review_status TEXT;
+  v_src UUID;
+  v_tgt UUID;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.complaints WHERE id = p_source_id) THEN
+    RAISE EXCEPTION 'Source complaint % not found', p_source_id;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.complaints WHERE id = p_target_id) THEN
+    RAISE EXCEPTION 'Target complaint % not found', p_target_id;
+  END IF;
+
+  IF p_source_id < p_target_id THEN
+    v_src := p_source_id;
+    v_tgt := p_target_id;
+  ELSE
+    v_src := p_target_id;
+    v_tgt := p_source_id;
+  END IF;
+
+  IF p_selected_action = 'REVIEW' THEN
+    v_review_status := 'PENDING';
+  ELSE
+    v_review_status := 'NOT_REQUIRED';
+  END IF;
+
+  UPDATE public.wicr_decisions
+  SET is_latest = false, updated_at = now()
+  WHERE source_complaint_id = p_source_id 
+    AND target_complaint_id = p_target_id
+    AND is_latest = true;
+
+  INSERT INTO public.wicr_decisions (
+    source_complaint_id,
+    target_complaint_id,
+    relationship_type,
+    raw_probability,
+    calibrated_probability,
+    is_calibrated,
+    loss_accept,
+    loss_reject,
+    loss_review,
+    cost_matrix,
+    selected_action,
+    review_status,
+    routed_reason,
+    model_version,
+    calibration_version,
+    policy_version,
+    is_latest
+  )
+  VALUES (
+    p_source_id,
+    p_target_id,
+    p_relationship_type,
+    p_raw_prob,
+    p_cal_prob,
+    COALESCE(p_is_calibrated, false),
+    p_loss_accept,
+    p_loss_reject,
+    p_loss_review,
+    COALESCE(p_cost_matrix, '{"false_lock": 10.0, "missed_link": 5.0, "review": 1.0}'::jsonb),
+    p_selected_action,
+    v_review_status,
+    p_routed_reason,
+    COALESCE(p_model_version, '1.0'),
+    p_calibration_version,
+    COALESCE(p_policy_version, '1.0'),
+    true
+  )
+  RETURNING id INTO v_decision_id;
+
+  IF p_selected_action = 'ACCEPT' AND p_relationship_type IN ('Duplicate', 'Related') THEN
+    INSERT INTO public.complaint_relationships (
+      source_complaint_id, target_complaint_id, relationship_type, confidence, reason
+    )
+    VALUES (
+      v_src,
+      v_tgt,
+      p_relationship_type,
+      COALESCE(p_cal_prob, p_raw_prob),
+      'WICR Automated Decision ACCEPT (Loss=' || p_loss_accept || ')'
+    )
+    ON CONFLICT (source_complaint_id, target_complaint_id) DO UPDATE
+    SET relationship_type = EXCLUDED.relationship_type,
+        confidence = EXCLUDED.confidence,
+        reason = EXCLUDED.reason;
+  ELSIF p_selected_action = 'REJECT' THEN
+    DELETE FROM public.complaint_relationships
+    WHERE source_complaint_id = v_src AND target_complaint_id = v_tgt;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'decision_id', v_decision_id,
+    'selected_action', p_selected_action,
+    'review_status', v_review_status,
+    'source_complaint_id', p_source_id,
+    'target_complaint_id', p_target_id,
+    'relationship_type', p_relationship_type,
+    'is_calibrated', p_is_calibrated
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.resolve_wicr_review(
+  p_decision_id UUID,
+  p_reviewer_id UUID,
+  p_action TEXT,
+  p_notes TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_record RECORD;
+  v_new_status TEXT;
+  v_src UUID;
+  v_tgt UUID;
+BEGIN
+  IF p_action NOT IN ('ACCEPT', 'REJECT') THEN
+    RAISE EXCEPTION 'Invalid review resolution action %. Must be ACCEPT or REJECT', p_action;
+  END IF;
+
+  SELECT * INTO v_record
+  FROM public.wicr_decisions
+  WHERE id = p_decision_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'WICR decision % not found', p_decision_id;
+  END IF;
+
+  IF v_record.review_status != 'PENDING' THEN
+    RAISE EXCEPTION 'WICR decision % is already resolved (status: %)', p_decision_id, v_record.review_status;
+  END IF;
+
+  IF p_action = 'ACCEPT' THEN
+    v_new_status := 'RESOLVED_ACCEPT';
+  ELSE
+    v_new_status := 'RESOLVED_REJECT';
+  END IF;
+
+  UPDATE public.wicr_decisions
+  SET review_status = v_new_status,
+      reviewer_id = p_reviewer_id,
+      reviewer_notes = p_notes,
+      reviewed_at = now(),
+      updated_at = now()
+  WHERE id = p_decision_id;
+
+  IF v_record.source_complaint_id < v_record.target_complaint_id THEN
+    v_src := v_record.source_complaint_id;
+    v_tgt := v_record.target_complaint_id;
+  ELSE
+    v_src := v_record.target_complaint_id;
+    v_tgt := v_record.source_complaint_id;
+  END IF;
+
+  IF p_action = 'ACCEPT' AND v_record.relationship_type IN ('Duplicate', 'Related') THEN
+    INSERT INTO public.complaint_relationships (
+      source_complaint_id, target_complaint_id, relationship_type, confidence, reason
+    )
+    VALUES (
+      v_src,
+      v_tgt,
+      v_record.relationship_type,
+      COALESCE(v_record.calibrated_probability, v_record.raw_probability),
+      'Human verified via WICR Review Queue: ' || COALESCE(p_notes, 'Approved by reviewer')
+    )
+    ON CONFLICT (source_complaint_id, target_complaint_id) DO UPDATE
+    SET relationship_type = EXCLUDED.relationship_type,
+        confidence = EXCLUDED.confidence,
+        reason = EXCLUDED.reason;
+  ELSIF p_action = 'REJECT' THEN
+    DELETE FROM public.complaint_relationships
+    WHERE source_complaint_id = v_src AND target_complaint_id = v_tgt;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'decision_id', p_decision_id,
+    'resolved_action', p_action,
+    'review_status', v_new_status,
+    'reviewer_id', p_reviewer_id,
+    'resolved_at', now()
+  );
+END;
+$$;
+
+
+-- ============================================================================
+-- Step 16: Phase 18 Migration — WICR Audit Immutability & Concurrency Hardening
+-- ============================================================================
+
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS department TEXT;
+
+CREATE TABLE IF NOT EXISTS public.wicr_review_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  decision_id UUID NOT NULL REFERENCES public.wicr_decisions(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL CHECK (event_type IN ('DECISION_RECORDED', 'RESOLVED_ACCEPT', 'RESOLVED_REJECT', 'STATUS_MODIFIED')),
+  previous_status TEXT,
+  new_status TEXT NOT NULL,
+  action TEXT,
+  actor_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  actor_email TEXT,
+  actor_role TEXT,
+  notes TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wicr_events_decision ON public.wicr_review_events(decision_id);
+CREATE INDEX IF NOT EXISTS idx_wicr_events_actor ON public.wicr_review_events(actor_id);
+CREATE INDEX IF NOT EXISTS idx_wicr_events_created ON public.wicr_review_events(created_at DESC);
+
+CREATE OR REPLACE FUNCTION public.prevent_wicr_event_mutation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Table wicr_review_events is append-only. Modification or deletion of audit events is prohibited.';
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_prevent_wicr_event_mutation ON public.wicr_review_events;
+CREATE TRIGGER trg_prevent_wicr_event_mutation
+BEFORE UPDATE OR DELETE ON public.wicr_review_events
+FOR EACH ROW
+EXECUTE FUNCTION public.prevent_wicr_event_mutation();
+
+DROP VIEW IF EXISTS public.v_pending_wicr_reviews CASCADE;
+CREATE VIEW public.v_pending_wicr_reviews AS
+SELECT 
+  d.id AS decision_id,
+  d.source_complaint_id,
+  c1.title AS source_title,
+  c1.category AS source_category,
+  c1.department_id AS source_department,
+  c1.description AS source_description,
+  d.target_complaint_id,
+  c2.title AS target_title,
+  c2.category AS target_category,
+  c2.department_id AS target_department,
+  c2.description AS target_description,
+  d.relationship_type,
+  d.raw_probability,
+  d.calibrated_probability,
+  d.is_calibrated,
+  d.loss_accept,
+  d.loss_reject,
+  d.loss_review,
+  d.cost_matrix,
+  d.selected_action,
+  d.review_status,
+  d.routed_reason,
+  d.model_version,
+  d.calibration_version,
+  d.policy_version,
+  d.created_at
+FROM public.wicr_decisions d
+JOIN public.complaints c1 ON c1.id = d.source_complaint_id
+JOIN public.complaints c2 ON c2.id = d.target_complaint_id
+WHERE d.review_status = 'PENDING' AND d.is_latest = true
+ORDER BY d.created_at DESC;
+
+CREATE OR REPLACE FUNCTION public.record_wicr_decision(
+  p_source_id UUID,
+  p_target_id UUID,
+  p_relationship_type TEXT,
+  p_raw_prob NUMERIC,
+  p_cal_prob NUMERIC,
+  p_is_calibrated BOOLEAN,
+  p_loss_accept NUMERIC,
+  p_loss_reject NUMERIC,
+  p_loss_review NUMERIC,
+  p_cost_matrix JSONB,
+  p_selected_action TEXT,
+  p_routed_reason TEXT,
+  p_model_version TEXT DEFAULT '1.0',
+  p_calibration_version TEXT DEFAULT '1.0',
+  p_policy_version TEXT DEFAULT '1.0'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_decision_id UUID;
+  v_review_status TEXT;
+  v_src UUID;
+  v_tgt UUID;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.complaints WHERE id = p_source_id) THEN
+    RAISE EXCEPTION 'Source complaint % not found', p_source_id;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.complaints WHERE id = p_target_id) THEN
+    RAISE EXCEPTION 'Target complaint % not found', p_target_id;
+  END IF;
+
+  IF p_source_id < p_target_id THEN
+    v_src := p_source_id;
+    v_tgt := p_target_id;
+  ELSE
+    v_src := p_target_id;
+    v_tgt := p_source_id;
+  END IF;
+
+  IF p_selected_action = 'REVIEW' THEN
+    v_review_status := 'PENDING';
+  ELSE
+    v_review_status := 'NOT_REQUIRED';
+  END IF;
+
+  UPDATE public.wicr_decisions
+  SET is_latest = false, updated_at = now()
+  WHERE source_complaint_id = p_source_id 
+    AND target_complaint_id = p_target_id
+    AND is_latest = true;
+
+  INSERT INTO public.wicr_decisions (
+    source_complaint_id,
+    target_complaint_id,
+    relationship_type,
+    raw_probability,
+    calibrated_probability,
+    is_calibrated,
+    loss_accept,
+    loss_reject,
+    loss_review,
+    cost_matrix,
+    selected_action,
+    review_status,
+    routed_reason,
+    model_version,
+    calibration_version,
+    policy_version,
+    is_latest
+  )
+  VALUES (
+    p_source_id,
+    p_target_id,
+    p_relationship_type,
+    p_raw_prob,
+    p_cal_prob,
+    COALESCE(p_is_calibrated, false),
+    p_loss_accept,
+    p_loss_reject,
+    p_loss_review,
+    COALESCE(p_cost_matrix, '{"false_lock": 10.0, "missed_link": 5.0, "review": 1.0}'::jsonb),
+    p_selected_action,
+    v_review_status,
+    p_routed_reason,
+    COALESCE(p_model_version, '1.0'),
+    p_calibration_version,
+    COALESCE(p_policy_version, '1.0'),
+    true
+  )
+  RETURNING id INTO v_decision_id;
+
+  INSERT INTO public.wicr_review_events (
+    decision_id,
+    event_type,
+    previous_status,
+    new_status,
+    action,
+    actor_id,
+    actor_email,
+    actor_role,
+    notes,
+    metadata
+  )
+  VALUES (
+    v_decision_id,
+    'DECISION_RECORDED',
+    NULL,
+    v_review_status,
+    p_selected_action,
+    NULL,
+    'system',
+    'system',
+    'Automated WICR decision evaluated: ' || p_selected_action,
+    jsonb_build_object(
+      'relationship_type', p_relationship_type,
+      'raw_probability', p_raw_prob,
+      'calibrated_probability', p_cal_prob,
+      'loss_accept', p_loss_accept,
+      'loss_reject', p_loss_reject,
+      'loss_review', p_loss_review,
+      'routed_reason', p_routed_reason
+    )
+  );
+
+  IF p_selected_action = 'ACCEPT' AND p_relationship_type IN ('Duplicate', 'Related') THEN
+    INSERT INTO public.complaint_relationships (
+      source_complaint_id, target_complaint_id, relationship_type, confidence, reason
+    )
+    VALUES (
+      v_src,
+      v_tgt,
+      p_relationship_type,
+      COALESCE(p_cal_prob, p_raw_prob),
+      'WICR Automated Decision ACCEPT (Loss=' || p_loss_accept || ')'
+    )
+    ON CONFLICT (source_complaint_id, target_complaint_id) DO UPDATE
+    SET relationship_type = EXCLUDED.relationship_type,
+        confidence = EXCLUDED.confidence,
+        reason = EXCLUDED.reason;
+  ELSIF p_selected_action = 'REJECT' THEN
+    DELETE FROM public.complaint_relationships
+    WHERE source_complaint_id = v_src AND target_complaint_id = v_tgt;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'decision_id', v_decision_id,
+    'selected_action', p_selected_action,
+    'review_status', v_review_status,
+    'source_complaint_id', p_source_id,
+    'target_complaint_id', p_target_id,
+    'relationship_type', p_relationship_type,
+    'is_calibrated', p_is_calibrated
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.resolve_wicr_review(
+  p_decision_id UUID,
+  p_reviewer_id UUID,
+  p_action TEXT,
+  p_notes TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_record RECORD;
+  v_reviewer RECORD;
+  v_new_status TEXT;
+  v_src UUID;
+  v_tgt UUID;
+BEGIN
+  IF p_action NOT IN ('ACCEPT', 'REJECT') THEN
+    RAISE EXCEPTION 'Invalid review resolution action %. Must be ACCEPT or REJECT', p_action;
+  END IF;
+
+  SELECT * INTO v_record
+  FROM public.wicr_decisions
+  WHERE id = p_decision_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'WICR decision % not found', p_decision_id;
+  END IF;
+
+  IF v_record.review_status != 'PENDING' THEN
+    RAISE EXCEPTION 'WICR decision % is already resolved (status: %)', p_decision_id, v_record.review_status;
+  END IF;
+
+  IF p_reviewer_id IS NOT NULL THEN
+    SELECT id, email, role INTO v_reviewer FROM public.users WHERE id = p_reviewer_id;
+  END IF;
+
+  IF p_action = 'ACCEPT' THEN
+    v_new_status := 'RESOLVED_ACCEPT';
+  ELSE
+    v_new_status := 'RESOLVED_REJECT';
+  END IF;
+
+  UPDATE public.wicr_decisions
+  SET review_status = v_new_status,
+      reviewer_id = p_reviewer_id,
+      reviewer_notes = p_notes,
+      reviewed_at = now(),
+      updated_at = now()
+  WHERE id = p_decision_id;
+
+  INSERT INTO public.wicr_review_events (
+    decision_id,
+    event_type,
+    previous_status,
+    new_status,
+    action,
+    actor_id,
+    actor_email,
+    actor_role,
+    notes,
+    metadata
+  )
+  VALUES (
+    p_decision_id,
+    v_new_status,
+    'PENDING',
+    v_new_status,
+    p_action,
+    p_reviewer_id,
+    v_reviewer.email,
+    v_reviewer.role,
+    p_notes,
+    jsonb_build_object(
+      'relationship_type', v_record.relationship_type,
+      'raw_probability', v_record.raw_probability,
+      'calibrated_probability', v_record.calibrated_probability,
+      'resolved_at', now()
+    )
+  );
+
+  IF v_record.source_complaint_id < v_record.target_complaint_id THEN
+    v_src := v_record.source_complaint_id;
+    v_tgt := v_record.target_complaint_id;
+  ELSE
+    v_src := v_record.target_complaint_id;
+    v_tgt := v_record.source_complaint_id;
+  END IF;
+
+  IF p_action = 'ACCEPT' AND v_record.relationship_type IN ('Duplicate', 'Related') THEN
+    INSERT INTO public.complaint_relationships (
+      source_complaint_id, target_complaint_id, relationship_type, confidence, reason
+    )
+    VALUES (
+      v_src,
+      v_tgt,
+      v_record.relationship_type,
+      COALESCE(v_record.calibrated_probability, v_record.raw_probability),
+      'Human verified via WICR Review Queue: ' || COALESCE(p_notes, 'Approved by reviewer')
+    )
+    ON CONFLICT (source_complaint_id, target_complaint_id) DO UPDATE
+    SET relationship_type = EXCLUDED.relationship_type,
+        confidence = EXCLUDED.confidence,
+        reason = EXCLUDED.reason;
+  ELSIF p_action = 'REJECT' THEN
+    DELETE FROM public.complaint_relationships
+    WHERE source_complaint_id = v_src AND target_complaint_id = v_tgt;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'decision_id', p_decision_id,
+    'resolved_action', p_action,
+    'review_status', v_new_status,
+    'reviewer_id', p_reviewer_id,
+    'resolved_at', now()
+  );
+END;
+$$;
+
+
+-- ============================================================================
+-- Step 17: Phase 19 Migration — Prerequisite Recommendations & Staged Resolution
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.task_dependency_recommendations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES public.tasks(id) ON DELETE CASCADE,
+  depends_on_task_id UUID NOT NULL REFERENCES public.tasks(id) ON DELETE CASCADE,
+  source_civic_issue_id UUID REFERENCES public.civic_issues(id) ON DELETE CASCADE,
+  target_civic_issue_id UUID REFERENCES public.civic_issues(id) ON DELETE CASCADE,
+  is_cross_issue BOOLEAN NOT NULL DEFAULT false,
+  source_department TEXT NOT NULL,
+  target_department TEXT NOT NULL,
+  confidence NUMERIC(4, 2) NOT NULL,
+  recommendation_type TEXT NOT NULL DEFAULT 'CROSS_DEPARTMENT' CHECK (recommendation_type IN ('CROSS_DEPARTMENT', 'INTRA_DEPARTMENT', 'CROSS_ISSUE')),
+  reason TEXT NOT NULL,
+  evidence JSONB DEFAULT '{}'::jsonb,
+  rule_version TEXT NOT NULL DEFAULT '1.0',
+  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED')),
+  reviewed_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
+  reviewer_notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+
+  CONSTRAINT unique_task_pair_recommendation UNIQUE (task_id, depends_on_task_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rec_task ON public.task_dependency_recommendations(task_id);
+CREATE INDEX IF NOT EXISTS idx_rec_depends_on ON public.task_dependency_recommendations(depends_on_task_id);
+CREATE INDEX IF NOT EXISTS idx_rec_status ON public.task_dependency_recommendations(status);
+CREATE INDEX IF NOT EXISTS idx_rec_source_issue ON public.task_dependency_recommendations(source_civic_issue_id);
+CREATE INDEX IF NOT EXISTS idx_rec_target_issue ON public.task_dependency_recommendations(target_civic_issue_id);
+
+ALTER TABLE public.tasks
+  ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS verified_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS verification_notes TEXT,
+  ADD COLUMN IF NOT EXISTS verification_evidence JSONB DEFAULT '{}'::jsonb;
+
+ALTER TABLE public.civic_issues
+  ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS verified_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS verification_notes TEXT,
+  ADD COLUMN IF NOT EXISTS resolution_evidence JSONB DEFAULT '{}'::jsonb;
+
+CREATE OR REPLACE VIEW public.v_pending_dependency_recommendations AS
+SELECT 
+  r.id AS recommendation_id,
+  r.task_id,
+  t_down.title AS task_title,
+  t_down.status AS task_status,
+  t_down.department_id AS task_department,
+  r.depends_on_task_id,
+  t_up.title AS prerequisite_title,
+  t_up.status AS prerequisite_status,
+  t_up.department_id AS prerequisite_department,
+  r.source_civic_issue_id,
+  ci_src.title AS source_issue_title,
+  r.target_civic_issue_id,
+  ci_tgt.title AS target_issue_title,
+  r.is_cross_issue,
+  r.confidence,
+  r.recommendation_type,
+  r.reason,
+  r.evidence,
+  r.rule_version,
+  r.status,
+  r.created_at
+FROM public.task_dependency_recommendations r
+JOIN public.tasks t_down ON t_down.id = r.task_id
+JOIN public.tasks t_up ON t_up.id = r.depends_on_task_id
+LEFT JOIN public.civic_issues ci_src ON ci_src.id = r.source_civic_issue_id
+LEFT JOIN public.civic_issues ci_tgt ON ci_tgt.id = r.target_civic_issue_id
+WHERE r.status = 'PENDING'
+ORDER BY r.confidence DESC, r.created_at DESC;
+
+CREATE OR REPLACE FUNCTION public.accept_dependency_recommendation(
+  p_recommendation_id UUID,
+  p_reviewer_id UUID,
+  p_notes TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_rec RECORD;
+  v_dep_result JSONB;
+BEGIN
+  SELECT * INTO v_rec
+  FROM public.task_dependency_recommendations
+  WHERE id = p_recommendation_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Recommendation % not found', p_recommendation_id;
+  END IF;
+
+  IF v_rec.status != 'PENDING' THEN
+    RAISE EXCEPTION 'Recommendation % is already resolved (status: %)', p_recommendation_id, v_rec.status;
+  END IF;
+
+  v_dep_result := public.add_task_dependency_transactional(v_rec.task_id, v_rec.depends_on_task_id);
+
+  UPDATE public.task_dependency_recommendations
+  SET status = 'ACCEPTED',
+      reviewed_by = p_reviewer_id,
+      reviewer_notes = p_notes,
+      reviewed_at = now(),
+      updated_at = now()
+  WHERE id = p_recommendation_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'recommendation_id', p_recommendation_id,
+    'status', 'ACCEPTED',
+    'dependency_result', v_dep_result,
+    'reviewed_by', p_reviewer_id,
+    'reviewed_at', now()
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.reject_dependency_recommendation(
+  p_recommendation_id UUID,
+  p_reviewer_id UUID,
+  p_notes TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_rec RECORD;
+BEGIN
+  SELECT * INTO v_rec
+  FROM public.task_dependency_recommendations
+  WHERE id = p_recommendation_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Recommendation % not found', p_recommendation_id;
+  END IF;
+
+  IF v_rec.status != 'PENDING' THEN
+    RAISE EXCEPTION 'Recommendation % is already resolved (status: %)', p_recommendation_id, v_rec.status;
+  END IF;
+
+  UPDATE public.task_dependency_recommendations
+  SET status = 'REJECTED',
+      reviewed_by = p_reviewer_id,
+      reviewer_notes = p_notes,
+      reviewed_at = now(),
+      updated_at = now()
+  WHERE id = p_recommendation_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'recommendation_id', p_recommendation_id,
+    'status', 'REJECTED',
+    'reviewed_by', p_reviewer_id,
+    'reviewed_at', now()
+  );
+END;
+$$;
+
+-- 7. Update update_task_status_transactional to support VERIFIED status & prerequisite readiness
+DROP FUNCTION IF EXISTS public.update_task_status_transactional(uuid, text, text, text) CASCADE;
+CREATE OR REPLACE FUNCTION public.update_task_status_transactional(
+  p_task_id UUID,
+  p_new_status TEXT,
+  p_user_email TEXT DEFAULT NULL,
+  p_reason TEXT DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_current_status TEXT;
+  v_civic_issue_id UUID;
+  v_workstream_id UUID;
+  v_unmet_task_id UUID;
+  v_unmet_title TEXT;
+  v_unmet_status TEXT;
+  v_ws_new_status TEXT;
+  v_ws_all_cancelled BOOLEAN;
+  v_ws_all_finished BOOLEAN;
+  v_ws_none_started BOOLEAN;
+  v_issue_new_status TEXT;
+  v_issue_all_cancelled BOOLEAN;
+  v_issue_all_finished BOOLEAN;
+  v_issue_none_started BOOLEAN;
+BEGIN
+  -- 1. Lock and fetch current task
+  SELECT status, civic_issue_id, workstream_id 
+  INTO v_current_status, v_civic_issue_id, v_workstream_id
+  FROM public.tasks 
+  WHERE id = p_task_id 
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Task not found';
+  END IF;
+  
+  IF v_current_status = p_new_status THEN
+    RETURN; -- No change
+  END IF;
+
+  -- Validate allowed transitions
+  IF v_current_status = 'PENDING' AND p_new_status NOT IN ('IN_PROGRESS', 'CANCELLED') THEN
+    RAISE EXCEPTION 'Invalid status transition from PENDING to %', p_new_status;
+  ELSIF v_current_status = 'IN_PROGRESS' AND p_new_status NOT IN ('COMPLETED', 'CANCELLED') THEN
+    RAISE EXCEPTION 'Invalid status transition from IN_PROGRESS to %', p_new_status;
+  ELSIF v_current_status = 'COMPLETED' AND p_new_status NOT IN ('VERIFIED') THEN
+    RAISE EXCEPTION 'Invalid status transition from COMPLETED to %', p_new_status;
+  ELSIF v_current_status IN ('CANCELLED', 'VERIFIED') THEN
+    RAISE EXCEPTION 'Task in % status cannot be transitioned to %', v_current_status, p_new_status;
+  END IF;
+
+  -- 2. Prerequisite enforcement when transitioning to IN_PROGRESS
+  IF p_new_status = 'IN_PROGRESS' THEN
+    SELECT t.id, t.title, t.status
+    INTO v_unmet_task_id, v_unmet_title, v_unmet_status
+    FROM public.task_dependencies td
+    JOIN public.tasks t ON t.id = td.depends_on_task_id
+    WHERE td.task_id = p_task_id
+      AND t.status NOT IN ('COMPLETED', 'VERIFIED')
+    LIMIT 1;
+
+    IF FOUND THEN
+      RAISE EXCEPTION 'Cannot start task. Prerequisite task % ("%") is not COMPLETED or VERIFIED (current status: %)',
+        v_unmet_task_id, v_unmet_title, v_unmet_status;
+    END IF;
+  END IF;
+
+  -- 3. Update Task
+  UPDATE public.tasks 
+  SET 
+    status = p_new_status, 
+    started_at = CASE WHEN p_new_status = 'IN_PROGRESS' AND v_current_status = 'PENDING' THEN now() ELSE started_at END,
+    completed_at = CASE WHEN p_new_status = 'COMPLETED' THEN now() ELSE completed_at END,
+    verified_at = CASE WHEN p_new_status = 'VERIFIED' THEN now() ELSE verified_at END,
+    cancelled_at = CASE WHEN p_new_status = 'CANCELLED' THEN now() ELSE cancelled_at END,
+    updated_at = now() 
+  WHERE id = p_task_id;
+
+  -- 4. Audit Log
+  INSERT INTO public.task_status_history 
+    (task_id, previous_status, new_status, changed_by, reason)
+  VALUES 
+    (p_task_id, v_current_status, p_new_status, COALESCE(p_user_email, 'system'), COALESCE(p_reason, 'Transitioned to ' || p_new_status));
+
+  -- 5. Re-evaluate Workstream Status
+  SELECT 
+    bool_and(status = 'CANCELLED'),
+    bool_and(status IN ('COMPLETED', 'VERIFIED', 'CANCELLED')),
+    bool_and(status = 'PENDING')
+  INTO v_ws_all_cancelled, v_ws_all_finished, v_ws_none_started
+  FROM public.tasks
+  WHERE workstream_id = v_workstream_id;
+  
+  IF v_ws_all_cancelled THEN v_ws_new_status := 'CANCELLED';
+  ELSIF v_ws_all_finished THEN v_ws_new_status := 'COMPLETED';
+  ELSIF NOT v_ws_none_started THEN v_ws_new_status := 'IN_PROGRESS';
+  ELSE v_ws_new_status := 'PENDING';
+  END IF;
+  
+  UPDATE public.workstreams 
+  SET status = v_ws_new_status, updated_at = now() 
+  WHERE id = v_workstream_id;
+
+  -- 6. Re-evaluate Civic Issue Status
+  -- Rule: A Civic Issue must not automatically be marked resolved merely because one department finishes.
+  -- All required tasks across all workstreams must be completed or cancelled.
+  SELECT 
+    bool_and(status = 'CANCELLED'),
+    bool_and(status IN ('COMPLETED', 'VERIFIED', 'CANCELLED')),
+    bool_and(status = 'PENDING')
+  INTO v_issue_all_cancelled, v_issue_all_finished, v_issue_none_started
+  FROM public.tasks
+  WHERE civic_issue_id = v_civic_issue_id;
+
+  IF v_issue_all_cancelled THEN v_issue_new_status := 'CANCELLED';
+  ELSIF v_issue_all_finished THEN v_issue_new_status := 'COMPLETED';
+  ELSIF NOT v_issue_none_started THEN v_issue_new_status := 'IN_PROGRESS';
+  ELSE v_issue_new_status := 'PENDING';
+  END IF;
+
+  UPDATE public.civic_issues 
+  SET status = v_issue_new_status, updated_at = now() 
+  WHERE id = v_civic_issue_id;
+
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.verify_civic_issue_resolution(
+  p_civic_issue_id UUID,
+  p_verifier_id UUID,
+  p_notes TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_incomplete_count INT;
+  v_total_tasks INT;
+  v_verifier RECORD;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.civic_issues WHERE id = p_civic_issue_id) THEN
+    RAISE EXCEPTION 'Civic Issue % not found', p_civic_issue_id;
+  END IF;
+
+  SELECT 
+    COUNT(*),
+    COUNT(*) FILTER (WHERE status NOT IN ('COMPLETED', 'VERIFIED', 'CANCELLED'))
+  INTO v_total_tasks, v_incomplete_count
+  FROM public.tasks
+  WHERE civic_issue_id = p_civic_issue_id;
+
+  IF v_total_tasks = 0 THEN
+    RAISE EXCEPTION 'Civic Issue % has no tasks to verify', p_civic_issue_id;
+  END IF;
+
+  IF v_incomplete_count > 0 THEN
+    RAISE EXCEPTION 'Cannot verify Civic Issue resolution. % incomplete task(s) remain across departments', v_incomplete_count;
+  END IF;
+
+  IF p_verifier_id IS NOT NULL THEN
+    SELECT id, email, role INTO v_verifier FROM public.users WHERE id = p_verifier_id;
+  END IF;
+
+  UPDATE public.tasks
+  SET status = 'VERIFIED',
+      verified_at = now(),
+      verified_by = p_verifier_id,
+      verification_notes = COALESCE(p_notes, 'Verified during final issue resolution'),
+      updated_at = now()
+  WHERE civic_issue_id = p_civic_issue_id AND status = 'COMPLETED';
+
+  UPDATE public.workstreams
+  SET status = 'COMPLETED', updated_at = now()
+  WHERE civic_issue_id = p_civic_issue_id AND status != 'CANCELLED';
+
+  UPDATE public.civic_issues
+  SET status = 'VERIFIED',
+      resolved_at = now(),
+      verified_at = now(),
+      verified_by = p_verifier_id,
+      verification_notes = p_notes,
+      updated_at = now()
+  WHERE id = p_civic_issue_id;
+
+  UPDATE public.complaints
+  SET status = 'Resolved', updated_at = now()
+  WHERE civic_issue_id = p_civic_issue_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'civic_issue_id', p_civic_issue_id,
+    'status', 'VERIFIED',
+    'verified_by', p_verifier_id,
+    'verified_at', now(),
+    'notes', p_notes
+  );
+END;
+$$;

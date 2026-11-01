@@ -1,14 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 const { generateEmbedding, cosineSimilarity } = require('../src/services/embeddingService');
-const { 
-  scoreCandidate, 
-  findBestDuplicate, 
-  haversineDistance, 
-  normalizeLocationScore, 
-  normalizeTemporalScore, 
+const {
+  scoreCandidate,
+  findBestDuplicate,
+  haversineDistance,
+  normalizeLocationScore,
+  normalizeTemporalScore,
   timeDifferenceHours,
-  DUPLICATE_CONFIG 
+  DUPLICATE_CONFIG
 } = require('../src/services/duplicateDetectionService');
 const { ComplaintGraphService } = require('../src/services/complaintGraphService');
 const { loadRules, mapIssueTypesToDepartments } = require('../src/services/routingService');
@@ -130,7 +130,9 @@ async function auditAlgorithms() {
     { id: 'cmp-4', text: 'Streetlight 1' },
     { id: 'cmp-5', text: 'Garbage 1' }
   ];
-  // cmp-1 <-> cmp-2 (Duplicate), cmp-2 <-> cmp-3 (Related), cmp-4 (Isolated), cmp-5 (Isolated)
+  // FR05: cmp-1 <-> cmp-2 (Duplicate) forms 1 component.
+  // cmp-2 <-> cmp-3 (Related) does NOT merge, so cmp-3 remains isolated.
+  // cmp-4 (Isolated) and cmp-5 (Isolated). Total components = 4.
   const testEdges = [
     { sourceId: 'cmp-1', targetId: 'cmp-2', relationship: 'Duplicate' },
     { sourceId: 'cmp-2', targetId: 'cmp-3', relationship: 'Related' },
@@ -143,7 +145,7 @@ async function auditAlgorithms() {
     totalNodes: testNodes.length,
     componentsCount: components.length,
     components: components,
-    status: components.length === 3 ? 'PASS' : 'FAIL'
+    status: components.length === 4 ? 'PASS' : 'FAIL'
   };
   console.log(`- Components found: ${components.length}`);
   console.log(`- Components: ${JSON.stringify(components)}`);

@@ -112,6 +112,10 @@ export default function PublicFeed() {
   };
 
   const handleUpvote = async (id) => {
+    if (!user) {
+      toast.error('Please sign in to upvote complaints.');
+      return;
+    }
     try {
       const { data } = await api.post(`/complaints/${id}/upvote`);
       setComplaints(prev => prev.map(c => {
@@ -374,7 +378,7 @@ export default function PublicFeed() {
         ) : (
           <div className="grid-responsive-2">
             {filteredComplaints.map(c => {
-              const hasUpvoted = c.upvotedBy?.includes(user.id);
+              const hasUpvoted = Boolean(user?.id && c.upvotedBy?.includes(user.id));
               return (
                 <motion.div 
                   key={c._id} 

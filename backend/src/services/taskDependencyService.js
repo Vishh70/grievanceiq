@@ -4,33 +4,126 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Validates and adds a new dependency.
- * @param {string} taskId 
- * @param {string} dependsOnTaskId 
- * @param {string} civicIssueId 
+ * Detects whether adding a directed dependency edge (dependsOnTaskId -> taskId)
+ * creates a cycle in the task graph using iterative reachability traversal (BFS).
+ *
+ * @param {string} taskId - The dependent task (downstream)
+ * @param {string} dependsOnTaskId - The prerequisite task (upstream)
+ * @param {Array<object>} existingDependencies - Array of { task_id, depends_on_task_id }
+ * @returns {{ hasCycle: boolean, path?: Array<string> }}
  */
-async function addDependency(taskId, dependsOnTaskId, civicIssueId) {
+function detectCycleInEdges(taskId, dependsOnTaskId, existingDependencies) {
+  if (taskId === dependsOnTaskId) {
+    return { hasCycle: true, path: [taskId, taskId] };
+  }
+
+  // Build adjacency list: depends_on_task_id -> task_id (directed prerequisite flow)
+  const adj = new Map();
+  for (const dep of existingDependencies) {
+    if (!adj.has(dep.depends_on_task_id)) {
+      adj.set(dep.depends_on_task_id, []);
+    }
+    adj.get(dep.depends_on_task_id).push(dep.task_id);
+  }
+
+  // Check if dependsOnTaskId is reachable starting from taskId
+  const queue = [[taskId]];
+  const visited = new Set([taskId]);
+
+  while (queue.length > 0) {
+    const currentPath = queue.shift();
+    const currentNode = currentPath[currentPath.length - 1];
+
+    const neighbors = adj.get(currentNode) || [];
+    for (const neighbor of neighbors) {
+      if (neighbor === dependsOnTaskId) {
+        return {
+          hasCycle: true,
+          path: [...currentPath, neighbor, taskId]
+        };
+      }
+      if (!visited.has(neighbor)) {
+        visited.add(neighbor);
+        queue.push([...currentPath, neighbor]);
+      }
+    }
+  }
+
+  return { hasCycle: false };
+}
+
+/**
+ * Validates and atomically adds a new task dependency.
+ * Supports both intra-issue and cross-issue task dependencies.
+ * Prevents cycles using PostgreSQL advisory-locked recursive traversal.
+ *
+ * @param {string} taskId - Downstream dependent task
+ * @param {string} dependsOnTaskId - Upstream prerequisite task
+ * @param {string} [civicIssueId] - Optional Civic Issue ID for authorization scope
+ */
+async function addDependency(taskId, dependsOnTaskId, civicIssueId = null) {
   if (taskId === dependsOnTaskId) {
     throw new Error('Self dependency is not allowed.');
   }
 
-  // Verify both tasks exist and belong to the same Civic Issue
+  // 1. Verify both tasks exist
   const { data: tasks, error: fetchErr } = await supabase
     .from('tasks')
-    .select('id, civic_issue_id')
+    .select('id, civic_issue_id, title')
     .in('id', [taskId, dependsOnTaskId]);
     
   if (fetchErr) throw new Error(`Failed to fetch tasks: ${fetchErr.message}`);
   
-  if (tasks.length !== 2) {
+  if (!tasks || tasks.length !== 2) {
     throw new Error('One or both tasks not found.');
   }
 
-  if (tasks[0].civic_issue_id !== civicIssueId || tasks[1].civic_issue_id !== civicIssueId) {
-    throw new Error('Tasks belong to different Civic Issues or provided ID does not match.');
+  // 2. Authorization scope: if civicIssueId is provided, at least one task must belong to it
+  if (civicIssueId) {
+    const belongs = tasks.some(t => t.civic_issue_id === civicIssueId);
+    if (!belongs) {
+      throw new Error('Tasks do not belong to the provided Civic Issue.');
+    }
   }
 
-  // Insert dependency
+  // 3. Attempt PostgreSQL atomic serialized RPC with advisory lock & recursive cycle check
+  try {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('add_task_dependency_transactional', {
+      p_task_id: taskId,
+      p_depends_on_task_id: dependsOnTaskId
+    });
+
+    if (!rpcErr) {
+      return rpcData;
+    }
+
+    if (rpcErr.message && rpcErr.message.includes('cycle')) {
+      throw new Error(rpcErr.message);
+    }
+    if (rpcErr.message && !rpcErr.message.includes('function') && !rpcErr.message.includes('does not exist')) {
+      throw new Error(`Failed to insert dependency: ${rpcErr.message}`);
+    }
+  } catch (rpcEx) {
+    if (rpcEx.message && rpcEx.message.includes('cycle')) {
+      throw rpcEx;
+    }
+    if (rpcEx.message && !rpcEx.message.includes('function') && !rpcEx.message.includes('does not exist')) {
+      throw rpcEx;
+    }
+  }
+
+  // 4. Fallback for mock environments: application-level reachability cycle check before insert
+  const { data: allDeps, error: depsQueryErr } = await supabase
+    .from('task_dependencies')
+    .select('task_id, depends_on_task_id');
+
+  if (!depsQueryErr && allDeps) {
+    const cycleCheck = detectCycleInEdges(taskId, dependsOnTaskId, allDeps);
+    if (cycleCheck.hasCycle) {
+      throw new Error(`Adding this dependency would create a cycle: ${cycleCheck.path.join(' -> ')}`);
+    }
+  }
+
   const { error: insertErr } = await supabase
     .from('task_dependencies')
     .insert({
@@ -40,18 +133,31 @@ async function addDependency(taskId, dependsOnTaskId, civicIssueId) {
 
   if (insertErr) {
     if (insertErr.code === '23505') { // Unique violation
-      return; // Already exists, idempotent
+      return { success: true, status: 'ALREADY_EXISTS' };
+    }
+    if (insertErr.message && insertErr.message.includes('cycle')) {
+      throw new Error(insertErr.message);
     }
     throw new Error(`Failed to insert dependency: ${insertErr.message}`);
   }
+}
 
-  // Validate cycle after inserting
-  const plan = await getExecutionPlan(civicIssueId);
-  if (!plan.validDag) {
-    // Revert insertion
-    await supabase.from('task_dependencies').delete().match({ task_id: taskId, depends_on_task_id: dependsOnTaskId });
-    throw new Error(`Adding this dependency would create a cycle: ${plan.cycle.join(' -> ')}`);
+/**
+ * Removes an existing task dependency edge.
+ *
+ * @param {string} taskId
+ * @param {string} dependsOnTaskId
+ */
+async function removeDependency(taskId, dependsOnTaskId) {
+  const { error } = await supabase
+    .from('task_dependencies')
+    .delete()
+    .match({ task_id: taskId, depends_on_task_id: dependsOnTaskId });
+
+  if (error) {
+    throw new Error(`Failed to remove dependency: ${error.message}`);
   }
+  return true;
 }
 
 /**
@@ -151,7 +257,7 @@ function kahnTopologicalSort(tasks, graph, inDegree) {
 }
 
 /**
- * Gets the execution plan (Topological sort and stages) for a Civic Issue.
+ * Gets the execution plan (Topological sort, stages, and cross-issue readiness) for a Civic Issue.
  */
 async function getExecutionPlan(civicIssueId) {
   const { data: tasks, error: tasksErr } = await supabase
@@ -167,35 +273,73 @@ async function getExecutionPlan(civicIssueId) {
       totalTasks: 0,
       stages: [],
       topologicalOrder: [],
-      taskReadiness: {}
+      taskReadiness: {},
+      crossIssueDependencies: []
     };
   }
 
+  const taskIds = tasks.map(t => t.id);
+
+  // Fetch dependencies where this issue's tasks are either downstream or upstream
   const { data: deps, error: depsErr } = await supabase
     .from('task_dependencies')
     .select('*')
-    .in('task_id', tasks.map(t => t.id));
+    .in('task_id', taskIds);
     
   if (depsErr) throw new Error('Failed to fetch dependencies');
 
-  const { graph, inDegree } = buildGraph(tasks, deps);
+  // Fetch any external prerequisite tasks that belong to other Civic Issues
+  const allPrereqIds = (deps || []).map(d => d.depends_on_task_id);
+  const externalPrereqIds = allPrereqIds.filter(id => !taskIds.includes(id));
+  let externalTasks = [];
+
+  if (externalPrereqIds.length > 0) {
+    const { data: extTasks } = await supabase
+      .from('tasks')
+      .select('id, status, title, civic_issue_id, priority, created_at')
+      .in('id', [...new Set(externalPrereqIds)]);
+    if (extTasks) externalTasks = extTasks;
+  }
+
+  const allKnownTasks = [...tasks, ...externalTasks];
+
+  // Intra-issue topological graph
+  const { graph, inDegree } = buildGraph(tasks, deps || []);
   const { validDag, cycle, sorted, stages } = kahnTopologicalSort(tasks, graph, inDegree);
 
-  // Calculate task readiness
+  // Calculate task readiness considering both intra-issue and cross-issue prerequisites
   const taskReadiness = {};
   for (const task of tasks) {
-    // A task is ready if all its dependencies are COMPLETED
-    const lockedBy = deps.filter(d => d.task_id === task.id).map(d => d.depends_on_task_id);
+    const lockedBy = (deps || []).filter(d => d.task_id === task.id).map(d => d.depends_on_task_id);
     const lockedByIncomplete = lockedBy.filter(depId => {
-      const depTask = tasks.find(t => t.id === depId);
-      return depTask && depTask.status !== 'COMPLETED';
+      const depTask = allKnownTasks.find(t => t.id === depId);
+      return !depTask || !['COMPLETED', 'VERIFIED'].includes(depTask.status);
     });
 
+    const isReady = lockedByIncomplete.length === 0 && task.status === 'PENDING';
+    const stageState = task.status === 'PENDING' ? (isReady ? 'READY' : 'PENDING') : task.status;
+
     taskReadiness[task.id] = {
-      ready: lockedByIncomplete.length === 0 && task.status === 'PENDING',
+      ready: isReady,
+      stageState,
       lockedBy: lockedByIncomplete
     };
   }
+
+  // Cross-issue dependency metadata
+  const crossIssueDependencies = (deps || [])
+    .filter(d => externalPrereqIds.includes(d.depends_on_task_id))
+    .map(d => {
+      const extTask = externalTasks.find(t => t.id === d.depends_on_task_id);
+      return {
+        taskId: d.task_id,
+        dependsOnTaskId: d.depends_on_task_id,
+        prerequisiteTitle: extTask ? extTask.title : 'External Task',
+        prerequisiteCivicIssueId: extTask ? extTask.civic_issue_id : null,
+        prerequisiteStatus: extTask ? extTask.status : 'UNKNOWN',
+        isSatisfied: extTask ? ['COMPLETED', 'VERIFIED'].includes(extTask.status) : false
+      };
+    });
 
   // Format stages array of objects
   const formattedStages = stages.map((stageTasks, idx) => ({
@@ -203,7 +347,7 @@ async function getExecutionPlan(civicIssueId) {
     tasks: stageTasks
   }));
 
-  const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
+  const completedTasks = tasks.filter(t => t.status === 'COMPLETED' || t.status === 'VERIFIED').length;
   const progress = {
     totalTasks: tasks.length,
     completedTasks,
@@ -219,6 +363,7 @@ async function getExecutionPlan(civicIssueId) {
     stages: formattedStages,
     topologicalOrder: sorted,
     taskReadiness,
+    crossIssueDependencies,
     progress
   };
 }
@@ -272,47 +417,26 @@ async function applyDependencyRules(civicIssueId) {
   }
 
   if (inserts.length > 0) {
-    // 1. Snapshot existing dependencies before insert so we know what to revert if necessary
-    const { data: existingDeps } = await supabase
-      .from('task_dependencies')
-      .select('*')
-      .in('task_id', tasks.map(t => t.id));
-    
-    // 2. Use upsert to prevent duplicates
-    const { data: inserted, error: depInsertErr } = await supabase
-      .from('task_dependencies')
-      .upsert(inserts, { onConflict: 'task_id, depends_on_task_id' })
-      .select();
-      
-    if (depInsertErr) {
-      throw new Error(`Failed to upsert task dependencies: ${depInsertErr.message}`);
-    }
-
-    // 3. Validate DAG
-    const plan = await getExecutionPlan(civicIssueId);
-    if (!plan.validDag) {
-      // 4. Rollback: delete the newly inserted dependencies
-      if (inserted && inserted.length > 0) {
-        const insertedIds = inserted.map(d => d.id);
-        // Exclude the ones that were already there before this operation
-        const existingIds = existingDeps ? existingDeps.map(d => d.id) : [];
-        const toDeleteIds = insertedIds.filter(id => !existingIds.includes(id));
-        
-        if (toDeleteIds.length > 0) {
-          await supabase.from('task_dependencies').delete().in('id', toDeleteIds);
+    for (const item of inserts) {
+      try {
+        await addDependency(item.task_id, item.depends_on_task_id, civicIssueId);
+      } catch (depErr) {
+        if (depErr.message && depErr.message.includes('cycle')) {
+          console.warn(`[DependencyRules] Skipped cyclic rule dependency: ${depErr.message}`);
+        } else {
+          throw depErr;
         }
       }
-      const cycleMsg = `Automatic dependency generation created a cycle: ${plan.cycle.join(' -> ')}. Rolled back invalid dependencies.`;
-      console.error(`[DependencyRules] ${cycleMsg}`);
-      throw new Error(cycleMsg);
     }
   }
 }
 
 module.exports = {
   addDependency,
+  removeDependency,
   getExecutionPlan,
   applyDependencyRules,
   buildGraph,
-  kahnTopologicalSort
+  kahnTopologicalSort,
+  detectCycleInEdges
 };

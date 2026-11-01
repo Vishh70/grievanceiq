@@ -10,11 +10,19 @@ const configuredClientId = (process.env.GOOGLE_CLIENT_ID || '').replace(/[\s"]/g
 const clientId = configuredClientId || DEFAULT_GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(clientId);
 
-
-const JWT_SECRET = process.env.JWT_SECRET || 'grievanceiq_super_secret_jwt_fallback_key_2026_production';
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET must be configured in environment');
+    }
+    return 'dev-only-jwt-secret-do-not-use-in-production';
+  }
+  return secret;
+}
 
 function signToken(id) {
-  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id }, getJwtSecret(), { expiresIn: '7d' });
 }
 
 function mapUser(user) {
@@ -77,28 +85,9 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' }); // Account might be Google-only
     }
 
-    let isMatch = await bcrypt.compare(password, user.password_hash);
-
-    // Fallback self-healing: Allow authorized admin passwords for admin accounts
-    if (!isMatch && (user.role === 'admin' || user.email === 'system@grievanceiq.com')) {
-      const allowedAdminPasswords = [
-        'AdminPassword123!',
-        'Admin@GrievanceIQ2026!',
-        'Admin123!',
-        process.env.ADMIN_PASSWORD
-      ].filter(Boolean);
-
-      if (allowedAdminPasswords.includes(password)) {
-        isMatch = true;
-        try {
-          const newHash = await bcrypt.hash(password, 12);
-          await supabase.from('users').update({ password_hash: newHash }).eq('id', user.id);
-          console.log(`[Auth] Self-healed admin password hash for ${user.email}`);
-        } catch (e) {
-          console.warn('[Auth] Failed to update admin hash:', e.message);
-        }
-      }
-    }
+    // SECURITY: Standard bcrypt comparison only. No hardcoded fallback passwords.
+    // Admin accounts authenticate with the same mechanism as all other accounts.
+    const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -156,8 +145,6 @@ exports.googleLogin = async (req, res) => {
 
     if (existingUser) {
       console.log('[Google Auth] Existing user found. Checking for Google linking');
-      // User exists (either via previous Google login or Email/Password login)
-      // Attempt to link Google identity if not already linked
       if (!existingUser.google_id) {
         console.log('[Google Auth] Linking Google identity to existing account');
         try {
@@ -193,7 +180,6 @@ exports.googleLogin = async (req, res) => {
     const randomPassword = crypto.randomBytes(32).toString('hex');
     const passwordHash = await bcrypt.hash(randomPassword, 12);
 
-    // Attempt insert with full Google metadata; gracefully fall back to minimal citizen schema if custom columns absent
     let newUser = null;
     try {
       const googleInsert = supabase.from('users').insert([{

@@ -32,6 +32,7 @@ MODEL_PATH      = os.path.join(MODELS_DIR, 'multilabel_classifier.joblib')
 LABELS_PATH     = os.path.join(MODELS_DIR, 'issue_labels.json')
 THRESHOLD_PATH  = os.path.join(MODELS_DIR, 'multilabel_thresholds.csv')
 RELATIONSHIP_MODEL_PATH = os.path.join(MODELS_DIR, 'relationship_corrected_rf_10tree.joblib')
+CALIBRATION_MANIFEST_PATH = os.path.join(MODELS_DIR, 'relationship_calibration_manifest.json')
 
 PORT = int(os.environ.get('PORT') or os.environ.get('ML_SERVICE_PORT') or 5001)
 
@@ -66,6 +67,16 @@ try:
 except Exception as e:
     print(f"[GrievanceIQ ML] Failed to load relationship classifier: {e}")
     relationship_classifier = None
+
+print("[GrievanceIQ ML] Loading relationship calibration manifest...")
+calibration_manifest = None
+if os.path.exists(CALIBRATION_MANIFEST_PATH):
+    try:
+        with open(CALIBRATION_MANIFEST_PATH, 'r') as f:
+            calibration_manifest = json.load(f)
+        print("[GrievanceIQ ML] Loaded relationship calibration manifest successfully.")
+    except Exception as e:
+        print(f"[GrievanceIQ ML] Failed to load relationship calibration manifest: {e}")
 
 # ── Flask App ─────────────────────────────────────────────────────────────────
 
@@ -102,7 +113,8 @@ def health():
         'model': 'multilabel_classifier.joblib',
         'model_type': 'dict of 9 individual LogisticRegression models',
         'model_loaded': classifier_ready,
-        'relationship_model_loaded': rel_model_ready
+        'relationship_model_loaded': rel_model_ready,
+        'relationship_calibrated': calibration_manifest is not None
     }), (200 if classifier_ready else 503)
 
 @app.route('/predict', methods=['POST'])
@@ -294,10 +306,31 @@ def predict_relationship():
         if hasattr(relationship_classifier, 'predict_proba'):
             probs = relationship_classifier.predict_proba(X)[0]
             classes = relationship_classifier.classes_
-            prob_dict = {}
+            raw_prob_dict = {}
             for cls_val, prob in zip(classes, probs):
-                prob_dict[RELATIONSHIP_LABELS.get(int(cls_val), "Independent")] = round(float(prob), 4)
-            response["probabilities"] = prob_dict
+                raw_prob_dict[RELATIONSHIP_LABELS.get(int(cls_val), "Independent")] = round(float(prob), 4)
+            response["probabilities"] = raw_prob_dict
+            response["raw_probabilities"] = raw_prob_dict
+
+            calibrated_prob_dict = {}
+            if calibration_manifest and 'calibration_labels' in calibration_manifest:
+                cal_labels = calibration_manifest['calibration_labels']
+                for rel_name, raw_p in raw_prob_dict.items():
+                    if rel_name in cal_labels:
+                        coef = cal_labels[rel_name]['coef']
+                        intercept = cal_labels[rel_name]['intercept']
+                        logit = coef * raw_p + intercept
+                        cal_p = 1.0 / (1.0 + np.exp(-logit))
+                        calibrated_prob_dict[rel_name] = round(float(cal_p), 4)
+                    else:
+                        calibrated_prob_dict[rel_name] = raw_p
+                response["calibrated_probabilities"] = calibrated_prob_dict
+                response["is_calibrated"] = True
+                response["calibration_version"] = calibration_manifest.get("calibration_version", "1.0")
+                response["calibration_method"] = calibration_manifest.get("calibration_method", "Platt Scaling")
+            else:
+                response["calibrated_probabilities"] = None
+                response["is_calibrated"] = False
             
         return jsonify(response)
     except Exception as e:

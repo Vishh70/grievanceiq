@@ -53,6 +53,7 @@ function createApp() {
   app.use('/api/dashboard',    require('./routes/dashboardRoutes'));
   app.use('/api/civic-issues', require('./routes/civicIssueRoutes'));
   app.use('/api/tasks',        require('./routes/taskRoutes'));
+  app.use('/api/wicr',         require('./routes/wicrRoutes'));
 
   // Also mirror routes directly without /api prefix for reverse-proxy compatibility
   app.use('/auth',             require('./routes/authRoutes'));
@@ -60,6 +61,7 @@ function createApp() {
   app.use('/dashboard',        require('./routes/dashboardRoutes'));
   app.use('/civic-issues',     require('./routes/civicIssueRoutes'));
   app.use('/tasks',            require('./routes/taskRoutes'));
+  app.use('/wicr',             require('./routes/wicrRoutes'));
 
   // ── Health Check ───────────────────────────────────────────────────────────
   app.get(['/api/health', '/health'], async (_req, res) => {

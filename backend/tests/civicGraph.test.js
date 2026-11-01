@@ -45,13 +45,14 @@ describe('Phase 4: Civic Issue Grouping & Graphs', () => {
       expect(components).toEqual([['C001', 'C002']]);
     });
 
-    it('Test 2 — Related grouping', () => {
+    it('Test 2 — Related complaints remain separate (FR05)', () => {
       complaintGraphService.buildGraph(
         [{ id: 'C1' }, { id: 'C2' }],
         [{ sourceId: 'C1', targetId: 'C2', relationship: 'Related' }]
       );
       const components = complaintGraphService.findConnectedComponents();
-      expect(components).toEqual([['C1', 'C2']]);
+      // FR05: Related edges NEVER merge complaints into the same Civic Issue
+      expect(components).toEqual([['C1'], ['C2']]);
     });
 
     it('Test 3 — Independent complaints remain separate', () => {
@@ -72,7 +73,7 @@ describe('Phase 4: Civic Issue Grouping & Graphs', () => {
       expect(components).toEqual([['C1'], ['C2']]);
     });
 
-    it('Test 5 — Connected chain forms one component', () => {
+    it('Test 5 — Chain with Related edge does not transitively merge (FR05)', () => {
       complaintGraphService.buildGraph(
         [{ id: 'A' }, { id: 'B' }, { id: 'C' }],
         [
@@ -81,10 +82,11 @@ describe('Phase 4: Civic Issue Grouping & Graphs', () => {
         ]
       );
       const components = complaintGraphService.findConnectedComponents();
-      expect(components).toEqual([['A', 'B', 'C']]);
+      // FR05: Only B and C merge via Duplicate; A remains in its own component
+      expect(components).toEqual([['A'], ['B', 'C']]);
     });
 
-    it('Test 6 — Separate components', () => {
+    it('Test 6 — Related pairs remain separate, Duplicate pairs merge (FR05)', () => {
       complaintGraphService.buildGraph(
         [{ id: 'A' }, { id: 'B' }, { id: 'C' }, { id: 'D' }],
         [
@@ -93,7 +95,8 @@ describe('Phase 4: Civic Issue Grouping & Graphs', () => {
         ]
       );
       const components = complaintGraphService.findConnectedComponents();
-      expect(components).toEqual([['A', 'B'], ['C', 'D']]);
+      // FR05: A and B are separate singletons; C and D merge into one component
+      expect(components).toEqual([['A'], ['B'], ['C', 'D']]);
     });
 
     it('Test 8 — Empty graph', () => {

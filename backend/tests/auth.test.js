@@ -62,6 +62,81 @@ describe('Auth Controller', () => {
     });
   });
 
+  describe('POST /api/auth/login', () => {
+    it('should reject login with incorrect password for admin accounts — no fallback bypass', async () => {
+      const bcrypt = require('bcryptjs');
+      const correctHash = await bcrypt.hash('RealSecurePassword!', 12);
+
+      supabase.from.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            id: 'admin-1',
+            email: 'system@grievanceiq.com',
+            role: 'admin',
+            password_hash: correctHash
+          }
+        })
+      }));
+
+      // Try one of the previously-hardcoded fallback passwords
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'system@grievanceiq.com', password: 'AdminPassword123!' });
+
+      expect(res.statusCode).toEqual(401);
+      expect(res.body.error).toMatch(/Invalid email or password/i);
+    });
+
+    it('should accept login with correct bcrypt-verified password', async () => {
+      const bcrypt = require('bcryptjs');
+      const correctHash = await bcrypt.hash('RealSecurePassword!', 12);
+
+      supabase.from.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            id: 'admin-1',
+            email: 'system@grievanceiq.com',
+            role: 'admin',
+            password_hash: correctHash
+          }
+        })
+      }));
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'system@grievanceiq.com', password: 'RealSecurePassword!' });
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body).toHaveProperty('token');
+      expect(res.body.user).not.toHaveProperty('password_hash');
+    });
+
+    it('should reject login when password_hash is null (Google-only account)', async () => {
+      supabase.from.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: {
+            id: 'google-user-1',
+            email: 'google@example.com',
+            role: 'citizen',
+            password_hash: null
+          }
+        })
+      }));
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'google@example.com', password: 'anything' });
+
+      expect(res.statusCode).toEqual(401);
+    });
+  });
+
   describe('POST /api/auth/google', () => {
 
     it('should return 400 if credential is missing', async () => {

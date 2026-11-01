@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import MunicipalDagViewer from './MunicipalDagViewer';
 
 export default function CivicIssuesManager({
   civicIssues = [],
@@ -138,6 +139,19 @@ export default function CivicIssuesManager({
   };
 
   // Batch execute all ready tasks
+  
+  // Verify a single completed task
+  const handleVerifySingleTask = async (taskId) => {
+    const toastId = toast.loading('Recording task inspection verification...');
+    try {
+      await api.post(`/tasks/${taskId}/verify`, { notes: 'Physical inspection verified.' });
+      toast.success('Task status verified!', { id: toastId });
+      if (selectedIssueId) await loadIssueDetails(selectedIssueId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to verify task', { id: toastId });
+    }
+  };
+
   const handleExecuteAllReady = async () => {
     if (!executionPlan || !allTasks.length) return;
     const readyTasks = allTasks.filter(t => {
@@ -781,6 +795,15 @@ export default function CivicIssuesManager({
               {/* ── TAB 1: Topologically Sorted Pipeline Stages ───────── */}
               {activeTab === 'dag' && (
                 <div>
+                  <MunicipalDagViewer
+                    selectedIssue={selectedIssue}
+                    executionPlan={executionPlan}
+                    allTasks={allTasks}
+                    dependencies={dependencies}
+                    onUpdateTaskStatus={handleUpdateTaskStatus}
+                    onRefreshIssue={() => loadIssueDetails(selectedIssueId)}
+                  />
+                  <div style={{ margin: '1.25rem 0' }} />
                   {/* Horizontal Stage Stepper Visualizer */}
                   {executionPlan?.stages && executionPlan.stages.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', overflowX: 'auto', padding: '0.75rem', background: '#f8fafc', borderRadius: 'var(--admin-radius-sm)', border: '1px solid var(--admin-border)' }}>
@@ -1052,6 +1075,38 @@ export default function CivicIssuesManager({
                                             <span>Cancel</span>
                                           </button>
                                         </>
+                                      )}
+
+                                      {isCompleted && (
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm"
+                                          onClick={() => handleVerifySingleTask(task.id)}
+                                          style={{ background: '#059669', color: '#ffffff', padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                                        >
+                                          <ShieldCheck size={12} />
+                                          <span>Verify Task</span>
+                                        </button>
+                                      )}
+
+                                      {task.status === 'VERIFIED' && (
+                                        <span
+                                          style={{
+                                            background: '#ecfdf5',
+                                            color: '#047857',
+                                            border: '1px solid #6ee7b7',
+                                            padding: '2px 8px',
+                                            borderRadius: 4,
+                                            fontSize: '0.72rem',
+                                            fontWeight: 700,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 4
+                                          }}
+                                        >
+                                          <ShieldCheck size={12} />
+                                          <span>Verified</span>
+                                        </span>
                                       )}
                                     </div>
                                   </div>

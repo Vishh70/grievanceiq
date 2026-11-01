@@ -6,6 +6,10 @@
 //
 // Uses a trained Random Forest model on features from Phase 1 (embeddings)
 // and Phase 2 (duplicate scoring).
+//
+// Phase 4 additions:
+// - Incorporates empirical Platt probability calibration (calibrationService)
+// - Integrates WICR expected loss evaluation (wicrService)
 
 const path = require('path');
 const fs = require('fs');
@@ -19,6 +23,8 @@ const {
   scoreCandidate,
   DUPLICATE_CONFIG,
 } = require('./duplicateDetectionService');
+const { calibrateProbability } = require('./calibrationService');
+const { evaluateRelationshipDecision } = require('./wicrService');
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -89,7 +95,11 @@ async function predictRelationshipCorrected(complaintA, complaintB) {
     return {
       relationship: 'Unknown',
       confidence: 0,
+      calibrated_confidence: 0,
       probabilities: {},
+      raw_probabilities: {},
+      calibrated_probabilities: {},
+      is_calibrated: false,
       features: featureSummary,
       status: 'not_verified',
       message: 'External ML service could not be verified in the current environment.'
@@ -105,10 +115,37 @@ async function predictRelationshipCorrected(complaintA, complaintB) {
     const response = await axios.post(`${ML_SERVICE_URL}/predict-relationship`, { features }, { timeout: 3000, headers });
     console.log('[RELATIONSHIP MODEL] corrected-python');
 
+    const rel = response.data.relationship;
+    const rawProbs = response.data.raw_probabilities || response.data.probabilities || {};
+    const rawConfidence = response.data.probabilities ? response.data.probabilities[rel] || 1.0 : 1.0;
+
+    // Check if Python response already supplied calibration; otherwise calibrate locally
+    let calibratedProbs = response.data.calibrated_probabilities;
+    let isCalibrated = Boolean(response.data.is_calibrated);
+
+    if (!calibratedProbs && rawProbs) {
+      calibratedProbs = {};
+      for (const [key, val] of Object.entries(rawProbs)) {
+        const cal = calibrateProbability(val, key);
+        calibratedProbs[key] = cal.isCalibrated ? cal.calibratedProbability : val;
+        if (key === rel && cal.isCalibrated) {
+          isCalibrated = true;
+        }
+      }
+    }
+
+    const calibratedConfidence = (calibratedProbs && calibratedProbs[rel] !== undefined)
+      ? calibratedProbs[rel]
+      : rawConfidence;
+
     return {
-      relationship: response.data.relationship,
-      confidence: response.data.probabilities ? response.data.probabilities[response.data.relationship] || 1.0 : 1.0,
+      relationship: rel,
+      confidence: rawConfidence,
+      calibrated_confidence: calibratedConfidence,
       probabilities: response.data.probabilities || {},
+      raw_probabilities: rawProbs,
+      calibrated_probabilities: calibratedProbs || {},
+      is_calibrated: isCalibrated,
       features: featureSummary,
     };
   } catch (err) {
@@ -125,6 +162,26 @@ async function predictRelationship(complaintA, complaintB) {
   return predictRelationshipCorrected(complaintA, complaintB);
 }
 
+/**
+ * Evaluates relationship prediction with the WICR decision engine (FR06).
+ * Computes minimum expected loss over calibrated probabilities.
+ * 
+ * @param {object} complaintA 
+ * @param {object} complaintB 
+ * @param {object} [options]
+ * @returns {Promise<object>} Combined inference and WICR decision result
+ */
+async function evaluateRelationshipWicr(complaintA, complaintB, options = {}) {
+  const inference = await predictRelationshipCorrected(complaintA, complaintB);
+  const rawProb = inference.confidence;
+  const wicrResult = evaluateRelationshipDecision(inference.relationship, rawProb, options);
+
+  return {
+    ...inference,
+    wicr: wicrResult
+  };
+}
+
 module.exports = {
   // Constants
   RELATIONSHIP_LABELS,
@@ -136,4 +193,5 @@ module.exports = {
   getFeatureNames,
   predictRelationship,
   predictRelationshipCorrected,
+  evaluateRelationshipWicr,
 };

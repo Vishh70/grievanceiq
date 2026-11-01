@@ -150,7 +150,7 @@ async function runAudit9() {
 
   const complaintGraphService = new ComplaintGraphService();
   complaintGraphService.buildGraph([compNew, compCand], [
-    { sourceId: compNew.id, targetId: compCand.id, relationship: 'Related' }
+    { sourceId: compNew.id, targetId: compCand.id, relationship: 'Duplicate' }
   ]);
   const components = complaintGraphService.findConnectedComponents();
   console.log('   Connected Components:', components);

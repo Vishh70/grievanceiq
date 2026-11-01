@@ -29,22 +29,18 @@ function AnimatedRoutes() {
         <Route path="/"         element={<PageTransition><Landing /></PageTransition>} />
         <Route path="/login"    element={<PageTransition><Navbar /><Login /></PageTransition>} />
         <Route path="/register" element={<PageTransition><Navbar /><Register /></PageTransition>} />
+        <Route path="/feed"     element={<PageTransition><Navbar /><PublicFeed /></PageTransition>} />
+        <Route path="/complaints/:id" element={<PageTransition><Navbar /><ComplaintDetail /></PageTransition>} />
 
         {/* Citizen routes */}
         <Route path="/profile" element={
           <ProtectedRoute><PageTransition><Navbar /><Profile /></PageTransition></ProtectedRoute>
-        } />
-        <Route path="/feed" element={
-          <ProtectedRoute><PageTransition><Navbar /><PublicFeed /></PageTransition></ProtectedRoute>
         } />
         <Route path="/complaints/new" element={
           <ProtectedRoute><PageTransition><Navbar /><SubmitComplaint /></PageTransition></ProtectedRoute>
         } />
         <Route path="/complaints" element={
           <ProtectedRoute><PageTransition><Navbar /><MyComplaints /></PageTransition></ProtectedRoute>
-        } />
-        <Route path="/complaints/:id" element={
-          <ProtectedRoute><PageTransition><Navbar /><ComplaintDetail /></PageTransition></ProtectedRoute>
         } />
 
         {/* Intuitive Navigation Aliases */}
@@ -60,6 +56,8 @@ function AnimatedRoutes() {
         <Route path="/admin/complaints"     element={<Navigate to="/admin?tab=complaints" replace />} />
         <Route path="/admin/all-complaints" element={<Navigate to="/admin?tab=complaints" replace />} />
         <Route path="/admin/issues"         element={<Navigate to="/admin?tab=civic-issues" replace />} />
+        <Route path="/admin/reviews"        element={<Navigate to="/admin?tab=wicr-reviews" replace />} />
+        <Route path="/admin/wicr"           element={<Navigate to="/admin?tab=wicr-reviews" replace />} />
 
         {/* Default redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />

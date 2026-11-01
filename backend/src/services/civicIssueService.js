@@ -1,7 +1,7 @@
 // src/services/civicIssueService.js
 const supabase = require('../config/supabase');
 const complaintGraphService = require('./complaintGraphService');
-const { predictRelationship } = require('./relationshipService');
+const relationshipService = require('./relationshipService');
 const knowledgeGraphService = require('./knowledgeGraphService');
 const routingService = require('./routingService');
 const relationshipPersistenceService = require('./relationshipPersistenceService');
@@ -234,7 +234,7 @@ async function processCivicIssueGrouping(newComplaint, candidates) {
   // Predict relationships between the new complaint and all candidates
   for (const cand of candidates) {
     try {
-      const result = await predictRelationship(newComplaint, cand);
+      const result = await relationshipService.predictRelationship(newComplaint, cand);
       if (result && result.relationship) {
         let relationshipType = result.relationship;
         let reason = null;
@@ -277,11 +277,13 @@ async function processCivicIssueGrouping(newComplaint, candidates) {
   const components = graphService.findConnectedComponents();
   
   // We process the component that contains the new complaint
+  let activeCivicIssue = null;
   for (const compIds of components) {
     if (compIds.includes(newComplaint.id)) {
       const compData = compIds.map(id => allComplaints.find(c => c.id === id)).filter(Boolean);
       const savedIssue = await createOrUpdateCivicIssue(compData);
       if (savedIssue) {
+        activeCivicIssue = savedIssue;
         console.log(`[CivicRouting] Automatically routing Civic Issue ${savedIssue.id}`);
         try {
           await routingService.routeCivicIssue(savedIssue.id);
@@ -292,6 +294,118 @@ async function processCivicIssueGrouping(newComplaint, candidates) {
       }
     }
   }
+
+  return {
+    civicIssueId: activeCivicIssue ? activeCivicIssue.id : null,
+    civicIssue: activeCivicIssue,
+    components: components
+  };
+}
+
+/**
+ * Retrieves related Civic Issues linked via 'Related' complaint relationships.
+ * Preserves cross-issue operational and investigative links without merging incident tickets.
+ *
+ * @param {string} civicIssueId - UUID of the civic issue
+ * @returns {Promise<Array<object>>} List of related civic issues with relationship evidence
+ */
+async function getRelatedCivicIssues(civicIssueId) {
+  if (!civicIssueId) return [];
+
+  try {
+    // 1. Fetch complaints for this civic issue
+    const { data: currentComplaints, error: compErr } = await supabase
+      .from('complaints')
+      .select('id')
+      .eq('civic_issue_id', civicIssueId);
+
+    if (compErr || !currentComplaints || currentComplaints.length === 0) {
+      return [];
+    }
+
+    const complaintIds = currentComplaints.map(c => c.id);
+
+    // 2. Query complaint_relationships for 'Related' links touching any of these complaints
+    const { data: relations, error: relErr } = await supabase
+      .from('complaint_relationships')
+      .select('*')
+      .eq('relationship_type', 'Related');
+
+    if (relErr || !relations || relations.length === 0) {
+      return [];
+    }
+
+    // Filter relations that touch at least one complaint in this civic issue
+    const relevantRelations = relations.filter(r =>
+      complaintIds.includes(r.source_complaint_id) || complaintIds.includes(r.target_complaint_id)
+    );
+
+    if (relevantRelations.length === 0) {
+      return [];
+    }
+
+    // 3. Find other complaint IDs that belong to a different civic issue
+    const otherComplaintIds = [];
+    const relationMap = new Map(); // otherComplaintId -> array of relations
+
+    for (const rel of relevantRelations) {
+      const otherId = complaintIds.includes(rel.source_complaint_id)
+        ? rel.target_complaint_id
+        : rel.source_complaint_id;
+
+      if (!complaintIds.includes(otherId)) {
+        otherComplaintIds.push(otherId);
+        if (!relationMap.has(otherId)) relationMap.set(otherId, []);
+        relationMap.get(otherId).push(rel);
+      }
+    }
+
+    if (otherComplaintIds.length === 0) return [];
+
+    // 4. Fetch the other complaints and their civic issues
+    const { data: otherComplaints, error: otherErr } = await supabase
+      .from('complaints')
+      .select('id, civic_issue_id')
+      .in('id', [...new Set(otherComplaintIds)]);
+
+    if (otherErr || !otherComplaints) return [];
+
+    const relatedIssueIds = [...new Set(
+      otherComplaints.map(c => c.civic_issue_id).filter(id => id && id !== civicIssueId)
+    )];
+
+    if (relatedIssueIds.length === 0) return [];
+
+    // 5. Fetch related civic issues
+    const { data: relatedIssues, error: issueErr } = await supabase
+      .from('civic_issues')
+      .select('id, title, primary_category, priority, status, created_at')
+      .in('id', relatedIssueIds);
+
+    if (issueErr || !relatedIssues) return [];
+
+    // 6. Enrich with evidence
+    return relatedIssues.map(issue => {
+      const issueCompIds = otherComplaints
+        .filter(c => c.civic_issue_id === issue.id)
+        .map(c => c.id);
+
+      const evidence = [];
+      for (const compId of issueCompIds) {
+        const edges = relationMap.get(compId) || [];
+        evidence.push(...edges);
+      }
+
+      return {
+        ...issue,
+        relationshipType: 'Related',
+        evidence: evidence
+      };
+    });
+  } catch (err) {
+    console.error(`[CivicIssueService] Error fetching related civic issues for ${civicIssueId}:`, err.message);
+    return [];
+  }
 }
 
 module.exports = {
@@ -299,5 +413,6 @@ module.exports = {
   calculateRepresentativeLocation,
   aggregatePriority,
   createOrUpdateCivicIssue,
-  processCivicIssueGrouping
+  processCivicIssueGrouping,
+  getRelatedCivicIssues
 };

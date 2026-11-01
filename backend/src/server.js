@@ -6,20 +6,26 @@ if (!process.env.ML_SERVICE_URL) {
   process.env.ML_SERVICE_URL = 'http://127.0.0.1:5001';
 }
 
+// SECURITY: In production, JWT_SECRET must be explicitly provided
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  console.error('❌ CRITICAL: JWT_SECRET is not configured in production. Exiting.');
+  process.exit(1);
+}
+
 const createApp = require('./app');
 const supabase = require('./config/supabase');
 
 const app = createApp();
 
 // ── Database ──────────────────────────────────────────────────────────────────
-// Automatically seed default admin user into Supabase if not exists, or ensure password is correct
+// SECURITY: Non-destructive admin verification on startup.
+// - Creates the default admin account ONLY if no admin exists at all.
+// - Never overwrites or resets an existing admin password.
 (async () => {
   try {
     const adminEmail = 'system@grievanceiq.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'AdminPassword123!';
-    const bcrypt = require('bcryptjs');
 
-    const checkAdminQuery = supabase.from('users').select('id, password_hash').eq('email', adminEmail);
+    const checkAdminQuery = supabase.from('users').select('id').eq('email', adminEmail);
     const { data: existingAdmin, error: fetchErr } = typeof checkAdminQuery.maybeSingle === 'function'
       ? await checkAdminQuery.maybeSingle()
       : await checkAdminQuery.single();
@@ -30,7 +36,13 @@ const app = createApp();
     }
 
     if (!existingAdmin) {
-      // Create new admin account
+      // Only seed a new admin if ADMIN_PASSWORD is explicitly configured
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      if (!adminPassword) {
+        console.warn('⚠️ No admin account exists and ADMIN_PASSWORD is not configured. Skipping admin seed.');
+        return;
+      }
+      const bcrypt = require('bcryptjs');
       const passwordHash = await bcrypt.hash(adminPassword, 12);
       const { error: insertErr } = await supabase.from('users').insert([{
         name: 'System Admin',
@@ -42,18 +54,10 @@ const app = createApp();
       if (insertErr) throw insertErr;
       console.log('✅ Default Admin created: system@grievanceiq.com');
     } else {
-      // Always ensure the admin password matches the configured value
-      const needsUpdate = !existingAdmin.password_hash || !(await bcrypt.compare(adminPassword, existingAdmin.password_hash));
-      if (needsUpdate) {
-        const passwordHash = await bcrypt.hash(adminPassword, 12);
-        await supabase.from('users').update({ password_hash: passwordHash }).eq('id', existingAdmin.id);
-        console.log('✅ Admin password synchronized on startup: system@grievanceiq.com');
-      } else {
-        console.log('✅ Admin account verified: system@grievanceiq.com');
-      }
+      console.log('✅ Admin account verified: system@grievanceiq.com');
     }
   } catch (err) {
-    console.error('Failed to seed admin:', err.message);
+    console.error('Failed to verify admin:', err.message);
   }
 })();
 
@@ -81,7 +85,8 @@ const server = app.listen(PORT, async () => {
   });
 
   // ── Recovery Mechanism ───────────────────────────────────────────────────────
-  // Recover pending/stale complaints with bounded concurrency & service readiness
+  // Recover pending/stale complaints with bounded concurrency & service readiness.
+  // Uses atomic lease acquisition to prevent duplicate processing.
   (async () => {
     try {
       const { isMLServiceAvailable } = require('./services/mlService');
@@ -95,19 +100,21 @@ const server = app.listen(PORT, async () => {
       const { complaintQueue } = require('./config/queue');
       let staleComplaints = [];
       try {
+        // Select complaints that are stale: PENDING, FAILED, or PROCESSING with expired leases
         const { data, error } = await supabase
           .from('complaints')
           .select('id, description, image_base64')
-          .or('processing_status.in.(PROCESSING,PENDING,FAILED),department.is.null,department.eq.Unassigned')
+          .or('processing_status.in.(PENDING,FAILED),and(processing_status.eq.PROCESSING,lock_expires_at.lt.' + new Date().toISOString() + ')')
           .order('created_at', { ascending: false })
           .limit(50);
         if (!error && data) staleComplaints = data;
       } catch (queryErr) {
         try {
+          // Fallback for schemas without lock_expires_at column yet
           const { data } = await supabase
             .from('complaints')
             .select('id, description, image_base64')
-            .in('processing_status', ['PROCESSING', 'PENDING'])
+            .in('processing_status', ['PENDING', 'FAILED'])
             .limit(20);
           if (data) staleComplaints = data;
         } catch { /* ignore fallback error */ }
@@ -115,8 +122,6 @@ const server = app.listen(PORT, async () => {
 
       if (staleComplaints && staleComplaints.length > 0) {
         console.log(`🔄 Found ${staleComplaints.length} pending/stale complaints. Starting bounded recovery...`);
-        const queueConfig = require('./config/queue');
-        const { processComplaintLogic } = require('./workers/complaintWorker');
 
         for (const complaint of staleComplaints) {
           if (queueConfig.connection && queueConfig.connection.status === 'ready') {
@@ -136,7 +141,9 @@ const server = app.listen(PORT, async () => {
             }
           } else {
             // Free Tier / Redis Disconnected Fallback: Controlled sequential in-memory recovery
+            // The worker's processComplaintLogic will use atomic lease acquisition internally
             console.log(`[Recovery] Processing complaint ${complaint.id} in-memory...`);
+            const { processComplaintLogic } = require('./workers/complaintWorker');
             try {
               await processComplaintLogic({
                 complaintId: complaint.id,

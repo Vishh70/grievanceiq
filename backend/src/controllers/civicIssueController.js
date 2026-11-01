@@ -3,6 +3,7 @@ const supabase = require('../config/supabase');
 const routingService = require('../services/routingService');
 const dependencyService = require('../services/taskDependencyService');
 const executionService = require('../services/taskExecutionService');
+const prerequisiteService = require('../services/prerequisiteRecommendationService');
 
 exports.getCivicIssues = async (req, res) => {
   try {
@@ -263,6 +264,131 @@ exports.getCivicIssueProgress = async (req, res) => {
     if (progress.error) return res.status(400).json({ error: progress.error });
     res.json(progress);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Phase 6: Prerequisite Recommendations & Verification Endpoints
+
+exports.generatePrerequisiteRecommendations = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const recommendations = await prerequisiteService.generateRecommendations(id);
+    res.json({
+      message: 'Prerequisite recommendations generated',
+      count: recommendations.length,
+      recommendations
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getPendingRecommendations = async (req, res) => {
+  try {
+    const civicIssueId = req.params.id || req.query.civicIssueId;
+    const departmentId = req.query.departmentId;
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const offset = parseInt(req.query.offset, 10) || 0;
+
+    const recommendations = await prerequisiteService.getPendingRecommendations({
+      civicIssueId,
+      departmentId,
+      limit,
+      offset
+    });
+
+    res.json({
+      count: recommendations.length,
+      recommendations
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.acceptRecommendation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notes } = req.body || {};
+    const reviewerId = req.user?.id;
+
+    const result = await prerequisiteService.acceptRecommendation(id, reviewerId, notes);
+    res.json({
+      message: 'Recommendation accepted and dependency added to execution graph',
+      result
+    });
+  } catch (err) {
+    if (err.message && err.message.includes('cycle')) {
+      return res.status(409).json({ error: 'CYCLE_DETECTED', message: err.message });
+    }
+    if (err.message && err.message.includes('not found')) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: err.message });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.rejectRecommendation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notes } = req.body || {};
+    const reviewerId = req.user?.id;
+
+    const result = await prerequisiteService.rejectRecommendation(id, reviewerId, notes);
+    res.json({
+      message: 'Recommendation rejected',
+      result
+    });
+  } catch (err) {
+    if (err.message && err.message.includes('not found')) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: err.message });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.verifyTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notes, evidence } = req.body || {};
+    const verifierId = req.user?.id;
+    const userEmail = req.user?.email || 'officer';
+
+    const result = await executionService.verifyTask(id, verifierId, userEmail, notes, evidence);
+    res.json({
+      message: 'Task verified successfully',
+      result
+    });
+  } catch (err) {
+    if (err.message && err.message.includes('Task not found')) {
+      return res.status(404).json({ error: 'TASK_NOT_FOUND', message: err.message });
+    }
+    if (err.message && err.message.includes('must be in COMPLETED status')) {
+      return res.status(400).json({ error: 'INVALID_STATUS', message: err.message });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.verifyCivicIssueResolution = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notes } = req.body || {};
+    const verifierId = req.user?.id;
+
+    const result = await executionService.verifyCivicIssue(id, verifierId, notes);
+    res.json({
+      message: 'Civic Issue verified and resolved successfully',
+      result
+    });
+  } catch (err) {
+    if (err.message && err.message.includes('not found')) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: err.message });
+    }
+    if (err.message && err.message.includes('incomplete task(s) remain')) {
+      return res.status(409).json({ error: 'INCOMPLETE_TASKS_REMAIN', message: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };

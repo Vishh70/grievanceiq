@@ -17,10 +17,11 @@ import StatusUpdateModal from '../components/admin/StatusUpdateModal';
 import CivicIssuesManager from '../components/admin/CivicIssuesManager';
 import AiSafetyIntelligence from '../components/admin/AiSafetyIntelligence';
 import IncidentMapSection from '../components/admin/IncidentMapSection';
+import WicrReviewQueue from '../components/admin/WicrReviewQueue';
 
 export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ['overview', 'complaints', 'civic-issues', 'ai-safety', 'incident-map'];
+  const validTabs = ['overview', 'complaints', 'civic-issues', 'wicr-reviews', 'ai-safety', 'incident-map'];
   const requestedTab = searchParams.get('tab');
   const initialTab = validTabs.includes(requestedTab) ? requestedTab : 'overview';
 
@@ -47,6 +48,7 @@ export default function AdminDashboard() {
   const [summary, setSummary] = useState(null);
   const [similarGroups, setSimilarGroups] = useState([]);
   const [civicIssues, setCivicIssues] = useState([]);
+  const [pendingReviewsCount, setPendingReviewsCount] = useState(0);
   const [complaintsData, setComplaintsData] = useState({
     complaints: [],
     total: 0,
@@ -79,15 +81,17 @@ export default function AdminDashboard() {
   // Fetch Summary, Similar Groups, and Civic Issues
   const fetchGlobalMetrics = useCallback(async () => {
     try {
-      const [sumRes, simRes, civicRes] = await Promise.all([
+      const [sumRes, simRes, civicRes, wicrRes] = await Promise.all([
         api.get('/dashboard/summary'),
         api.get('/dashboard/similar-groups').catch(() => ({ data: { groups: [] } })),
-        api.get('/civic-issues').catch(() => ({ data: [] }))
+        api.get('/civic-issues').catch(() => ({ data: [] })),
+        api.get('/wicr/stats').catch(() => ({ data: { stats: { pending: 0 } } }))
       ]);
 
       setSummary(sumRes.data);
       setSimilarGroups(simRes.data.groups || []);
       setCivicIssues(civicRes.data || []);
+      setPendingReviewsCount(wicrRes.data?.stats?.pending || 0);
       setLastRefreshed(new Date());
     } catch (err) {
       console.error('Failed to load dashboard metrics:', err);
@@ -355,6 +359,7 @@ export default function AdminDashboard() {
           counts={{
             complaints: complaintsData.total,
             civicIssues: civicIssues.length,
+            pendingReviews: pendingReviewsCount,
             hazards: analytics.topSafetyHazards?.length,
             mapPins: mapPins.length
           }}
@@ -482,6 +487,11 @@ export default function AdminDashboard() {
             civicIssues={civicIssues}
             onRefreshList={fetchGlobalMetrics}
           />
+        )}
+
+        {/* ── Tab: WICR Review Queue (FR06) ──────────────────────── */}
+        {activeTab === 'wicr-reviews' && (
+          <WicrReviewQueue />
         )}
 
         {/* ── Tab 4: AI & Safety Intelligence ───────────────────── */}

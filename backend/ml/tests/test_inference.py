@@ -105,3 +105,22 @@ def test_predict_relationship_valid_request(client):
         data = response.get_json()
         assert 'relationship' in data
         assert 'probabilities' in data
+
+
+def test_predict_relationship_calibration(client):
+    response = client.post('/predict-relationship', json={
+        "features": [0.2] * 20
+    })
+    assert response.status_code == 200
+    data = response.get_json()
+    assert 'relationship' in data
+    assert 'probabilities' in data
+    assert 'raw_probabilities' in data
+    assert data.get('is_calibrated') is True
+    assert 'calibrated_probabilities' in data
+    cal_probs = data['calibrated_probabilities']
+    assert 'Duplicate' in cal_probs
+    assert 'Related' in cal_probs
+    assert 0.0 <= cal_probs['Duplicate'] <= 1.0
+    assert 0.0 <= cal_probs['Related'] <= 1.0
+    assert data.get('calibration_version') == '1.0'

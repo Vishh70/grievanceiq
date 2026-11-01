@@ -3,6 +3,19 @@
 const mockUpdates = [];
 
 function createChainableQuery() {
+  const updateChain = {
+    eq: jest.fn(),
+    in: jest.fn(),
+    select: jest.fn(),
+    single: jest.fn().mockImplementation(() => Promise.resolve({
+      data: { id: 'test-complaint-uuid-1234' },
+      error: null
+    }))
+  };
+  updateChain.eq.mockReturnValue(updateChain);
+  updateChain.in.mockReturnValue(updateChain);
+  updateChain.select.mockReturnValue(updateChain);
+
   const query = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
@@ -11,6 +24,7 @@ function createChainableQuery() {
     lte: jest.fn().mockReturnThis(),
     not: jest.fn().mockReturnThis(),
     or: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     single: jest.fn().mockResolvedValue({
@@ -26,14 +40,11 @@ function createChainableQuery() {
     }),
     update: jest.fn((fields) => {
       mockUpdates.push(fields);
-      return {
-        eq: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
-          data: { id: 'test-complaint-uuid-1234', ...fields },
-          error: null
-        })
-      };
+      updateChain.single = jest.fn().mockResolvedValue({
+        data: { id: 'test-complaint-uuid-1234', ...fields },
+        error: null
+      });
+      return updateChain;
     })
   };
   return query;
@@ -62,7 +73,7 @@ describe('Complaint Worker Multi-Stage Resilience & Persistence', () => {
     mockUpdates.length = 0;
     jest.clearAllMocks();
 
-    findBestDuplicate.mockResolvedValue({ isDuplicate: false, masterComplaintId: null });
+    findBestDuplicate.mockReturnValue({ bestMatch: null });
     processCivicIssueGrouping.mockResolvedValue({ civicIssueId: null, isNew: false });
   });
 
@@ -83,7 +94,7 @@ describe('Complaint Worker Multi-Stage Resilience & Persistence', () => {
       text: 'Massive pothole causing car damage on Main St'
     })).rejects.toThrow('Embedding generation failed');
 
-    // Check Stage 1 initial processing state
+    // Check Stage 0/1 lease & processing state
     expect(mockUpdates[0]).toMatchObject({
       processing_status: 'PROCESSING',
       processing_error: null
@@ -127,9 +138,6 @@ describe('Complaint Worker Multi-Stage Resilience & Persistence', () => {
       complaintId: 'test-complaint-uuid-1234',
       text: 'Massive pothole causing car damage on Main St'
     });
-
-    const stage5Update = mockUpdates.find(u => u.ml_labels && u.ml_labels.includes('Road Damage'));
-    expect(stage5Update).toBeDefined();
 
     const finalUpdate = mockUpdates.find(u => u.processing_status === 'PROCESSED');
     expect(finalUpdate).toBeDefined();

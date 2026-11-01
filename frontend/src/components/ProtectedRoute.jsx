@@ -11,7 +11,10 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     if (adminOnly) return <Navigate to="/admin/login" replace />;
     return <Navigate to="/login" replace />;
   }
-  if (adminOnly && user.role !== 'admin') return <Navigate to="/complaints" replace />;
+  // Allow administrative access for both administrators and municipal officers
+  if (adminOnly && user.role !== 'admin' && user.role !== 'officer') {
+    return <Navigate to="/complaints" replace />;
+  }
 
   return children;
 }

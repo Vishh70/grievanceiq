@@ -1,7 +1,16 @@
 const jwt = require('jsonwebtoken');
 const supabase = require('../config/supabase');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'grievanceiq_super_secret_jwt_fallback_key_2026_production';
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET must be configured in environment');
+    }
+    return 'dev-only-jwt-secret-do-not-use-in-production';
+  }
+  return secret;
+}
 
 /**
  * Protect route — requires a valid Bearer JWT
@@ -14,7 +23,8 @@ exports.protect = async (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const secret = getJwtSecret();
+    const decoded = jwt.verify(token, secret);
     
     const { data: user, error } = await supabase.from('users').select('*').eq('id', decoded.id).single();
     if (error || !user) return res.status(401).json({ error: 'User not found' });
@@ -39,7 +49,8 @@ exports.optionalAuth = async (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const secret = getJwtSecret();
+    const decoded = jwt.verify(token, secret);
     const { data: user } = await supabase.from('users').select('*').eq('id', decoded.id).single();
     if (user) {
       delete user.password_hash;
@@ -60,4 +71,3 @@ exports.restrictTo = (...roles) => (req, res, next) => {
   }
   next();
 };
-
