@@ -1,97 +1,77 @@
-# GrievanceIQ — Remediation & Verification Work Log
+# GrievanceIQ — Remediation & Staging Verification Work Log
 
-**Current Commit**: `066dc2e08211511c4e8d776adf08f33af61d6c0a`  
+**Current Commit**: `9dff3ff3c29994c6f37a505b3cb2f928a6fcf7c1`  
 **Branch**: `main` (synced with `origin/main`)  
 **Date**: 2026-11-12  
-**Status**: `IMPLEMENTED — STAGING VERIFICATION BLOCKED`
+**Status**: `IMPLEMENTED — STAGING PROVISIONING BLOCKED`
 
 ---
 
-## 1. Executive Summary & Root Cause
+## 1. Executive Summary & Baseline Evidence Refresh
 
-### Root Cause Analysis
-The WICR Review Queue production error (`Failed to fetch pending reviews: Could not find the table 'public.v_pending_wicr_reviews' in the schema cache`) observed at `https://grievanceiq-app.vercel.app/admin?tab=wicr-reviews` stems from:
-1. **Unapplied Migration**: The live Supabase instance connected to Render backend (`https://grievanceiq-gky1.onrender.com`) was only migrated through Phase 13. WICR schema definitions (Phases 17 & 18) were previously stored only in `docs/database/` and had never been applied to the live database.
-2. **Defensive Migration Bypass**: Migration `20261101131302_gate1_database_permissions.sql` in `supabase/migrations/` guarded view permission grants with `IF to_regclass('public.v_pending_wicr_reviews') IS NOT NULL`, meaning it skipped `v_pending_wicr_reviews` without error because the view did not exist.
-3. **Missing PostgREST Discovery**: Because neither `v_pending_wicr_reviews` nor `wicr_decisions` existed in PostgreSQL, PostgREST returned HTTP 404 / code `PGRST205` ("Could not find the table 'public.v_pending_wicr_reviews' in the schema cache").
-4. **PL/pgSQL Unassigned Variable Bug**: In earlier draft versions of `resolve_wicr_review`, `v_reviewer` was declared as a `RECORD`. When `p_reviewer_id` was NULL, accessing `v_reviewer.email` resulted in runtime error `record "v_reviewer" is not assigned yet`.
-
----
-
-## 2. Implemented Code & Migration Remediation
-
-### A. Canonical Database Migrations
-- `supabase/migrations/20261102140000_wicr_reviews_and_gate1_permissions.sql`:
-  - Adds `users.department` column if not present.
-  - Creates `public.wicr_decisions` table and indexes.
-  - Creates `public.wicr_review_events` append-only audit trail and anti-mutation trigger `trg_prevent_wicr_event_mutation`.
-  - Creates `public.v_pending_wicr_reviews` queue view joining complaints and decisions where `review_status = 'PENDING'`.
-  - Creates `public.record_wicr_decision` RPC.
-  - Creates `public.resolve_wicr_review` RPC with row locking (`FOR UPDATE`), atomic duplicate/related relationship insertion, and safe scalar variables (`v_reviewer_email`, `v_reviewer_role`) handling NULL `p_reviewer_id`.
-  - Applies Gate 1 security hardening: sets `security_invoker = true` on `v_pending_wicr_reviews`, revokes all permissions from `PUBLIC`, `anon`, and `authenticated`, grants `SELECT` to `service_role`, grants `service_role` on underlying base tables (`complaints`, `departments`, `users`, etc.), and reloads PostgREST schema cache via `NOTIFY pgrst, 'reload schema'`.
-- `docs/database/apply_wicr_and_gate1_hardening.sql`: Self-contained, idempotent script for one-click manual execution in Supabase SQL Editor.
-
-### B. Backend Services & Controllers
-- `backend/src/app.js`: Removed frontend `VITE_*` variable lookups; strictly prioritized `SUPABASE_SERVICE_ROLE_KEY`.
-- `backend/src/config/supabase.js`: Added production check warning when `SUPABASE_SERVICE_ROLE_KEY` is missing.
-- `backend/src/services/reviewQueueService.js`: Removed silent error suppression in `getQueueStats` so missing-schema failures are never masked by falsy 0 metrics.
-- `backend/tests/unit/wicrController.test.js`: Added unit tests verifying HTTP 500 error propagation on missing schema cache without suppressing errors.
-- `backend/tests/integration/wicrQueuePermissionsAndSchema.test.js`: Added 13 isolated PGlite tests verifying schema existence, missing-schema rejection, direct anon/authenticated access denial, and service-role success.
+### Live Git & Repository State
+- **Branch**: `main`
+- **Head Commit**: `9dff3ff3c29994c6f37a505b3cb2f928a6fcf7c1`
+- **Working Tree**: Clean (`git status` reports nothing to commit, working tree clean)
+- **GitHub Actions (Commit `9dff3ff`)**:
+  - `Supabase Preview`: **COMPLETED SUCCESS**
+  - `build (22.x)` (Frontend CI): **COMPLETED SUCCESS**
+  - `build-and-test (22.x)` (Backend CI): **COMPLETED SUCCESS**
+- **Vercel Frontend** (`https://grievanceiq-app.vercel.app`):
+  - HTTP Status: `200 OK` (`X-Vercel-Id: bom1::djjsg-1794467438183-4a8b6f4ce60a`)
+- **Render Backend** (`https://grievanceiq-gky1.onrender.com`):
+  - Health endpoint (`/api/health`): `HTTP 200 OK` (`database: connected`, `version: 1.0.3-unified-auth-production`, `environment: production`, `redis: end`)
+  - Direct WICR endpoint (`/api/wicr/reviews`): `HTTP 401 Unauthorized {"error":"Not authorised — no token"}` (properly guarded by Express JWT middleware)
 
 ---
 
-## 3. Test & Verification Baseline
+## 2. Status of the 7 Operational Items (Gates 1 & 2)
+
+### Gate 1 — Supabase & PostgREST Permissions (6 Items)
+
+| Item # | Task Description | Status | Evidence / Details |
+| :---: | :--- | :---: | :--- |
+| **1** | Provision `grievanceiq-staging-clean` or confirm isolated synthetic staging | **BLOCKED** | `grievanceiq-staging-clean` is not provisioned; Supabase CLI returns `AccessTokenRequiredError`. Per Hard Safety Rules 2 & 4, no paid cloud project was created and `supabase-red-cable` remains untouched without explicit owner isolation confirmation. |
+| **2** | Configure backend with verified privileged Supabase credential | **BLOCKED** | Awaiting staging project provisioning. Backend configuration logic in `backend/src/app.js` and `backend/src/config/supabase.js` is hardened to require `SUPABASE_SERVICE_ROLE_KEY`. |
+| **3** | Apply reviewed WICR & Gate 1 migrations to staging | **READY / VERIFIED LOCALLY** | Canonical migration `supabase/migrations/20261102140000_wicr_reviews_and_gate1_permissions.sql` and standalone runner `docs/database/apply_wicr_and_gate1_hardening.sql` verified cleanly in PGlite. Ready for 1-click execution in staging SQL Editor. |
+| **4** | Verify view in PostgREST; deny anon/authenticated, allow service-role | **VERIFIED LOCALLY** | Verified via 13 PGlite integration tests (`wicrQueuePermissionsAndSchema.test.js`). `anon` and `authenticated` roles receive `403 permission denied`; `service_role` has full read/write/RPC rights. PostgREST reload notification `NOTIFY pgrst, 'reload schema'` is embedded. |
+| **5** | Run live staging integration tests with no mandatory tests skipped | **PENDING STAGING** | PGlite tests (31 tests across 4 suites) pass 100%. Live network integration tests (`livePostgrestSecurity.test.js`, `supabase.test.js`, `true_e2e.test.js`) are safely skipped pending staging cloud credentials. |
+| **6** | Verify staging backend's WICR route & authenticated review page | **PENDING STAGING** | Route logic, controller, and frontend `WicrReviewQueue.jsx` verified. Production page remains unmigrated until cloud database migration is authorized. |
+
+---
+
+### Gate 2 — Redis & BullMQ Worker Connectivity (1 Item)
+
+| Item # | Task Description | Status | Evidence / Details |
+| :---: | :--- | :---: | :--- |
+| **7** | Confirm live Redis/BullMQ worker connectivity and processing | **INVESTIGATED / BLOCKED** | **Investigation of `redis: end`:** In `backend/src/config/queue.js`, `retryStrategy` halts after 3 attempts (`return null`) to prevent unhandled connection spam when `REDIS_URL` is unreachable. On Render's single web service container, no managed Redis service is provisioned, so ioredis transitions to `'end'`. When disconnected, `server.js` engages an in-memory fallback. **To verify Gate 2**, an isolated Redis service (e.g. Upstash Redis or Render Redis) must have its connection URL provided via `REDIS_URL` in the staging environment. |
+
+---
+
+## 3. Reconciled Test Matrix
 
 | Test Suite / Command | Total Suites | Passed Suites | Skipped Suites | Total Tests | Passed Tests | Skipped Tests | Duration | Verification Engine |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Backend Unit Tests**<br>`npm.cmd run test:unit` | 26 | 26 | 0 | 256 | 256 | 0 | 41.56s | Jest In-Memory / Mocks |
 | **Backend Integration Tests**<br>`npm.cmd run test:integration` | 7 | 4 | 3 | 34 | 31 | 3 | 42.88s | PGlite (PostgreSQL 16 WASM) & Redis |
-| **Frontend Build**<br>`npm.cmd run build` | 1 | 1 | 0 | — | — | — | 0.93s | Vite + TypeScript 6 |
+| **Frontend Production Build**<br>`npm.cmd run build` | 1 | 1 | 0 | — | — | — | 0.93s | Vite 8 + TypeScript 6 |
 | **Playwright E2E**<br>`npx.cmd playwright test 06-responsive-a11y` | 1 | 1 | 0 | 4 | 4 | 0 | 19.30s | Chromium Headless |
-| **ML Inference Unit Tests**<br>`python -m pytest backend/ml/tests/test_inference.py` | 1 | 1 | 0 | 8 | 8 | 0 | 8.00s | Pytest / Flask Test Client |
+| **ML Pytest Suite**<br>`python -m pytest backend/ml/tests/test_inference.py` | 1 | 1 | 0 | 8 | 8 | 0 | 8.00s | Pytest / Flask Test Client |
 | **ML Models Audit**<br>`python backend/scripts/audit_all_models.py` | 1 | 1 | 0 | 10 | 10 | 0 | 2.12s | Scikit-Learn Joblib Models |
 
-### Detailed Integration Test Breakdown
-1. `tests/integration/migration.test.js`: **10 passed** (PGlite)
-2. `tests/integration/dataApiPermissions.test.js`: **7 passed** (PGlite)
-3. `tests/integration/wicrQueuePermissionsAndSchema.test.js`: **13 passed** (PGlite)
-4. `tests/integration/worker.test.js`: **1 passed** (Worker/Queue)
-5. `tests/integration/livePostgrestSecurity.test.js`: **1 skipped** (requires live cloud Supabase environment variables)
-6. `tests/integration/supabase.test.js`: **1 skipped** (requires live cloud Supabase credentials)
-7. `tests/integration/true_e2e.test.js`: **1 skipped** (requires live cloud Supabase credentials)
-
 ---
 
-## 4. Current Deployment & CI Status
+## 4. Owner Action Required to Unblock Both Gates
 
-- **GitHub Actions (Commit `066dc2e`)**:
-  - `Supabase Preview`: **SUCCESS**
-  - `Backend CI (build-and-test 22.x)`: **SUCCESS**
-  - `Frontend CI (build 22.x)`: **SUCCESS**
-- **Vercel Frontend**:
-  - URL: `https://grievanceiq-app.vercel.app`
-  - Status: HTTP 200 (Cache HIT, `X-Vercel-Id: bom1::x25wh-1794466142331-f3deb1e9072c`)
-- **Render Backend**:
-  - URL: `https://grievanceiq-gky1.onrender.com/api/health`
-  - Status: HTTP 200
-  - Response: `status: ok`, `database: connected`, `version: 1.0.3-unified-auth-production`, `environment: production`
-  - WICR Route (`/api/wicr/reviews`): Denies unauthenticated access with HTTP 401 (`{"error":"Not authorised — no token"}`).
+### Action for Gate 1 (Supabase Staging):
+1. **Option A (Provision Clean Staging Project — Recommended)**:
+   - Create a clean Supabase project (e.g. `grievanceiq-staging-clean`).
+   - Run `docs/database/apply_wicr_and_gate1_hardening.sql` in its Supabase SQL Editor.
+   - Configure Render staging environment variables `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+2. **Option B (Confirm `supabase-red-cable` is Isolated Staging)**:
+   - If `supabase-red-cable` (`bvyyeefapmdisxzuttds`) is confirmed as an isolated staging database with synthetic data, run `docs/database/apply_wicr_and_gate1_hardening.sql` in its SQL Editor.
 
----
-
-## 5. Remaining Blocker & Exact Owner Action Required
-
-Per Hard Safety Boundaries (Rules 1, 2, 4, and 9):
-1. **Never run unverified migrations or DDL writes against production**.
-2. **`supabase-red-cable` (`bvyyeefapmdisxzuttds`) is not confirmed isolated from production and must not be modified**.
-3. **`grievanceiq-staging-clean` has not yet been provisioned in Supabase**.
-4. **No Supabase CLI access token (`AccessTokenRequiredError`) or organization billing approval is present to provision a new project autonomously**.
-
-### Minimal Owner Action to Unblock Live Verification:
-1. **Option A (Recommended: Clean Staging Project)**:
-   - Create or provision `grievanceiq-staging-clean` in Supabase dashboard.
-   - Run `docs/database/apply_wicr_and_gate1_hardening.sql` in the Supabase SQL Editor.
-   - Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Render staging environment.
-2. **Option B (Confirm `supabase-red-cable` Isolation)**:
-   - If `supabase-red-cable` (`bvyyeefapmdisxzuttds`) is confirmed by the owner as an isolated staging database containing only synthetic data, execute `docs/database/apply_wicr_and_gate1_hardening.sql` in its SQL Editor.
-   - PostgREST schema cache will automatically reload via `NOTIFY pgrst, 'reload schema'`.
+### Action for Gate 2 (Redis / BullMQ Staging):
+1. Provision a free isolated Redis database (e.g. from Upstash Redis or Render Redis).
+2. Configure `REDIS_URL` in the staging environment.
+3. Once configured, `/api/health` will return `"redis": "connected"`, and BullMQ will process complaint jobs asynchronously with full lease ownership.
