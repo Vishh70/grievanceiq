@@ -253,14 +253,7 @@ class ReviewQueueService {
       };
     } catch (err) {
       console.error(`[ReviewQueueService] Exception fetching stats:`, err.message);
-      return {
-        pending: 0,
-        resolvedAccept: 0,
-        resolvedReject: 0,
-        duplicatesPending: 0,
-        relatedPending: 0,
-        totalEvaluated: 0
-      };
+      throw err;
     }
   }
 }

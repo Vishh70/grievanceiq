@@ -11,6 +11,11 @@ if (!supabaseUrl || !supabaseKey) {
   } else {
     console.warn('⚠️ Supabase URL or Key is missing. Using placeholder for local dev/tests.');
   }
+} else if (process.env.NODE_ENV === 'production') {
+  const isPrivilegedKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY);
+  if (!isPrivilegedKey) {
+    console.warn('⚠️ SECURITY WARNING: Backend is running without SUPABASE_SERVICE_ROLE_KEY. Access to backend-only views and RLS-protected tables requires service_role privileges.');
+  }
 }
 
 const supabase = createClient(

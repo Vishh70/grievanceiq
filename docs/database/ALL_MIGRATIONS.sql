@@ -1635,7 +1635,8 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   v_record RECORD;
-  v_reviewer RECORD;
+  v_reviewer_email TEXT := 'system';
+  v_reviewer_role TEXT := 'system';
   v_new_status TEXT;
   v_src UUID;
   v_tgt UUID;
@@ -1658,7 +1659,7 @@ BEGIN
   END IF;
 
   IF p_reviewer_id IS NOT NULL THEN
-    SELECT id, email, role INTO v_reviewer FROM public.users WHERE id = p_reviewer_id;
+    SELECT email, role INTO v_reviewer_email, v_reviewer_role FROM public.users WHERE id = p_reviewer_id;
   END IF;
 
   IF p_action = 'ACCEPT' THEN
@@ -1694,8 +1695,8 @@ BEGIN
     v_new_status,
     p_action,
     p_reviewer_id,
-    v_reviewer.email,
-    v_reviewer.role,
+    COALESCE(v_reviewer_email, 'system'),
+    COALESCE(v_reviewer_role, 'system'),
     p_notes,
     jsonb_build_object(
       'relationship_type', v_record.relationship_type,

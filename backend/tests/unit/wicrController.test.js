@@ -306,5 +306,35 @@ describe('FR06 / Phase 5: WICR Review Controller & RBAC Authorization', () => {
     });
   });
 
+  describe('5. Missing Schema & PostgREST Error Handling', () => {
+    it('A. Returns HTTP 500 with clear schema-cache error when view is missing and does NOT fall back to empty queue', async () => {
+      const schemaError = new Error("Failed to fetch pending reviews: Could not find the table 'public.v_pending_wicr_reviews' in the schema cache");
+      jest.spyOn(reviewQueueService, 'getPendingReviews').mockRejectedValueOnce(schemaError);
+
+      const token = generateTestToken(mockAdmin);
+      const res = await request(app)
+        .get('/api/wicr/reviews')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toContain("Could not find the table 'public.v_pending_wicr_reviews' in the schema cache");
+      expect(res.body.reviews).toBeUndefined(); // Must NOT suppress with empty queue
+    });
+
+    it('B. Returns HTTP 500 when queue statistics fails due to unmigrated database table', async () => {
+      const statsError = new Error("Failed to fetch queue stats: Could not find the table 'public.wicr_decisions' in the schema cache");
+      jest.spyOn(reviewQueueService, 'getQueueStats').mockRejectedValueOnce(statsError);
+
+      const token = generateTestToken(mockAdmin);
+      const res = await request(app)
+        .get('/api/wicr/stats')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toContain("Could not find the table 'public.wicr_decisions' in the schema cache");
+      expect(res.body.stats).toBeUndefined();
+    });
+  });
+
 });
 
